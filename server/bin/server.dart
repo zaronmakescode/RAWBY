@@ -3,8 +3,8 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_cors_headers/shelf_cors_headers.dart';
 import 'package:args/args.dart';
-import '../lib/router.dart';
-import '../lib/store.dart';
+import 'package:rawby_server/router.dart';
+import 'package:rawby_server/store.dart';
 
 Future<void> main(List<String> args) async {
   final parser = ArgParser()..addOption('port', abbr: 'p', defaultsTo: '8080');

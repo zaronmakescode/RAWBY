@@ -10,11 +10,11 @@ final _uuid = const Uuid();
 // ── Feedback ─────────────────────────────────────────────────────
 
 Future<Response> handleGetFeedback(Request request) async {
-  return Response.ok(jsonEncode(Store.instance.getFeedback()), headers: _json);
+  return Response.ok(jsonEncode(await Store.instance.getFeedback()), headers: _json);
 }
 
 Future<Response> handleDeleteFeedback(Request request, String id) async {
-  Store.instance.deleteFeedback(id);
+  await Store.instance.deleteFeedback(id);
   return Response.ok(jsonEncode({'status': 'ok'}), headers: _json);
 }
 
@@ -33,18 +33,19 @@ Future<Response> handlePostUpdate(Request request) async {
     'createdAt': DateTime.now().toUtc().toIso8601String(),
   };
 
-  Store.instance.addUpdate(update);
+  await Store.instance.addUpdate(update);
   return Response(201, body: jsonEncode(update), headers: _json);
 }
 
 Future<Response> handleGetUpdates(Request request) async {
-  return Response.ok(jsonEncode(Store.instance.getUpdates()), headers: _json);
+  return Response.ok(jsonEncode(await Store.instance.getUpdates()), headers: _json);
 }
 
 // ── Users ────────────────────────────────────────────────────────
 
 Future<Response> handleGetUsers(Request request) async {
-  final users = Store.instance.getAllUsers().map((u) {
+  final allUsers = await Store.instance.getAllUsers();
+  final users = allUsers.map((u) {
     // Don't expose password hashes
     return {
       'id': u['id'],
@@ -69,7 +70,7 @@ Future<Response> handleRegisterFcmToken(Request request) async {
   final token = body['token'] as String? ?? '';
 
   if (token.isNotEmpty) {
-    Store.instance.saveFcmToken(userId, token);
+    await Store.instance.saveFcmToken(userId, token);
   }
 
   return Response.ok(jsonEncode({'status': 'ok'}), headers: _json);

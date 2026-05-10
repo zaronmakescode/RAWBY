@@ -28,11 +28,23 @@ jobs:
     steps:
       - name: Create Tracking Issue
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+<<<<<<< HEAD
         with:
           script: |
             const version = "${{ inputs.version }}";
             const channel = "${{ inputs.release_channel }}";
             const hotfix = "${{ inputs.hotfix }}";
+=======
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.release_channel }}
+          HOTFIX: ${{ inputs.hotfix }}
+        with:
+          script: |
+            const version = process.env.VERSION;
+            const channel = process.env.CHANNEL;
+            const hotfix = process.env.HOTFIX;
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504
             const releaseType = hotfix === "true" ? "hotfix" : "initial";
 
             let versionValidator;
@@ -57,13 +69,21 @@ jobs:
               return;
             }
 
+<<<<<<< HEAD
             const majorMinorVersion = version.match(/^(\d+\.\d+)/)[0];
+=======
+            const majorMinorVersion = version.match(/^(\d+\.\d+)/)[1];
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504
             const branchName = `flutter-${majorMinorVersion}-candidate.0`;
 
             // Build the dynamic checklist
             let body = `## Flutter Release\n`;
             body += `Candidate Branch: [${branchName}](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName})\n`;
+<<<<<<< HEAD
             body += `Tag: [${version}](https://github.com/{context.repo.owner}/${context.repo.repo}/releases/tag/${version})\n`;
+=======
+            body += `Tag: [${version}](https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${version})\n`;
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504
 
             body += `### 📋 Release Checklist\n\n`;
 
@@ -72,13 +92,21 @@ jobs:
             if (channel === 'beta' && hotfix !== 'true') {
               body += '#### Branch Alignment\n';
               body += '  - [ ] Stop the [Dart Auto Roller](https://autoroll.skia.org/r/dart-sdk-flutter)\n';
+<<<<<<< HEAD
               body += '  - [ ] Roll forward to aligned Dart hash\n';
+=======
+              body += '  - [ ] Update Dart version if necessary ([GH Workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/roll-dart-dependencies.yml))\n';
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504
               body += '    - Dart Hash: [Paste the Dart hash here]\n';
               body += '  - [ ] Wait for Google3 Roll to complete.\n';
               body += '  - [ ] Restart the [Dart Auto Roller](https://autoroll.skia.org/r/dart-sdk-flutter)\n';
 
               body += '#### Cut release branches\n';
+<<<<<<< HEAD
               body += '  - [ ] Cut new flutter branch: `' + branchName + '`\n';
+=======
+              body += '  - [ ] Cut new flutter branch: `' + branchName + '` ' + `([GH Workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/cut-release-branch.yml))\n`;
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504
               body += '  - [ ] Cut new recipes branch: `' + branchName + '` [Gerrit UI](https://flutter-review.googlesource.com/admin/repos/recipes,branches)\n';
             }
 
@@ -88,11 +116,19 @@ jobs:
               body += '  - [ ] Create `release-candidate-branch.version` file on candidate branch\n';
             } else {
               body += `- [ ] Merge outstanding [cherry-picks](https://github.com/${context.repo.owner}/${context.repo.repo}/pulls?q=is%3Apr+is%3Aopen+label%3A"cp%3A+review")\n`;
+<<<<<<< HEAD
               body += '- [ ] Update Dart version if necessary\n';
               body += '  - Dart Hash: [Paste the Dart hash here]\n';
             }
 
             body += '- [ ] Pin engine hash in `engine.version` if necessary\n'
+=======
+              body += `- [ ] Update Dart version if necessary ([GH Workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/roll-dart-dependencies.yml))\n`;
+              body += '  - Dart Hash: [Paste the Dart hash here]\n';
+            }
+
+            body += '- [ ] Pin engine hash in `engine.version` if necessary' + `([GH Workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/sync-engine-version.yml))\n`
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504
 
             if (channel === 'stable' && hotfix === 'true') {
               body += '- [ ] Add changelog for stable release\n';
@@ -114,7 +150,11 @@ jobs:
               body += '- [ ] Merge the changelog back to the `master` branch\n';
             }
 
+<<<<<<< HEAD
             await github.rest.issues.create({
+=======
+            const issueResponse = await github.rest.issues.create({
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `[${channel}] [${releaseType}] Flutter Release Version ${version}`,
@@ -122,3 +162,20 @@ jobs:
               labels: ['release-tracker'],
               assignees: [context.actor],
             });
+<<<<<<< HEAD
+=======
+
+            const issueUrl = issueResponse.data.html_url;
+            const issueNumber = issueResponse.data.number;
+
+            // Write a big, friendly button to the Job Summary
+            await core.summary
+              .addRaw(`# 🚀 Release Tracker Created!`)
+              .addBreak()
+              .addRaw(`The release tracking issue for **${version}** has been successfully generated.`)
+              .addBreak()
+              .addRaw(`### [Click here to view Issue #${issueResponse.data.number}](${issueResponse.data.html_url})`)
+              .addBreak()
+              .addRaw(`**Assignee:** @${context.actor}`)
+              .write();
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504

@@ -5,7 +5,7 @@ import '../store.dart';
 final _json = {'content-type': 'application/json'};
 
 Future<Response> handleGetLeaderboard(Request request) async {
-  final users = Store.instance.getAllUsers();
+  final users = await Store.instance.getAllUsers();
 
   final entries = users.map((u) {
     return {
@@ -31,13 +31,13 @@ Future<Response> handleGetLeaderboard(Request request) async {
 }
 
 Future<Response> handleGetProfile(Request request, String username) async {
-  final user = Store.instance.getUserByUsername(username);
+  final user = await Store.instance.getUserByUsername(username);
   if (user == null) {
     return Response(404, body: jsonEncode({'error': 'User not found'}), headers: _json);
   }
 
-  final userId = Store.instance.getUserIdByUsername(username)!;
-  final snapshot = Store.instance.getSnapshot(userId);
+  final userId = (await Store.instance.getUserIdByUsername(username))!;
+  final snapshot = await Store.instance.getSnapshot(userId);
 
   return Response.ok(jsonEncode({
     'user': {

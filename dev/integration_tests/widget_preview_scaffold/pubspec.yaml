@@ -1,14 +1,23 @@
 name: widget_preview_scaffold
 description: Scaffolding for Flutter Widget Previews
+<<<<<<< HEAD
 publish_to: "none"
 version: 0.0.1
 
 environment:
   sdk: ^3.9.0-0
+=======
+
+environment:
+  sdk: ^3.10.0-0
+
+resolution: workspace
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504
 
 dependencies:
   flutter:
     sdk: flutter
+<<<<<<< HEAD
   flutter_test:
     sdk: flutter
   # These will be replaced with proper constraints after the template is hydrated.
@@ -60,12 +69,35 @@ dependencies:
   web_socket_channel: 3.0.3
   webview_flutter: 4.13.0
   webview_flutter_web: ^0.2.3+4
+=======
+
+  dtd: any
+  file: any
+  google_fonts: any
+  json_rpc_2: any
+  path: any
+  stack_trace: any
+  url_launcher: any
+  web: any
+  webview_flutter: any
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504
 
 dev_dependencies:
   flutter_tools:
     path: ../../../packages/flutter_tools/
+<<<<<<< HEAD
   test: 1.30.0
 
 flutter:
   uses-material-design: true
 # PUBSPEC CHECKSUM: m9voc4
+=======
+  test: any
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+# PUBSPEC CHECKSUM: 7554df
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504

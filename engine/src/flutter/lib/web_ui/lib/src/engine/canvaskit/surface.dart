@@ -52,6 +52,9 @@ abstract class CkSurface extends Surface {
     return true;
   }
 
+  /// Whether this surface is using software rendering.
+  bool get isSoftware => !supportsWebGl;
+
   String? _fallbackToSoftwareReason;
 
   /// When true, the surface will fail to create a GL context and fall back to
@@ -82,7 +85,7 @@ abstract class CkSurface extends Surface {
   Future<void> get initialized => _initialized.future;
   final Completer<void> _initialized = Completer<void>();
 
-  late Completer<void>? _handledContextLostEvent;
+  Completer<void>? _handledContextLostEvent;
 
   /// Creates the canvas object and initializes the graphics context.
   Future<void> _initialize() async {
@@ -220,6 +223,7 @@ abstract class CkSurface extends Surface {
   @override
   void dispose() {
     _skSurface?.dispose();
+    _skSurface = null;
   }
 
   @override

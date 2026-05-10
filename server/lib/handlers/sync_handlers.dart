@@ -10,14 +10,14 @@ Future<Response> handlePushSnapshot(Request request) async {
   final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
 
   // Save the full snapshot
-  Store.instance.saveSnapshot(userId, body);
+  await Store.instance.saveSnapshot(userId, body);
 
   // Update user-level aggregates
-  final user = Store.instance.getUserById(userId);
+  final user = await Store.instance.getUserById(userId);
   if (user != null) {
     user['totalScore'] = body['totalScore'] ?? user['totalScore'] ?? 0;
     user['streak'] = body['streak'] ?? user['streak'] ?? 0;
-    Store.instance.updateUser(userId, user);
+    await Store.instance.updateUser(userId, user);
   }
 
   return Response.ok(jsonEncode({'status': 'ok'}), headers: _json);
@@ -28,11 +28,11 @@ Future<Response> handleSyncScores(Request request) async {
   final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
 
   // Update score data
-  final user = Store.instance.getUserById(userId);
+  final user = await Store.instance.getUserById(userId);
   if (user != null) {
     user['totalScore'] = body['totalScore'] ?? user['totalScore'] ?? 0;
     user['streak'] = body['streak'] ?? user['streak'] ?? 0;
-    Store.instance.updateUser(userId, user);
+    await Store.instance.updateUser(userId, user);
   }
 
   return Response.ok(jsonEncode({'status': 'ok'}), headers: _json);

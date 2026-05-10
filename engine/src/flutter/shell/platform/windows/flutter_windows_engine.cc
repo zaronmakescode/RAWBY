@@ -524,10 +524,14 @@ bool FlutterWindowsEngine::Stop() {
 }
 
 std::unique_ptr<FlutterWindowsView> FlutterWindowsEngine::CreateView(
-    std::unique_ptr<WindowBindingHandler> window) {
+    std::unique_ptr<WindowBindingHandler> window,
+    bool is_sized_to_content,
+    const BoxConstraints& box_constraints,
+    FlutterWindowsViewSizingDelegate* sizing_delegate) {
   auto view_id = next_view_id_;
   auto view = std::make_unique<FlutterWindowsView>(
-      view_id, this, std::move(window), windows_proc_table_);
+      view_id, this, std::move(window), is_sized_to_content, box_constraints,
+      sizing_delegate, windows_proc_table_);
 
   view->CreateRenderSurface();
   view->UpdateSemanticsEnabled(semantics_enabled_);
@@ -653,6 +657,13 @@ void FlutterWindowsEngine::RemoveView(FlutterViewId view_id) {
     std::unique_lock write_lock(views_mutex_);
 
     FML_DCHECK(views_.find(view_id) != views_.end());
+
+    // Reset text input state if the removed view is the active text input
+    // view, to prevent stale view references.
+    if (text_input_plugin_) {
+      text_input_plugin_->OnViewRemoved(view_id);
+    }
+
     views_.erase(view_id);
   }
 }

@@ -11,8 +11,8 @@ Future<void> main(List<String> args) async {
   final result = parser.parse(args);
   final port = int.parse(Platform.environment['PORT'] ?? result['port'] as String);
 
-  // Initialize in-memory store
-  Store.instance.initialize();
+  // Initialize MongoDB connection
+  await Store.instance.initialize();
 
   final app = buildRouter();
 

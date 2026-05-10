@@ -14,12 +14,12 @@ Future<Response> handleLogin(Request request) async {
     return Response(400, body: jsonEncode({'error': 'Username and password required'}), headers: _json);
   }
 
-  final userId = Store.instance.getUserIdByUsername(username);
+  final userId = await Store.instance.getUserIdByUsername(username);
   if (userId == null) {
     return Response(401, body: jsonEncode({'error': 'Invalid username or password'}), headers: _json);
   }
 
-  final user = Store.instance.getUserById(userId)!;
+  final user = (await Store.instance.getUserById(userId))!;
   if (!verifyPassword(password, user['passwordHash'] as String)) {
     return Response(401, body: jsonEncode({'error': 'Invalid username or password'}), headers: _json);
   }
@@ -58,14 +58,14 @@ Future<Response> handleRegister(Request request) async {
     return Response(400, body: jsonEncode({'error': 'Password must be at least 6 characters'}), headers: _json);
   }
 
-  if (Store.instance.usernameExists(username)) {
+  if (await Store.instance.usernameExists(username)) {
     return Response(409, body: jsonEncode({'error': 'Username already taken'}), headers: _json);
   }
 
   final id = Store.instance.generateId();
   final now = DateTime.now().toUtc().toIso8601String();
 
-  Store.instance.createUser(id, {
+  await Store.instance.createUser(id, {
     'username': username,
     'displayName': displayName.isNotEmpty ? displayName : username,
     'email': email,
@@ -93,14 +93,14 @@ Future<Response> handleRegister(Request request) async {
 
 Future<Response> handleGetMe(Request request) async {
   final userId = getUserId(request);
-  final user = Store.instance.getUserById(userId);
+  final user = await Store.instance.getUserById(userId);
 
   if (user == null) {
     return Response(404, body: jsonEncode({'error': 'User not found'}), headers: _json);
   }
 
   // Check if there's a snapshot with full session data
-  final snapshot = Store.instance.getSnapshot(userId);
+  final snapshot = await Store.instance.getSnapshot(userId);
 
   return Response.ok(jsonEncode({
     'user': {

@@ -6,26 +6,50 @@ Dart backend for the RAWBY filmmaking challenge app.
 - **Dart** + **Shelf** (HTTP framework)
 - **shelf_router** for routing
 - **dart_jsonwebtoken** for JWT auth
-- **JSON file storage** (swap with a DB for production)
+- **MongoDB Atlas** (free 512 MB cluster) for persistent storage
+- **mongo_dart** for database connectivity
 
 ## Run Locally
 
 ```bash
 cd server
 dart pub get
+
+# Option A: Local MongoDB
+dart run bin/server.dart
+
+# Option B: Use Atlas connection string
+set MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/rawby
 dart run bin/server.dart
 ```
 
 Server starts at `http://localhost:8080`.
 
-## Deploy to Render
+## MongoDB Atlas Setup (Free)
+
+1. Go to [mongodb.com/atlas](https://www.mongodb.com/atlas) and create a free account
+2. Create a **FREE Shared Cluster** (M0 — 512 MB, free forever)
+3. Under **Database Access**, create a database user with read/write permissions
+4. Under **Network Access**, add `0.0.0.0/0` to allow connections from anywhere (required for Render)
+5. Click **Connect** → **Drivers** → copy the connection string
+6. Replace `<password>` with your database user's password
+7. Add `/rawby` at the end as the database name
+
+Your URI will look like:
+```
+mongodb+srv://rawbyuser:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/rawby?retryWrites=true&w=majority
+```
+
+## Deploy to Render (Free)
 
 1. Push this repo to GitHub
-2. Create a new **Web Service** on Render
+2. Create a new **Web Service** on [render.com](https://render.com)
 3. Set **Root Directory** to `server`
 4. Set **Runtime** to **Docker**
-5. Render will auto-detect the Dockerfile
-6. Add a **Disk** mounted at `/app/data` for persistent storage
+5. Under **Environment Variables**, add:
+   - `PORT` = `8080`
+   - `MONGO_URI` = your MongoDB Atlas connection string from above
+6. Deploy — that's it!
 
 ## API Endpoints
 

@@ -1,163 +1,163 @@
-import 'dart:convert';
 import 'dart:io';
+import 'package:mongo_dart/mongo_dart.dart';
 import 'package:uuid/uuid.dart';
 
-/// Simple JSON file-based persistent store.
-/// On Render, data persists as long as the service is running.
-/// For production, swap with a real database.
+/// MongoDB Atlas persistent store.
+/// Uses MONGO_URI environment variable for connection string.
 class Store {
   Store._();
   static final Store instance = Store._();
 
   final _uuid = const Uuid();
-  final String _dataDir = 'data';
+  late Db _db;
 
-  late Map<String, Map<String, dynamic>> _users; // userId -> user data
-  late Map<String, String> _usernameIndex; // username -> userId
-  late List<Map<String, dynamic>> _feedback;
-  late List<Map<String, dynamic>> _updates;
-  late Map<String, String> _fcmTokens; // userId -> token
-  late Map<String, Map<String, dynamic>> _snapshots; // userId -> last snapshot
+  late DbCollection _users;
+  late DbCollection _snapshots;
+  late DbCollection _feedback;
+  late DbCollection _updates;
+  late DbCollection _fcmTokens;
 
-  void initialize() {
-    _ensureDataDir();
-    _users = _loadMap('users.json');
-    _usernameIndex = {};
-    for (final entry in _users.entries) {
-      final username = entry.value['username'] as String? ?? '';
-      if (username.isNotEmpty) {
-        _usernameIndex[username.toLowerCase()] = entry.key;
-      }
-    }
-    _feedback = _loadList('feedback.json');
-    _updates = _loadList('updates.json');
-    _fcmTokens = Map<String, String>.from(_loadMap('fcm_tokens.json').map(
-      (k, v) => MapEntry(k, v.toString()),
-    ));
-    _snapshots = _loadMap('snapshots.json');
-  }
+  Future<void> initialize() async {
+    final mongoUri = Platform.environment['MONGO_URI'] ??
+        'mongodb://localhost:27017/rawby';
 
-  void _ensureDataDir() {
-    final dir = Directory(_dataDir);
-    if (!dir.existsSync()) dir.createSync(recursive: true);
-  }
+    _db = await Db.create(mongoUri);
+    await _db.open();
 
-  Map<String, Map<String, dynamic>> _loadMap(String filename) {
-    final file = File('$_dataDir/$filename');
-    if (!file.existsSync()) return {};
-    try {
-      final content = file.readAsStringSync();
-      final decoded = jsonDecode(content);
-      return Map<String, Map<String, dynamic>>.from(
-        (decoded as Map).map((k, v) => MapEntry(k.toString(), Map<String, dynamic>.from(v as Map))),
-      );
-    } catch (_) {
-      return {};
-    }
-  }
+    _users = _db.collection('users');
+    _snapshots = _db.collection('snapshots');
+    _feedback = _db.collection('feedback');
+    _updates = _db.collection('updates');
+    _fcmTokens = _db.collection('fcm_tokens');
 
-  List<Map<String, dynamic>> _loadList(String filename) {
-    final file = File('$_dataDir/$filename');
-    if (!file.existsSync()) return [];
-    try {
-      final content = file.readAsStringSync();
-      return List<Map<String, dynamic>>.from(
-        (jsonDecode(content) as List).map((e) => Map<String, dynamic>.from(e as Map)),
-      );
-    } catch (_) {
-      return [];
-    }
-  }
+    // Ensure indexes
+    await _users.createIndex(keys: {'username': 1}, unique: true);
+    await _snapshots.createIndex(keys: {'userId': 1}, unique: true);
+    await _fcmTokens.createIndex(keys: {'userId': 1}, unique: true);
 
-  void _saveMap(String filename, Map data) {
-    File('$_dataDir/$filename').writeAsStringSync(jsonEncode(data));
-  }
-
-  void _saveList(String filename, List data) {
-    File('$_dataDir/$filename').writeAsStringSync(jsonEncode(data));
+    print('  MongoDB connected to: ${_db.databaseName}');
   }
 
   // ── Users ──────────────────────────────────────────────────────
 
   String generateId() => _uuid.v4();
 
-  Map<String, dynamic>? getUserById(String id) => _users[id];
-
-  Map<String, dynamic>? getUserByUsername(String username) {
-    final id = _usernameIndex[username.toLowerCase()];
-    if (id == null) return null;
-    return _users[id];
+  Future<Map<String, dynamic>?> getUserById(String id) async {
+    final doc = await _users.findOne(where.eq('userId', id));
+    return doc;
   }
 
-  String? getUserIdByUsername(String username) {
-    return _usernameIndex[username.toLowerCase()];
+  Future<Map<String, dynamic>?> getUserByUsername(String username) async {
+    final doc = await _users.findOne(
+      where.eq('username', username).eq('usernameLower', username.toLowerCase()),
+    );
+    // Fallback: search by lowercase
+    if (doc != null) return doc;
+    return await _users.findOne(where.eq('usernameLower', username.toLowerCase()));
   }
 
-  bool usernameExists(String username) {
-    return _usernameIndex.containsKey(username.toLowerCase());
+  Future<String?> getUserIdByUsername(String username) async {
+    final doc = await _users.findOne(
+      where.eq('usernameLower', username.toLowerCase()),
+    );
+    return doc?['userId'] as String?;
   }
 
-  void createUser(String id, Map<String, dynamic> data) {
-    _users[id] = data;
-    final username = data['username'] as String? ?? '';
-    if (username.isNotEmpty) {
-      _usernameIndex[username.toLowerCase()] = id;
+  Future<bool> usernameExists(String username) async {
+    final doc = await _users.findOne(
+      where.eq('usernameLower', username.toLowerCase()),
+    );
+    return doc != null;
+  }
+
+  Future<void> createUser(String id, Map<String, dynamic> data) async {
+    data['userId'] = id;
+    data['usernameLower'] = (data['username'] as String).toLowerCase();
+    await _users.insertOne(data);
+  }
+
+  Future<void> updateUser(String id, Map<String, dynamic> data) async {
+    data['userId'] = id;
+    if (data.containsKey('username')) {
+      data['usernameLower'] = (data['username'] as String).toLowerCase();
     }
-    _saveMap('users.json', _users);
+    await _users.replaceOne(where.eq('userId', id), data, upsert: true);
   }
 
-  void updateUser(String id, Map<String, dynamic> data) {
-    _users[id] = data;
-    _saveMap('users.json', _users);
-  }
-
-  List<Map<String, dynamic>> getAllUsers() {
-    return _users.entries.map((e) {
-      final user = Map<String, dynamic>.from(e.value);
-      user['id'] = e.key;
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    final docs = await _users.find().toList();
+    return docs.map((doc) {
+      final user = Map<String, dynamic>.from(doc);
+      user['id'] = user['userId'];
+      user.remove('_id');
       return user;
     }).toList();
   }
 
   // ── Snapshots (sync) ───────────────────────────────────────────
 
-  void saveSnapshot(String userId, Map<String, dynamic> snapshot) {
-    _snapshots[userId] = snapshot;
-    _saveMap('snapshots.json', _snapshots);
+  Future<void> saveSnapshot(String userId, Map<String, dynamic> snapshot) async {
+    snapshot['userId'] = userId;
+    await _snapshots.replaceOne(
+      where.eq('userId', userId),
+      snapshot,
+      upsert: true,
+    );
   }
 
-  Map<String, dynamic>? getSnapshot(String userId) => _snapshots[userId];
+  Future<Map<String, dynamic>?> getSnapshot(String userId) async {
+    final doc = await _snapshots.findOne(where.eq('userId', userId));
+    if (doc != null) {
+      doc.remove('_id');
+      doc.remove('userId');
+    }
+    return doc;
+  }
 
   // ── Feedback ───────────────────────────────────────────────────
 
-  List<Map<String, dynamic>> getFeedback() => _feedback;
-
-  void addFeedback(Map<String, dynamic> item) {
-    _feedback.add(item);
-    _saveList('feedback.json', _feedback);
+  Future<List<Map<String, dynamic>>> getFeedback() async {
+    final docs = await _feedback.find().toList();
+    return docs.map((d) {
+      d.remove('_id');
+      return Map<String, dynamic>.from(d);
+    }).toList();
   }
 
-  void deleteFeedback(String id) {
-    _feedback.removeWhere((f) => f['id'] == id);
-    _saveList('feedback.json', _feedback);
+  Future<void> addFeedback(Map<String, dynamic> item) async {
+    await _feedback.insertOne(item);
+  }
+
+  Future<void> deleteFeedback(String id) async {
+    await _feedback.deleteOne(where.eq('id', id));
   }
 
   // ── Updates ────────────────────────────────────────────────────
 
-  List<Map<String, dynamic>> getUpdates() => _updates;
+  Future<List<Map<String, dynamic>>> getUpdates() async {
+    final docs = await _updates.find(where.sortBy('createdAt', descending: true)).toList();
+    return docs.map((d) {
+      d.remove('_id');
+      return Map<String, dynamic>.from(d);
+    }).toList();
+  }
 
-  void addUpdate(Map<String, dynamic> update) {
-    _updates.insert(0, update);
-    _saveList('updates.json', _updates);
+  Future<void> addUpdate(Map<String, dynamic> update) async {
+    await _updates.insertOne(update);
   }
 
   // ── FCM Tokens ─────────────────────────────────────────────────
 
-  void saveFcmToken(String userId, String token) {
-    _fcmTokens[userId] = token;
-    _saveMap('fcm_tokens.json',
-        _fcmTokens.map((k, v) => MapEntry(k, {'token': v})));
+  Future<void> saveFcmToken(String userId, String token) async {
+    await _fcmTokens.replaceOne(
+      where.eq('userId', userId),
+      {'userId': userId, 'token': token},
+      upsert: true,
+    );
   }
 
-  Map<String, String> getAllFcmTokens() => _fcmTokens;
+  Future<Map<String, String>> getAllFcmTokens() async {
+    final docs = await _fcmTokens.find().toList();
+    return {for (final d in docs) d['userId'] as String: d['token'] as String};
+  }
 }

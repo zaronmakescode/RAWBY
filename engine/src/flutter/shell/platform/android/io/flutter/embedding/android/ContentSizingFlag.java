@@ -32,7 +32,11 @@ class ContentSizingFlag {
               .getApplicationInfo(appContext.getPackageName(), PackageManager.GET_META_DATA);
       metaData = applicationInfo.metaData;
     } catch (NameNotFoundException ex) {
+<<<<<<< HEAD
       Log.e(TAG, "Could not get metadata");
+=======
+      Log.e(TAG, "Could not get metadata", ex);
+>>>>>>> 3621426accc8f74790732d9f5da98a27a01f8504
     }
     return metaData != null ? metaData.getBoolean(ENABLE_CONTENT_SIZING, DEFAULT) : DEFAULT;
   }

@@ -14,6 +14,7 @@ import '../view_embedder/style_manager.dart';
 import 'debug.dart';
 import 'layout.dart';
 import 'paint.dart';
+import 'paint_paragraph.dart';
 import 'painter.dart';
 
 @visibleForTesting
@@ -133,7 +134,7 @@ class WebParagraphStyle implements ui.ParagraphStyle {
   }
 }
 
-// TODO(mdebbar): Rename to `PaintElements`?
+// TODO(mdebbar): Rename to 'PaintElements'?
 enum StyleElements {
   // Background for a text clusters block
   background,
@@ -144,6 +145,8 @@ enum StyleElements {
   // Text cluster
   text,
 }
+
+enum ShadowDirection { left, right, top, bottom }
 
 class WebTextStyle implements ui.TextStyle {
   factory WebTextStyle({
@@ -418,14 +421,16 @@ class WebTextStyle implements ui.TextStyle {
     return (wordSpacing != null) ? '${wordSpacing}px' : '0px';
   }
 
+  String _buildLangString() {
+    return locale != null ? '${locale!.languageCode}-${locale!.countryCode}' : '';
+  }
+
   void _applyFontFeatures(DomCanvasRenderingContext2D context) {
     if (fontFeatures == null) {
       return;
     }
 
     final fontFeatureSettings = <ui.FontFeature>[];
-    var optimizeLegibility = false;
-
     for (final ui.FontFeature feature in fontFeatures!) {
       switch (feature.feature) {
         case 'smcp':
@@ -442,25 +447,21 @@ class WebTextStyle implements ui.TextStyle {
           context.fontVariantCaps = feature.value != 0 ? 'titling-caps' : 'normal';
         default:
           fontFeatureSettings.add(feature);
-          if (feature.value != 0) {
-            optimizeLegibility = true;
-          }
       }
     }
 
     if (fontFeatureSettings.isNotEmpty) {
-      // TODO(jlavrova): Do we really need to set this?
-      context.textRendering = optimizeLegibility ? 'optimizeLegibility' : 'optimizeSpeed';
       context.canvas!.style.fontFeatureSettings = fontFeatureListToCss(fontFeatureSettings);
     }
   }
 
   void applyToContext(DomCanvasRenderingContext2D context) {
     // Setup all the font-affecting attributes
-    // TODO(jlavrova): set 'lang' attribute as a combination of locale+language
+    // Set 'lang' attribute as a combination of locale+language
     context.font = _buildCssFontString();
     context.letterSpacing = _buildLetterSpacingString();
     context.wordSpacing = _buildWordSpacingString();
+    context.lang = _buildLangString();
     _applyFontFeatures(context);
   }
 
@@ -638,6 +639,7 @@ class TextSpan extends ParagraphSpan {
 
   DomTextMetrics _getMetrics() {
     style.applyToContext(layoutContext);
+
     // We need to set in up because we otherwise in RTL text without textDirection
     // Canvas2D will return all clusters placed right to left starting from 0.
     // Also, we have a separate (possibly, different) textDirection for the ellipsis.
@@ -740,7 +742,7 @@ class WebStrutStyle implements ui.StrutStyle {
     this.fontFamilyFallback,
     this.fontSize,
     double? height,
-    // TODO(mdebbar): implement leadingDistribution.
+    // TODO(jlavrova): Implement leadingDistribution.
     this.leadingDistribution,
     this.leading,
     this.fontWeight,
@@ -843,18 +845,15 @@ class WebParagraph implements ui.Paragraph {
   final List<ParagraphSpan> spans;
   final String text;
 
-  // TODO(jlavrova): Implement.
   @override
   double alphabeticBaseline = 0;
 
-  // TODO(jlavrova): Implement.
   @override
   bool didExceedMaxLines = false;
 
   @override
   double height = 0;
 
-  // TODO(jlavrova): Implement. Maybe use the same hack from the HTML renderer?
   @override
   double ideographicBaseline = 0;
 
@@ -969,17 +968,7 @@ class WebParagraph implements ui.Paragraph {
   }
 
   void paint(ui.Canvas canvas, ui.Offset offset) {
-    _paint.painter.resizePaintCanvas(ui.window.devicePixelRatio);
-    for (final TextLine line in _layout.lines) {
-      _paint.paintLine(canvas, _layout, line, offset.dx, offset.dy);
-    }
-  }
-
-  void paintOnCanvas2D(DomHTMLCanvasElement canvas, ui.Offset offset) {
-    _paint.painter.resizePaintCanvas(ui.window.devicePixelRatio);
-    for (final TextLine line in _layout.lines) {
-      _paint.paintLineOnCanvas2D(canvas, _layout, line, offset.dx, offset.dy);
-    }
+    _paint.paint(canvas, _layout, _painter, offset.dx, offset.dy);
   }
 
   @override
@@ -1089,7 +1078,8 @@ class WebParagraph implements ui.Paragraph {
   }
 
   late final TextLayout _layout = TextLayout(this);
-  late final TextPaint _paint = TextPaint(this, CanvasKitPainter());
+  late final TextPaint _paint = PaintParagraph(this);
+  late final Painter _painter = CanvasKitPainter();
 }
 
 class WebLineMetrics implements ui.LineMetrics {
@@ -1296,9 +1286,11 @@ class WebParagraphBuilder implements ui.ParagraphBuilder {
     final text = _fullTextBuffer.toString();
 
     final paragraph = WebParagraph(_paragraphStyle, _spans, text);
-    WebParagraphDebug.apiTrace('WebParagraphBuilder.build(): "$text" ${_spans.length}');
-    for (var i = 0; i < _spans.length; ++i) {
-      WebParagraphDebug.log('$i: ${_spans[i]}');
+    if (WebParagraphDebug.apiLogging) {
+      WebParagraphDebug.apiTrace('WebParagraphBuilder.build(): "$text" ${_spans.length}');
+      for (var i = 0; i < _spans.length; ++i) {
+        WebParagraphDebug.log('$i: ${_spans[i]}');
+      }
     }
     return paragraph;
   }

@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 
+#include "flutter/display_list/image/dl_image.h"
 #include "fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
@@ -128,12 +129,8 @@ class Variants : public GenericVariants {
     context.GetPipelineLibrary()->LogPipelineCreation(*desc);
     options.ApplyToPipelineDescriptor(*desc);
     desc_ = desc;
-    if (context.GetFlags().lazy_shader_mode) {
-      SetDefault(options, nullptr);
-    } else {
-      SetDefault(options, std::make_unique<PipelineHandleT>(context, desc_,
-                                                            /*async=*/true));
-    }
+    SetDefault(options, std::make_unique<PipelineHandleT>(context, desc_,
+                                                          /*async=*/true));
   }
 
   PipelineHandleT* Get(const ContentContextOptions& options) const {
@@ -164,7 +161,8 @@ template <class RenderPipelineHandleT>
 RenderPipelineHandleT* CreateIfNeeded(
     const ContentContext* context,
     Variants<RenderPipelineHandleT>& container,
-    ContentContextOptions opts) {
+    ContentContextOptions opts,
+    PipelineCompileQueue* compile_queue) {
   if (!context->IsValid()) {
     return nullptr;
   }
@@ -183,7 +181,7 @@ RenderPipelineHandleT* CreateIfNeeded(
   FML_CHECK(default_handle != nullptr);
 
   const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline =
-      default_handle->WaitAndGet();
+      default_handle->WaitAndGet(compile_queue);
   if (!pipeline) {
     return nullptr;
   }
@@ -204,11 +202,14 @@ template <class TypedPipeline>
 PipelineRef GetPipeline(const ContentContext* context,
                         Variants<TypedPipeline>& container,
                         ContentContextOptions opts) {
-  TypedPipeline* pipeline = CreateIfNeeded(context, container, opts);
+  auto compile_queue =
+      context->GetContext()->GetPipelineLibrary()->GetPipelineCompileQueue();
+  TypedPipeline* pipeline =
+      CreateIfNeeded(context, container, opts, compile_queue);
   if (!pipeline) {
     return raw_ptr<Pipeline<PipelineDescriptor>>();
   }
-  return raw_ptr(pipeline->WaitAndGet());
+  return raw_ptr(pipeline->WaitAndGet(compile_queue));
 }
 
 }  // namespace
@@ -303,6 +304,7 @@ struct ContentContext::Pipelines {
   Variants<TiledTexturePipeline> tiled_texture;
   Variants<VerticesUber1Shader> vertices_uber_1_;
   Variants<VerticesUber2Shader> vertices_uber_2_;
+  Variants<UberSDFPipeline> uber_sdf;
   Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter;
 
 // Web doesn't support external texture OpenGL extensions
@@ -634,6 +636,9 @@ ContentContext::ContentContext(
     pipelines_->fast_gradient.CreateDefault(*context_, options);
     pipelines_->line.CreateDefault(*context_, options);
     pipelines_->circle.CreateDefault(*context_, options);
+    if (context_->GetFlags().use_sdfs) {
+      pipelines_->uber_sdf.CreateDefault(*context_, options);
+    }
 
     if (context_->GetCapabilities()->SupportsSSBO()) {
       pipelines_->linear_gradient_ssbo_fill.CreateDefault(*context_, options);
@@ -692,14 +697,9 @@ ContentContext::ContentContext(
     }
     clip_pipeline_descriptor->SetColorAttachmentDescriptors(
         std::move(clip_color_attachments));
-    if (GetContext()->GetFlags().lazy_shader_mode) {
-      pipelines_->clip.SetDefaultDescriptor(clip_pipeline_descriptor);
-      pipelines_->clip.SetDefault(options, nullptr);
-    } else {
-      pipelines_->clip.SetDefault(
-          options,
-          std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor));
-    }
+    pipelines_->clip.SetDefault(
+        options,
+        std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor));
     pipelines_->texture_downsample.CreateDefault(
         *context_, options_no_msaa_no_depth_stencil);
     pipelines_->texture_downsample_bounded.CreateDefault(
@@ -1018,9 +1018,6 @@ void ContentContext::ResetTransientsBuffers() {
 }
 
 void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
-  if (GetContext()->GetFlags().lazy_shader_mode) {
-    return;
-  }
   GetContext()->InitializeCommonlyUsedShadersIfNeeded();
 }
 
@@ -1203,6 +1200,11 @@ PipelineRef ContentContext::GetGlyphAtlasPipeline(
 PipelineRef ContentContext::GetYUVToRGBFilterPipeline(
     ContentContextOptions opts) const {
   return GetPipeline(this, pipelines_->yuv_to_rgb_filter, opts);
+}
+
+PipelineRef ContentContext::GetUberSDFPipeline(
+    ContentContextOptions opts) const {
+  return GetPipeline(this, pipelines_->uber_sdf, opts);
 }
 
 PipelineRef ContentContext::GetPorterDuffPipeline(
@@ -1556,5 +1558,45 @@ PipelineRef ContentContext::GetDownsampleTextureGlesPipeline(
 }
 
 #endif  // IMPELLER_ENABLE_OPENGLES
+
+void ContentContext::SetTextureCachingEnabled(bool enabled) {
+  is_texture_caching_enabled_ = enabled;
+  if (!enabled) {
+    texture_cache_.clear();
+  }
+}
+
+std::shared_ptr<Texture> ContentContext::GetCachedTexture(
+    const flutter::DlImage* image) const {
+  if (!image) {
+    return nullptr;
+  }
+  if (is_texture_caching_enabled_) {
+    auto it = texture_cache_.find(image);
+    if (it != texture_cache_.end()) {
+      return it->second;
+    }
+  }
+  return nullptr;
+}
+
+void ContentContext::SetCachedTexture(
+    const flutter::DlImage* image,
+    const std::shared_ptr<Texture>& texture) const {
+  if (!image || !texture) {
+    return;
+  }
+  if (is_texture_caching_enabled_) {
+    texture_cache_[image] = texture;
+  }
+}
+
+void ContentContext::RemoveCachedTexture(const flutter::DlImage* image) const {
+  texture_cache_.erase(image);
+}
+
+void ContentContext::ClearCachedTextures() const {
+  texture_cache_.clear();
+}
 
 }  // namespace impeller

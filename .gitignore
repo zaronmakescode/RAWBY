@@ -25,7 +25,6 @@
 .pub-cache/
 .pub/
 build/
-*.lock
 
 # Android
 .gradle/

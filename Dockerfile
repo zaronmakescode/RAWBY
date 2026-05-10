@@ -1,6 +1,6 @@
 FROM dart:stable AS build
 WORKDIR /app
-COPY . .
+COPY server/ .
 RUN dart --version && dart pub get && dart compile exe bin/server.dart -o bin/server
 
 FROM scratch

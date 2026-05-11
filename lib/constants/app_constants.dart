@@ -7,7 +7,7 @@ class AppConstants {
 
   // API — change to your Render URL after deployment
   // e.g. 'https://rawby-server.onrender.com'
-  static const String apiBaseUrl = 'http://localhost:8080';
+  static const String apiBaseUrl = 'https://rawby-1.onrender.com';
   static const String storageKey = 'rawby_state_v1';
   static const String aiSettingsKey = 'rawby_ai_settings_v1';
   static const String themeKey = 'rawby_theme_v1';

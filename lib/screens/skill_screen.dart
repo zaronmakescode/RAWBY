@@ -63,27 +63,12 @@ class SkillScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // — Journal Section
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index == 0) {
-                            return _buildStatsSection(theme, session);
-                          }
-                          if (index == 1) {
-                            return _buildJournalSection(theme, session);
-                          }
-                          if (index == 2) {
-                            return _buildAiPlanSection(context, theme, session, ref);
-                          }
-                          return null;
-                        },
-                        childCount: 3,
-                      ),
-                    ),
-                  ),
+                  _buildStatsSection(theme, session),
+                  const SizedBox(height: 24),
+                  _buildJournalSection(theme, session),
+                  const SizedBox(height: 24),
+                  _buildAiPlanSection(context, theme, session, ref),
+                  const SizedBox(height: 100),
                 ],
               ),
             ),

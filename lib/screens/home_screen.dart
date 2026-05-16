@@ -111,8 +111,8 @@ class _HeaderBar extends StatelessWidget {
         ? session.displayName.split(' ').first
         : (session.username.isNotEmpty ? session.username : 'creator');
 
-    final weekStart = DateTime.tryParse(session.weekStart);
-    final deadline = DateTime.tryParse(session.deadline);
+    final weekStart = DateTime.tryParse(session.weekStart)?.toLocal();
+    final deadline = DateTime.tryParse(session.deadline)?.toLocal();
     final weekLabel = (weekStart != null && deadline != null)
         ? '${DateFormat.MMMd().format(weekStart)} → ${DateFormat.MMMd().format(deadline)}'
         : '';
@@ -402,12 +402,18 @@ class _BentoGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final deadline = DateTime.tryParse(session.deadline);
+    final deadline = DateTime.tryParse(session.deadline)?.toLocal();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final deadlineDate = deadline == null
+        ? null
+        : DateTime(deadline.year, deadline.month, deadline.day);
+    final daysLeft = deadlineDate == null
+        ? 0
+        : deadlineDate.difference(today).inDays.clamp(0, 9999);
     final hoursLeft = deadline == null
         ? 0
-        : deadline.difference(DateTime.now()).inHours.clamp(0, 9999);
-
-    final daysLeft = (hoursLeft / 24).floor();
+        : deadline.difference(now).inHours.clamp(0, 9999);
     final deadlineColor = _deadlineColor(theme, deadline);
 
     final cells = [

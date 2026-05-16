@@ -11,6 +11,7 @@ class AppConstants {
   static const String storageKey = 'rawby_state_v1';
   static const String aiSettingsKey = 'rawby_ai_settings_v1';
   static const String themeKey = 'rawby_theme_v1';
+  static const String authTokenKey = 'rawby_auth_token';
 
   // Timezone
   static const String hungaryTz = 'Europe/Budapest';

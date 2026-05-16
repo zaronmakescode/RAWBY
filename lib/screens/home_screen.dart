@@ -4,11 +4,9 @@
 // on the Prompts screen with the selected prompt. Home shows the
 // next step, key stats, workflow progress and history preview.
 // ============================================================
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../models/project_model.dart';
@@ -330,11 +328,35 @@ class _NextStepCard extends ConsumerWidget {
         (p) => p.id == s.selectedPromptId,
         orElse: () => s.prompts.first,
       );
+
+      if (s.workflow.isNotEmpty) {
+        final allDone = s.workflow.every((t) => t.done);
+        if (allDone) {
+          return _Step(
+            icon: Icons.check_circle_outline,
+            title: 'Submit project',
+            subtitle: 'All workflow steps done! Submit your ${p.level} project to lock in ${p.points} pts.',
+            cta: 'Go to Prompts to submit',
+            badge: 'READY',
+            onTap: (ctx) => ctx.push(Routes.prompts),
+          );
+        }
+        final nextTask = s.workflow.firstWhere((t) => !t.done, orElse: () => s.workflow.first);
+        return _Step(
+          icon: Icons.arrow_circle_right_outlined,
+          title: 'Next step: ${nextTask.label}',
+          subtitle: '${p.level} · ${p.points} pts · ${s.workflow.where((t) => t.done).length}/${s.workflow.length} tasks done',
+          cta: 'Open prompts',
+          badge: 'IN PROGRESS',
+          onTap: (ctx) => ctx.push(Routes.prompts),
+        );
+      }
+
       return _Step(
         icon: Icons.movie_creation_outlined,
         title: 'Filming: ${p.level}',
         subtitle:
-            '${p.points} pts · ${p.inspiration.isNotEmpty ? "inspo ${p.inspiration}" : "open the prompt for shot list & songs"}',
+            '${p.points} pts · ${p.inspiration.isNotEmpty ? "inspo: ${p.inspiration}" : "open prompt for shot list & songs"}',
         cta: 'Open prompt detail',
         badge: 'IN PROGRESS',
         onTap: (ctx) => ctx.push(Routes.prompts),
@@ -354,7 +376,7 @@ class _NextStepCard extends ConsumerWidget {
 
     return _Step(
       icon: Icons.list_alt_outlined,
-      title: 'Choose your prompt',
+      title: 'Choose a prompt',
       subtitle: '${s.prompts.length} prompts waiting. Pick one — locks in for the week.',
       cta: 'Browse prompts',
       badge: 'PICK ONE',

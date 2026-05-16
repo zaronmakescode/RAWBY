@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_session_provider.dart';
+import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/glass_card.dart';
 
@@ -200,6 +201,14 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ).animate(delay: 160.ms).fadeIn().slideY(begin: 0.05),
 
+                    // ── Suggestions ──────────────────────────────────
+                    const SectionHeader(
+                      title: 'Suggestions',
+                      subtitle: 'Send feature ideas or feedback to the team',
+                    ),
+                    _SuggestionSection(isAdmin: session.isAdmin)
+                        .animate(delay: 240.ms).fadeIn().slideY(begin: 0.05),
+
                     // ── About ────────────────────────────────────────
                     const SectionHeader(title: 'About'),
                     GlassCard(
@@ -219,7 +228,7 @@ class SettingsScreen extends ConsumerWidget {
                               value: session.currentRank.label),
                         ],
                       ),
-                    ).animate(delay: 240.ms).fadeIn().slideY(begin: 0.05),
+                    ).animate(delay: 320.ms).fadeIn().slideY(begin: 0.05),
                   ],
                 ),
               ),
@@ -526,6 +535,181 @@ class _InfoRow extends StatelessWidget {
           Text(value,
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Suggestion Section ─────────────────────────────────────────
+
+class _SuggestionSection extends ConsumerStatefulWidget {
+  final bool isAdmin;
+  const _SuggestionSection({required this.isAdmin});
+
+  @override
+  ConsumerState<_SuggestionSection> createState() => _SuggestionSectionState();
+}
+
+class _SuggestionSectionState extends ConsumerState<_SuggestionSection> {
+  final _ctrl = TextEditingController();
+  List<dynamic> _suggestions = [];
+  bool _loading = false;
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    try {
+      final api = ref.read(apiServiceProvider);
+      final list = widget.isAdmin
+          ? await api.getAllSuggestions()
+          : await api.getMySuggestions();
+      setState(() { _suggestions = list; _loading = false; });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _submit() async {
+    final text = _ctrl.text.trim();
+    if (text.isEmpty) return;
+    setState(() { _submitting = true; _error = null; });
+    try {
+      await ref.read(apiServiceProvider).submitSuggestion(text);
+      _ctrl.clear();
+      await _load();
+    } catch (e) {
+      setState(() => _error = 'Failed to send. Try again.');
+    } finally {
+      setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _reply(String id) async {
+    final replyCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reply'),
+        content: TextField(
+          controller: replyCtrl,
+          maxLines: 4,
+          decoration: const InputDecoration(hintText: 'Your reply...'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && replyCtrl.text.trim().isNotEmpty) {
+      await ref.read(apiServiceProvider).replySuggestion(id, replyCtrl.text.trim());
+      _load();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!widget.isAdmin) ...[
+            TextField(
+              controller: _ctrl,
+              maxLines: 3,
+              maxLength: 800,
+              decoration: InputDecoration(
+                hintText: 'Your suggestion or feature request...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.all(12),
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (_error != null)
+              Text(_error!, style: TextStyle(color: theme.colorScheme.error, fontSize: 12)),
+            GradientButton(
+              icon: Icons.send_outlined,
+              label: _submitting ? 'Sending...' : 'Send suggestion',
+              loading: _submitting,
+              onTap: _submitting ? null : _submit,
+            ),
+            const SizedBox(height: 16),
+          ],
+          Text(
+            widget.isAdmin ? 'All suggestions' : 'Your submissions',
+            style: theme.textTheme.labelMedium?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          if (_loading)
+            const Center(child: CircularProgressIndicator(strokeWidth: 2))
+          else if (_suggestions.isEmpty)
+            Text('No suggestions yet.', style: theme.textTheme.bodySmall)
+          else
+            ..._suggestions.map((s) {
+              final m = s as Map<String, dynamic>;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.colorScheme.outline),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (widget.isAdmin)
+                      Text('@${m['username'] ?? ''}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.primary, fontWeight: FontWeight.w700)),
+                    Text(m['text'] as String? ?? '', style: theme.textTheme.bodyMedium),
+                    if (m['adminReply'] != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.reply, size: 14, color: theme.colorScheme.primary),
+                            const SizedBox(width: 6),
+                            Expanded(child: Text(m['adminReply'] as String, style: theme.textTheme.bodySmall)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (widget.isAdmin && m['adminReply'] == null) ...[
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () => _reply(m['id'] as String),
+                        icon: const Icon(Icons.reply, size: 16),
+                        label: const Text('Reply'),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );

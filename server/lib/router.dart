@@ -10,6 +10,7 @@ import 'handlers/admin_handlers.dart';
 import 'handlers/instagram_handlers.dart';
 import 'handlers/ai_handlers.dart';
 import 'handlers/admin_prompt_handlers.dart';
+import 'handlers/suggestion_handlers.dart';
 
 Handler buildRouter() {
   final router = Router();
@@ -80,6 +81,12 @@ Handler buildRouter() {
   // Admin prompt builder
   router.post('/api/admin/prompts', protect(handleSaveAdminPrompt));
   router.get('/api/admin/prompts', protect(handleGetAdminPrompts));
+
+  // Suggestions
+  router.post('/api/suggestions', protect(handleSubmitSuggestion));
+  router.get('/api/suggestions', protect(handleGetMySuggestions));
+  router.get('/api/admin/suggestions', protect(handleGetAllSuggestions));
+  router.post('/api/admin/suggestions/<id>/reply', protectWithParam(handleReplySuggestion));
 
   return router.call;
 }

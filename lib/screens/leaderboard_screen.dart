@@ -1,11 +1,14 @@
 // ============================================================
-// RAWBY — Leaderboard Screen (Placeholder)
+// RAWBY — Leaderboard Screen
+// Podium top 3, full ranked list, user rank panel, overtake alert.
 // ============================================================
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/user_session_provider.dart';
 import '../services/api_service.dart';
 import '../constants/ranks.dart';
 import '../widgets/leaderboard/achievements_section.dart';
+import '../widgets/common/glass_card.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
@@ -18,6 +21,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   List<dynamic> _entries = [];
   bool _loading = true;
   String? _error;
+  int? _prevUserPosition;
 
   @override
   void initState() {
@@ -26,12 +30,41 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
+    final session = ref.read(userSessionProvider);
     try {
       final api = ref.read(apiServiceProvider);
+      if (!api.hasAuthToken) {
+        setState(() {
+          _error = 'Sign in again to view the leaderboard.';
+          _loading = false;
+        });
+        return;
+      }
       final data = await api.getLeaderboard();
+      final entries = data['leaderboard'] as List<dynamic>? ?? [];
+
+      // Check for overtake
+      final userId = session.userId;
+      final newPos = entries.indexWhere((e) => (e as Map)['userId'] == userId);
+      if (_prevUserPosition != null && newPos != -1 && newPos > _prevUserPosition!) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Someone just passed you on the leaderboard! You dropped to #${newPos + 1}.'),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+              backgroundColor: Colors.deepOrange,
+            ),
+          );
+        }
+      }
+      _prevUserPosition = newPos >= 0 ? newPos : null;
+
       setState(() {
-        _entries = data['leaderboard'] as List<dynamic>? ?? [];
+        _entries = entries;
         _loading = false;
+        _error = null;
       });
     } catch (e) {
       setState(() {
@@ -71,14 +104,57 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                       ],
                     ),
                   )
-                : CustomScrollView(
+                : Builder(
+                  builder: (context) {
+                    final session = ref.watch(userSessionProvider);
+                    final rank = session.currentRank;
+                    final nextRank = session.nextRank;
+                    final ptsToNext = nextRank != null ? (nextRank.minScore - session.totalScore).clamp(0, 9999) : 0;
+                    final userId = session.userId;
+                    final userPos = _entries.indexWhere((e) => (e as Map)['userId'] == userId);
+                    return CustomScrollView(
                     slivers: [
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                          child: Text(
-                            'Leaderboard',
-                            style: theme.textTheme.headlineMedium,
+                          padding: const EdgeInsets.fromLTRB(16, 56, 16, 0),
+                          child: Text('Leaderboard', style: theme.textTheme.headlineMedium),
+                        ),
+                      ),
+                      // ── Your Rank Panel ───────────────────────────────
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                          child: GlassCard(
+                            gradient: [
+                              theme.colorScheme.primary.withOpacity(0.12),
+                              theme.colorScheme.secondary.withOpacity(0.04),
+                            ],
+                            child: Row(
+                              children: [
+                                Text(rank.icon, style: const TextStyle(fontSize: 28)),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(rank.label, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                                      Text(
+                                        userPos >= 0 ? '#${userPos + 1} · ${session.totalScore} pts' : '${session.totalScore} pts',
+                                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (nextRank != null)
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text('Next: ${nextRank.label}', style: theme.textTheme.labelSmall),
+                                      Text('$ptsToNext pts', style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700, color: theme.colorScheme.secondary)),
+                                    ],
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -157,7 +233,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                         ),
                       ),
                     ],
-                  ),
+                  );
+                  },
+                ),
       ),
     );
   }

@@ -574,33 +574,10 @@ class _Detail extends StatelessWidget {
                 ),
               ],
             ),
-
-            // ── Choose Button ──────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              child: widget.isLocked
-                  ? _LockedButton(
-                      isSelected: widget.isSelected,
-                      levelColor: levelColor,
-                      theme: theme,
-                    )
-                  : _ChooseButton(
-                      isSelected: widget.isSelected,
-                      levelColor: levelColor,
-                      levelGradient: levelGradient,
-                      onTap: widget.isSelected ? null : () {
-                        HapticFeedback.mediumImpact();
-                        widget.onChoose?.call();
-                      },
-                    ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    )
-        .animate(delay: Duration(milliseconds: 100 + widget.index * 100))
-        .fadeIn(duration: 500.ms)
-        .slideY(begin: 0.12, end: 0, curve: Curves.easeOutCubic);
+    );
   }
 }
 

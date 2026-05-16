@@ -247,4 +247,26 @@ class ApiService {
     final response = await _dio.get("/api/admin/prompts");
     return response.data as List<dynamic>;
   }
+
+  // ── Suggestions ───────────────────────────────────────────────
+
+  Future<void> submitSuggestion(String text) async {
+    await _dio.post("/api/suggestions", data: {"text": text});
+  }
+
+  Future<List<dynamic>> getMySuggestions() async {
+    final response = await _dio.get("/api/suggestions");
+    final data = response.data as Map<String, dynamic>;
+    return data['suggestions'] as List<dynamic>? ?? [];
+  }
+
+  Future<List<dynamic>> getAllSuggestions() async {
+    final response = await _dio.get("/api/admin/suggestions");
+    final data = response.data as Map<String, dynamic>;
+    return data['suggestions'] as List<dynamic>? ?? [];
+  }
+
+  Future<void> replySuggestion(String id, String reply) async {
+    await _dio.post("/api/admin/suggestions/$id/reply", data: {"reply": reply});
+  }
 }

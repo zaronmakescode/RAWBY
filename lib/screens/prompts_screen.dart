@@ -1,29 +1,84 @@
 // ============================================================
 // RAWBY — Prompts Screen
-// 3 weekly prompts + AI regen + custom + Idea Bank + submit /
-// record-stats CTAs (moved here from Home).
+// 3 weekly prompts + silent AI regen + custom + Idea Bank +
+// Big Project + submit (with gear log) / record-stats CTAs.
 // ============================================================
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/router_provider.dart';
 import '../providers/user_session_provider.dart';
 import '../services/prompt_service.dart';
 import '../widgets/common/glass_card.dart';
-import '../widgets/prompts/ai_generate_modal.dart';
 import '../widgets/prompts/custom_prompt_modal.dart';
 import '../widgets/prompts/prompt_card.dart';
+import '../widgets/projects/gear_log_modal.dart';
 import '../widgets/projects/record_stats_modal.dart';
 import '../widgets/projects/submit_modal.dart';
+import '../widgets/projects/big_project_modal.dart';
 
-class PromptsScreen extends ConsumerWidget {
+class PromptsScreen extends ConsumerStatefulWidget {
   const PromptsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PromptsScreen> createState() => _PromptsScreenState();
+}
+
+class _PromptsScreenState extends ConsumerState<PromptsScreen> {
+  bool _regenLoading = false;
+
+  Future<void> _silentRegen() async {
+    final session = ref.read(userSessionProvider);
+    if (session.regensLeft <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No regenerations left this week.'), behavior: SnackBarBehavior.floating),
+      );
+      return;
+    }
+    setState(() => _regenLoading = true);
+    try {
+      final ai = session.aiSettings;
+      final prefs = session.preferences;
+      final service = ref.read(promptServiceProvider);
+      final prompts = await service.generateAiPrompts(
+        provider: ai.provider,
+        model: ai.model,
+        seasonalPrompts: prefs.seasonalPrompts,
+        region: prefs.region.isNotEmpty ? prefs.region : 'Central Europe',
+        filmmakingGoal: prefs.filmmakingGoal.isNotEmpty ? prefs.filmmakingGoal : 'Grow my audience',
+        contentType: prefs.contentType.isNotEmpty ? prefs.contentType : 'Cinematic reels',
+      );
+      ref.read(userSessionProvider.notifier).setPrompts(prompts);
+      ref.read(userSessionProvider.notifier).incrementRegenCount();
+      ref.read(userSessionProvider.notifier).setAutoGenPending(false);
+      if (mounted) {
+        final remaining = ref.read(userSessionProvider).regensLeft;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Generated with ${ai.provider == 'openai' ? 'OpenAI' : 'Groq'} · $remaining regens left'),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('AI failed — showing local prompts'), behavior: SnackBarBehavior.floating),
+        );
+        final service = ref.read(promptServiceProvider);
+        final fallback = service.generateLocalPrompts();
+        ref.read(userSessionProvider.notifier).setPrompts(fallback);
+      }
+    } finally {
+      if (mounted) setState(() => _regenLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(userSessionProvider);
     final theme = Theme.of(context);
     final isLocked = session.isLocked;
@@ -83,16 +138,15 @@ class PromptsScreen extends ConsumerWidget {
                         if (!isLocked)
                           _ActionRow(
                             regensLeft: regensLeft,
-                            onAi: () => _showAiModal(context),
+                            regenLoading: _regenLoading,
+                            onAi: _silentRegen,
                             onCustom: () => _showCustomModal(context),
                             onShuffle: () {
-                              final service =
-                                  ref.read(promptServiceProvider);
+                              final service = ref.read(promptServiceProvider);
                               final prompts = service.generateLocalPrompts();
-                              ref
-                                  .read(userSessionProvider.notifier)
-                                  .setPrompts(prompts);
+                              ref.read(userSessionProvider.notifier).setPrompts(prompts);
                             },
+                            onBigProject: () => _showBigProjectModal(context),
                           ),
                         if (isLocked)
                           _SubmitPanel(
@@ -159,22 +213,13 @@ class PromptsScreen extends ConsumerWidget {
                           .read(userSessionProvider.notifier)
                           .setPrompts(prompts);
                     },
-                    onAi: () => _showAiModal(context),
+                    onAi: _silentRegen,
                   ),
                 ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Future<void> _showAiModal(BuildContext context) async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const AiGenerateModal(),
     );
   }
 
@@ -187,21 +232,38 @@ class PromptsScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _showBigProjectModal(BuildContext context) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const BigProjectModal(),
+    );
+  }
+
   Future<void> _showSubmitModal(BuildContext context) async {
-    final ok = await showModalBottomSheet<bool>(
+    final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const SubmitModal(),
     );
-    if (ok == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Project submitted! Stats unlock in 7 days.'),
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-        ),
+    if (result == 'submitted' && context.mounted) {
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => const GearLogModal(),
       );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Project submitted! Stats unlock in 7 days.'),
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -276,49 +338,65 @@ class _RoundIcon extends StatelessWidget {
 
 class _ActionRow extends StatelessWidget {
   final int regensLeft;
+  final bool regenLoading;
   final VoidCallback onAi;
   final VoidCallback onCustom;
   final VoidCallback onShuffle;
+  final VoidCallback onBigProject;
 
   const _ActionRow({
     required this.regensLeft,
+    required this.regenLoading,
     required this.onAi,
     required this.onCustom,
     required this.onShuffle,
+    required this.onBigProject,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _Pill(
-            icon: Icons.auto_awesome,
-            label: 'AI Regen',
-            sub: '$regensLeft left',
-            primary: true,
-            onTap: regensLeft > 0 ? onAi : null,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _Pill(
+                icon: regenLoading ? Icons.hourglass_top : Icons.auto_awesome,
+                label: regenLoading ? 'Generating...' : 'AI Regen',
+                sub: '$regensLeft left',
+                primary: true,
+                onTap: (regensLeft > 0 && !regenLoading) ? onAi : null,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _Pill(
+                icon: Icons.edit_outlined,
+                label: 'Custom',
+                sub: 'Write your own',
+                primary: false,
+                onTap: onCustom,
+              ),
+            ),
+            const SizedBox(width: 8),
+            _Pill(
+              icon: Icons.shuffle,
+              label: 'Shuffle',
+              sub: 'Local',
+              primary: false,
+              onTap: onShuffle,
+              compact: true,
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _Pill(
-            icon: Icons.edit_outlined,
-            label: 'Custom',
-            sub: 'Write your own',
-            primary: false,
-            onTap: onCustom,
-          ),
-        ),
-        const SizedBox(width: 8),
+        const SizedBox(height: 8),
         _Pill(
-          icon: Icons.shuffle,
-          label: 'Shuffle',
-          sub: 'Local',
+          icon: Icons.movie_filter_outlined,
+          label: 'Big Project',
+          sub: '150 pts · 14–24 days',
           primary: false,
-          onTap: onShuffle,
-          compact: true,
+          onTap: onBigProject,
+          fullWidth: true,
         ),
       ],
     ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.05);
@@ -332,6 +410,7 @@ class _Pill extends StatelessWidget {
   final bool primary;
   final VoidCallback? onTap;
   final bool compact;
+  final bool fullWidth;
 
   const _Pill({
     required this.icon,
@@ -340,6 +419,7 @@ class _Pill extends StatelessWidget {
     required this.primary,
     this.onTap,
     this.compact = false,
+    this.fullWidth = false,
   });
 
   @override
@@ -349,7 +429,7 @@ class _Pill extends StatelessWidget {
     final tint = primary
         ? theme.colorScheme.primary
         : theme.colorScheme.onSurfaceVariant;
-    return Opacity(
+    final widget = Opacity(
       opacity: disabled ? 0.4 : 1.0,
       child: Material(
         color: Colors.transparent,
@@ -357,6 +437,7 @@ class _Pill extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           onTap: onTap,
           child: Container(
+            width: fullWidth ? double.infinity : null,
             padding: EdgeInsets.symmetric(
               vertical: 12,
               horizontal: compact ? 12 : 12,
@@ -428,6 +509,7 @@ class _Pill extends StatelessWidget {
         ),
       ),
     );
+    return widget;
   }
 }
 

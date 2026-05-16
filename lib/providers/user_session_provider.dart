@@ -55,6 +55,11 @@ class UserSessionNotifier extends StateNotifier<UserSession> {
 
   Future<void> _loadFromStorage() async {
     final storage = _ref.read(storageServiceProvider);
+    // Restore auth token so API calls have it immediately after app restart
+    final savedToken = storage.getString(AppConstants.authTokenKey);
+    if (savedToken != null) {
+      _ref.read(apiServiceProvider).setAuthToken(savedToken);
+    }
     final raw = storage.getString(AppConstants.storageKey);
     if (raw == null) {
       _scheduleSave();
@@ -66,7 +71,6 @@ class UserSessionNotifier extends StateNotifier<UserSession> {
       final realigned = _realignCycle(loaded);
       state = realigned;
     } catch (e) {
-      // Fallback to initial session if loading fails
       state = _buildInitialSession();
       _scheduleSave();
     }

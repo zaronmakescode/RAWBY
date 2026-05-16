@@ -5,9 +5,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../constants/app_constants.dart';
 import '../providers/user_session_provider.dart';
 import '../providers/router_provider.dart';
 import '../services/api_service.dart';
+import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -47,9 +49,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         password: _passwordController.text,
       );
 
-      // Set auth token
+      // Set auth token and persist it for app restarts
       final token = result['token'] as String?;
-      if (token != null) api.setAuthToken(token);
+      if (token != null) {
+        api.setAuthToken(token);
+        ref.read(storageServiceProvider).setString(AppConstants.authTokenKey, token);
+      }
 
       // API returns { token, user: { id, username, ... } }
       final user = result['user'] as Map<String, dynamic>? ?? result;

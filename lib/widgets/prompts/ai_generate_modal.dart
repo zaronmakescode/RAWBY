@@ -337,24 +337,7 @@ class _AiGenerateModalState extends ConsumerState<AiGenerateModal> {
                               ),
                             ),
                           ),
-                        ),
-                        Switch(
-                          value: _seasonalPrompts,
-                          onChanged: (v) => setState(() => _seasonalPrompts = v),
-                        ),
-                      ],
-                    ),
-                    if (_seasonalPrompts) ...[
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 28),
-                        child: Text(
-                          SeasonService.getSeasonHint(_region, _seasonalPrompts),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontStyle: FontStyle.italic,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
+                        ],
                       ),
                     ),
                   ],

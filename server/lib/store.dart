@@ -16,6 +16,7 @@ class Store {
   late DbCollection _feedback;
   late DbCollection _updates;
   late DbCollection _fcmTokens;
+  late DbCollection _suggestions;
 
   Future<void> initialize() async {
     final mongoUri = Platform.environment['MONGO_URI'] ??
@@ -29,11 +30,13 @@ class Store {
     _feedback = _db.collection('feedback');
     _updates = _db.collection('updates');
     _fcmTokens = _db.collection('fcm_tokens');
+    _suggestions = _db.collection('suggestions');
 
     // Ensure indexes
     await _users.createIndex(keys: {'username': 1}, unique: true);
     await _snapshots.createIndex(keys: {'userId': 1}, unique: true);
     await _fcmTokens.createIndex(keys: {'userId': 1}, unique: true);
+    await _suggestions.createIndex(keys: {'userId': 1});
 
     print('  MongoDB connected to: ${_db.databaseName}');
   }
@@ -159,5 +162,36 @@ class Store {
   Future<Map<String, String>> getAllFcmTokens() async {
     final docs = await _fcmTokens.find().toList();
     return {for (final d in docs) d['userId'] as String: d['token'] as String};
+  }
+
+  // ── Suggestions ────────────────────────────────────────────────
+
+  Future<String> addSuggestion(Map<String, dynamic> data) async {
+    final id = _uuid.v4();
+    data['id'] = id;
+    data['createdAt'] = DateTime.now().toIso8601String();
+    await _suggestions.insertOne(data);
+    return id;
+  }
+
+  Future<List<Map<String, dynamic>>> getSuggestionsForUser(String userId) async {
+    final docs = await _suggestions
+        .find(where.eq('userId', userId).sortBy('createdAt', descending: true))
+        .toList();
+    return docs.map((d) { d.remove('_id'); return Map<String, dynamic>.from(d); }).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getAllSuggestions() async {
+    final docs = await _suggestions
+        .find(where.sortBy('createdAt', descending: true))
+        .toList();
+    return docs.map((d) { d.remove('_id'); return Map<String, dynamic>.from(d); }).toList();
+  }
+
+  Future<void> replySuggestion(String id, String reply) async {
+    await _suggestions.updateOne(
+      where.eq('id', id),
+      modify.set('adminReply', reply).set('repliedAt', DateTime.now().toIso8601String()),
+    );
   }
 }

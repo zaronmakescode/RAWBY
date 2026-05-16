@@ -17,6 +17,7 @@ import "../screens/idea_bank_screen.dart";
 import "../screens/feedback_wall_screen.dart";
 import "../screens/assistant_screen.dart";
 import "../screens/settings_screen.dart";
+import "../screens/paywall_screen.dart";
 import "../widgets/navigation/shell_scaffold.dart";
 import "user_session_provider.dart";
 
@@ -30,10 +31,12 @@ class Routes {
   static const assistant = "/assistant";
   static const leaderboard = "/leaderboard";
   static const gear = "/gear";
+  static const skill = "/skill";
   static const profile = "/profile";
   static const settings = "/settings";
   static const admin = "/admin";
   static const feedbackWall = "/admin/feedback";
+  static const paywall = "/paywall";
 }
 
 // Derived provider that only exposes the auth status (userId).
@@ -79,17 +82,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Settings — standalone
-      GoRoute(
-        path: Routes.settings,
-        name: "settings",
-        pageBuilder: (context, state) => _fadeTransition(
-          state,
-          const SettingsScreen(),
-        ),
-      ),
-
-      // Idea Bank — standalone (has its own AppBar, no shell nav)
+      // Idea Bank — standalone (own AppBar, no shell nav)
       GoRoute(
         path: Routes.ideaBank,
         name: "ideaBank",
@@ -109,17 +102,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // AI Assistant — standalone
-      GoRoute(
-        path: Routes.aiAssistant,
-        name: "aiAssistant",
-        pageBuilder: (context, state) => _fadeTransition(
-          state,
-          const AiAssistantScreen(),
-        ),
-      ),
-
-      // Paywall — standalone
+      // Paywall — standalone push overlay
       GoRoute(
         path: Routes.paywall,
         name: "paywall",
@@ -165,6 +148,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _fadeTransition(
               state,
               const GearScreen(),
+            ),
+          ),
+          GoRoute(
+            path: Routes.skill,
+            name: "skill",
+            pageBuilder: (context, state) => _fadeTransition(
+              state,
+              const SkillScreen(),
             ),
           ),
           GoRoute(

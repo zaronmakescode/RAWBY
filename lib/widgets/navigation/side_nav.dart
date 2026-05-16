@@ -125,8 +125,8 @@ class RawbySideNav extends StatelessWidget {
       ),
       _NavItem(
         label: 'Prompts',
-        icon: Icons.lightbulb_outline,
-        activeIcon: Icons.lightbulb,
+        icon: Icons.movie_outlined,
+        activeIcon: Icons.movie,
         route: Routes.prompts,
       ),
       _NavItem(
@@ -147,13 +147,25 @@ class RawbySideNav extends StatelessWidget {
         activeIcon: Icons.person,
         route: Routes.profile,
       ),
+      _NavItem(
+        label: 'Aurora',
+        icon: Icons.auto_awesome_outlined,
+        activeIcon: Icons.auto_awesome,
+        route: Routes.assistant,
+      ),
+      _NavItem(
+        label: 'Settings',
+        icon: Icons.tune,
+        activeIcon: Icons.tune,
+        route: Routes.settings,
+      ),
     ];
 
     if (isAdmin) {
       items.add(_NavItem(
         label: 'Admin',
-        icon: Icons.settings_outlined,
-        activeIcon: Icons.settings,
+        icon: Icons.shield_outlined,
+        activeIcon: Icons.shield,
         route: Routes.admin,
       ));
     }

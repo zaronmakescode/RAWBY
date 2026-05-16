@@ -1,17 +1,20 @@
 // ============================================================
-// RAWBY — Premium Design System
-// OLED black + glassmorphism + electric green
+// RAWBY — Theme System
+// Builds ThemeData for light/dark × cinema/green/grey/basic
+// Inter (body) + Playfair Display (display) via google_fonts.
+// Spring page transitions for app-wide motion.
 // ============================================================
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTheme {
   AppTheme._();
 
   static ThemeData build({
-    required String mode,
-    required String accent,
+    required String mode, // 'light' or 'dark'
+    required String accent, // 'cinema', 'green', 'grey', 'basic'
   }) {
     final isDark = mode == 'dark';
     final colors = AccentColors.forAccent(accent);
@@ -33,7 +36,7 @@ class AppTheme {
         },
       ),
 
-      scaffoldBackgroundColor: isDark ? const Color(0xFF080808) : RawbyPalette.lightBg,
+      scaffoldBackgroundColor: colorScheme.surface,
 
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -41,12 +44,14 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-        titleTextStyle: TextStyle(
+        systemOverlayStyle: isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
+        titleTextStyle: GoogleFonts.playfairDisplay(
           color: colorScheme.onSurface,
-          fontSize: 18,
+          fontSize: 22,
           fontWeight: FontWeight.w600,
-          letterSpacing: -0.5,
+          letterSpacing: -0.4,
         ),
       ),
 
@@ -62,15 +67,16 @@ class AppTheme {
         margin: EdgeInsets.zero,
       ),
 
-      // Primary buttons — glow effect built via decoration, not theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: colors.primary,
           foregroundColor: Colors.black,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: const TextStyle(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: GoogleFonts.inter(
             fontSize: 15,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.2,
@@ -81,55 +87,65 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: colors.primary,
-          side: BorderSide(color: colors.primary.withValues(alpha: 0.6), width: 1),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          backgroundColor: colors.primary.withValues(alpha: 0.04),
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          side: BorderSide(color: colors.primary.withOpacity(0.4), width: 1.2),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: colors.primary,
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
 
-      // Clean dark inputs — no yellow, no weird fills
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? const Color(0xFF111111) : const Color(0xFFF5F5F5),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        fillColor: isDark
+            ? const Color(0xFF1A1B1F)
+            : Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: isDark ? RawbyPalette.darkBorder : RawbyPalette.lightBorder,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
-            color: isDark ? const Color(0xFF1F1F1F) : const Color(0xFFE0E0E0),
-            width: 1,
+            color: isDark ? RawbyPalette.darkBorder : RawbyPalette.lightBorder,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: colors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: RawbyPalette.danger, width: 1.5),
         ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: RawbyPalette.danger, width: 1.5),
-        ),
-        hintStyle: TextStyle(
-          color: isDark ? const Color(0xFF555555) : const Color(0xFF999999),
+        hintStyle: GoogleFonts.inter(
+          color: isDark
+              ? RawbyPalette.textMutedDark
+              : RawbyPalette.textMutedLight,
           fontSize: 14,
         ),
-        labelStyle: TextStyle(
-          color: isDark ? const Color(0xFF666666) : const Color(0xFF888888),
+        labelStyle: GoogleFonts.inter(
+          color: isDark
+              ? RawbyPalette.textMutedDark
+              : RawbyPalette.textMutedLight,
           fontSize: 14,
         ),
         prefixIconColor: isDark ? const Color(0xFF555555) : const Color(0xFF888888),
@@ -142,10 +158,59 @@ class AppTheme {
         space: 1,
       ),
 
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: isDark
+            ? RawbyPalette.darkSurface.withOpacity(0.92)
+            : RawbyPalette.lightSurface.withOpacity(0.92),
+        selectedItemColor: colors.primary,
+        unselectedItemColor: isDark
+            ? RawbyPalette.textMutedDark
+            : RawbyPalette.textMutedLight,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+        selectedLabelStyle: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor:
+            isDark ? RawbyPalette.darkSurface : RawbyPalette.lightSurface,
+        selectedIconTheme: IconThemeData(color: colors.primary, size: 22),
+        unselectedIconTheme: IconThemeData(
+          color: isDark
+              ? RawbyPalette.textMutedDark
+              : RawbyPalette.textMutedLight,
+          size: 22,
+        ),
+        selectedLabelTextStyle: GoogleFonts.inter(
+          color: colors.primary,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelTextStyle: GoogleFonts.inter(
+          color: isDark
+              ? RawbyPalette.textMutedDark
+              : RawbyPalette.textMutedLight,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+        indicatorColor: colors.primary.withOpacity(0.12),
+        elevation: 0,
+        minWidth: 72,
+        minExtendedWidth: 200,
+      ),
+
       chipTheme: ChipThemeData(
-        backgroundColor: isDark ? const Color(0xFF141414) : RawbyPalette.lightCard,
-        selectedColor: colors.primary.withValues(alpha: 0.15),
-        labelStyle: TextStyle(
+        backgroundColor:
+            isDark ? RawbyPalette.darkCard : RawbyPalette.lightCard,
+        selectedColor: colors.primary.withOpacity(0.18),
+        labelStyle: GoogleFonts.inter(
           fontSize: 12,
           color: isDark ? RawbyPalette.textDark : RawbyPalette.textLight,
         ),
@@ -158,9 +223,12 @@ class AppTheme {
 
       listTileTheme: ListTileThemeData(
         tileColor: Colors.transparent,
-        iconColor: isDark ? const Color(0xFF666666) : const Color(0xFF999999),
+        iconColor: isDark
+            ? RawbyPalette.textMutedDark
+            : RawbyPalette.textMutedLight,
         textColor: isDark ? RawbyPalette.textDark : RawbyPalette.textLight,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
 
@@ -179,15 +247,18 @@ class AppTheme {
 
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: colors.primary,
-        linearTrackColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFEEEEEE),
-        linearMinHeight: 3,
+        linearTrackColor:
+            isDark ? RawbyPalette.darkBorder : RawbyPalette.lightBorder,
+        linearMinHeight: 6,
       ),
 
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFF111111),
-        contentTextStyle: const TextStyle(
-          color: Color(0xFFF5F5F5),
+        backgroundColor:
+            isDark ? RawbyPalette.darkCard : RawbyPalette.textLight,
+        contentTextStyle: GoogleFonts.inter(
+          color: isDark ? RawbyPalette.textDark : RawbyPalette.lightBg,
           fontSize: 14,
+          fontWeight: FontWeight.w500,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
@@ -195,29 +266,22 @@ class AppTheme {
       ),
 
       dialogTheme: DialogThemeData(
-        backgroundColor: isDark ? const Color(0xFF141414) : Colors.white,
+        backgroundColor:
+            isDark ? RawbyPalette.darkCard : RawbyPalette.lightSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 0,
-        titleTextStyle: TextStyle(
+        elevation: 12,
+        titleTextStyle: GoogleFonts.playfairDisplay(
           color: isDark ? RawbyPalette.textDark : RawbyPalette.textLight,
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.3,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
         ),
-      ),
-
-      bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        elevation: 0,
       ),
 
       textTheme: _buildTextTheme(isDark),
 
       iconTheme: IconThemeData(
-        color: isDark ? const Color(0xFF777777) : const Color(0xFF999999),
+        color:
+            isDark ? RawbyPalette.textMutedDark : RawbyPalette.textMutedLight,
         size: 20,
       ),
     );
@@ -230,16 +294,13 @@ class AppTheme {
       primaryContainer: colors.primaryDark,
       onPrimaryContainer: colors.onPrimary,
       secondary: colors.primaryLight,
-      onSecondary: Colors.black,
-      tertiary: const Color(0xFF7C4DFF),
-      onTertiary: Colors.white,
-      surface: const Color(0xFF080808),
-      onSurface: const Color(0xFFF0F0F0),
-      surfaceContainerHighest: const Color(0xFF141414),
-      surfaceContainerHigh: const Color(0xFF111111),
-      onSurfaceVariant: const Color(0xFF777777),
-      outline: const Color(0xFF1F1F1F),
-      outlineVariant: const Color(0xFF1A1A1A),
+      onSecondary: Colors.white,
+      surface: const Color(0xFF0A0B0D),
+      onSurface: RawbyPalette.textDark,
+      surfaceContainerHighest: RawbyPalette.darkCard,
+      onSurfaceVariant: RawbyPalette.textMutedDark,
+      outline: RawbyPalette.darkBorder,
+      outlineVariant: RawbyPalette.darkBorder.withOpacity(0.5),
       error: RawbyPalette.danger,
       onError: Colors.white,
       shadow: Colors.black,
@@ -267,30 +328,118 @@ class AppTheme {
   }
 
   static TextTheme _buildTextTheme(bool isDark) {
-    final base = isDark ? const Color(0xFFF0F0F0) : RawbyPalette.textLight;
-    final muted = isDark ? const Color(0xFF888888) : RawbyPalette.textMutedLight;
+    final baseColor = isDark ? RawbyPalette.textDark : RawbyPalette.textLight;
+    final mutedColor = isDark
+        ? RawbyPalette.textMutedDark
+        : RawbyPalette.textMutedLight;
+    final display = GoogleFonts.playfairDisplayTextTheme();
+    final body = GoogleFonts.interTextTheme();
 
     return TextTheme(
-      displayLarge: TextStyle(fontSize: 48, fontWeight: FontWeight.w800, color: base, letterSpacing: -2, height: 1.05),
-      displayMedium: TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: base, letterSpacing: -1.5, height: 1.1),
-      displaySmall: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: base, letterSpacing: -0.8, height: 1.15),
-      headlineLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: base, letterSpacing: -0.5, height: 1.2),
-      headlineMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: base, letterSpacing: -0.3, height: 1.25),
-      headlineSmall: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: base, letterSpacing: -0.2, height: 1.3),
-      titleLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: base, letterSpacing: -0.1, height: 1.4),
-      titleMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: base, letterSpacing: 0, height: 1.4),
-      titleSmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: muted, letterSpacing: 0.1, height: 1.4),
-      bodyLarge: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: base, height: 1.6),
-      bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: base, height: 1.55),
-      bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: muted, height: 1.5),
-      labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: base, letterSpacing: 0.1),
-      labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: muted, letterSpacing: 0.2),
-      labelSmall: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: muted, letterSpacing: 0.8),
+      displayLarge: display.displayLarge!.copyWith(
+        fontSize: 48,
+        fontWeight: FontWeight.w700,
+        color: baseColor,
+        letterSpacing: -1.5,
+        height: 1.05,
+      ),
+      displayMedium: display.displayMedium!.copyWith(
+        fontSize: 36,
+        fontWeight: FontWeight.w700,
+        color: baseColor,
+        letterSpacing: -1.0,
+        height: 1.1,
+      ),
+      displaySmall: display.displaySmall!.copyWith(
+        fontSize: 28,
+        fontWeight: FontWeight.w600,
+        color: baseColor,
+        letterSpacing: -0.5,
+        height: 1.2,
+      ),
+      headlineLarge: display.headlineLarge!.copyWith(
+        fontSize: 26,
+        fontWeight: FontWeight.w600,
+        color: baseColor,
+        letterSpacing: -0.4,
+        height: 1.2,
+      ),
+      headlineMedium: body.headlineMedium!.copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: baseColor,
+        letterSpacing: -0.2,
+        height: 1.3,
+      ),
+      headlineSmall: body.headlineSmall!.copyWith(
+        fontSize: 17,
+        fontWeight: FontWeight.w700,
+        color: baseColor,
+        letterSpacing: -0.1,
+        height: 1.35,
+      ),
+      titleLarge: body.titleLarge!.copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: baseColor,
+        letterSpacing: -0.1,
+        height: 1.4,
+      ),
+      titleMedium: body.titleMedium!.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: baseColor,
+        letterSpacing: 0.05,
+        height: 1.4,
+      ),
+      titleSmall: body.titleSmall!.copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: mutedColor,
+        letterSpacing: 0.6,
+        height: 1.4,
+      ),
+      bodyLarge: body.bodyLarge!.copyWith(
+        fontSize: 15,
+        fontWeight: FontWeight.w400,
+        color: baseColor,
+        height: 1.55,
+      ),
+      bodyMedium: body.bodyMedium!.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: baseColor,
+        height: 1.5,
+      ),
+      bodySmall: body.bodySmall!.copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: mutedColor,
+        height: 1.45,
+      ),
+      labelLarge: body.labelLarge!.copyWith(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: baseColor,
+        letterSpacing: 0.2,
+      ),
+      labelMedium: body.labelMedium!.copyWith(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: mutedColor,
+        letterSpacing: 0.3,
+      ),
+      labelSmall: body.labelSmall!.copyWith(
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        color: mutedColor,
+        letterSpacing: 0.6,
+      ),
     );
   }
 }
 
-/// Spring-physics-feel page transition (like Framer Motion spring)
+/// Spring-physics overshoot transition. Smooth, slightly bouncy.
 class _SpringPageTransitionsBuilder extends PageTransitionsBuilder {
   const _SpringPageTransitionsBuilder();
 
@@ -304,22 +453,16 @@ class _SpringPageTransitionsBuilder extends PageTransitionsBuilder {
   ) {
     final spring = CurvedAnimation(
       parent: animation,
-      curve: const Cubic(0.34, 1.56, 0.64, 1.0), // spring overshoot
-    );
-    final fadeOut = CurvedAnimation(
-      parent: secondaryAnimation,
-      curve: Curves.easeIn,
+      curve: const Cubic(0.34, 1.32, 0.64, 1.0),
     );
     return FadeTransition(
-      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: animation, curve: Curves.easeOut),
-      ),
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(spring),
-        child: FadeTransition(
-          opacity: Tween<double>(begin: 1.0, end: 0.95).animate(fadeOut),
-          child: child,
-        ),
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.04),
+          end: Offset.zero,
+        ).animate(spring),
+        child: child,
       ),
     );
   }

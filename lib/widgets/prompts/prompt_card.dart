@@ -1,14 +1,18 @@
 // ============================================================
-// RAWBY — Prompt Card  |  Creator's Brief
-// Dramatic presentation · flutter_animate · level gradients
+// RAWBY — Prompt Card
+// Cinematic prompt card with gradient hero header per level,
+// expandable storyboard (numbered shots), tiered song stack,
+// metadata chips, license-free keywords, save + choose actions.
 // ============================================================
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/prompt_model.dart';
 import '../../providers/user_session_provider.dart';
 import '../../theme/app_colors.dart';
+import '../common/glass_card.dart';
 
 class PromptCard extends ConsumerStatefulWidget {
   final PromptModel prompt;
@@ -31,7 +35,7 @@ class PromptCard extends ConsumerStatefulWidget {
 }
 
 class _PromptCardState extends ConsumerState<PromptCard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool _expanded = false;
   late AnimationController _expandCtrl;
   late Animation<double> _expandAnim;
@@ -69,352 +73,506 @@ class _PromptCardState extends ConsumerState<PromptCard>
     final isSaved = session.savedPrompts.any((p) => p.id == widget.prompt.id);
     final p = widget.prompt;
 
-    final levelColor = _levelColor(p.level, theme);
-    final levelIcon = _levelIcon(p.level);
-    final levelGradient = _levelGradient(p.level, theme);
-
-    final hasDetails = p.shots.isNotEmpty || p.songs.isNotEmpty || p.outcome.isNotEmpty;
+    final gradient = LevelGradient.forLevel(p.level);
+    final icon = LevelGradient.icon(p.level);
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F0F0F) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: widget.isSelected
-              ? levelColor
-              : (isDark ? const Color(0xFF1E1E1E) : RawbyPalette.lightBorder),
-          width: widget.isSelected ? 1.5 : 1,
+              ? gradient.first
+              : (isDark ? RawbyPalette.darkBorder : RawbyPalette.lightBorder),
+          width: widget.isSelected ? 1.6 : 1,
         ),
+        color: isDark ? RawbyPalette.darkCard : Colors.white,
         boxShadow: widget.isSelected
             ? [
                 BoxShadow(
-                  color: levelColor.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
+                  color: gradient.first.withOpacity(0.25),
+                  blurRadius: 30,
+                  offset: const Offset(0, 16),
                 ),
               ]
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
               ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Level Header Band ──────────────────────────────
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: levelGradient,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Gradient hero header ──────────────────────────────
+          Container(
+            height: 88,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: gradient,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: Row(
-                children: [
-                  Text(levelIcon, style: const TextStyle(fontSize: 22)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -20,
+                  bottom: -20,
+                  child: Icon(
+                    icon,
+                    size: 120,
+                    color: Colors.white.withOpacity(0.12),
+                  ),
+                ),
+                Padding(
+                  padding:
+                      const EdgeInsets.fromLTRB(18, 14, 14, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          _LevelChip(level: p.level, points: p.points),
+                          const Spacer(),
+                          if (p.source == 'ai')
+                            _SourceChip(label: 'AI', color: Colors.white),
+                          if (p.source == 'custom')
+                            _SourceChip(
+                                label: 'CUSTOM', color: Colors.white),
+                          const SizedBox(width: 6),
+                          _SaveStar(
+                            saved: isSaved,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              if (isSaved) {
+                                ref
+                                    .read(userSessionProvider.notifier)
+                                    .removeSavedPrompt(p.id);
+                              } else {
+                                ref
+                                    .read(userSessionProvider.notifier)
+                                    .savePrompt(p);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Saved to Idea Bank'),
+                                    duration: Duration(seconds: 2),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      if (p.category.isNotEmpty)
                         Text(
-                          p.level.toUpperCase(),
+                          p.category.replaceAll('_', ' ').toUpperCase(),
                           style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
                             color: Colors.white,
-                            letterSpacing: 1.5,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.6,
                           ),
                         ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Body ──────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  p.text,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    height: 1.6,
+                    fontSize: 14.5,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    if (p.emotion.isNotEmpty)
+                      _MetaPill(icon: Icons.psychology_outlined, label: p.emotion),
+                    if (p.inspiration.isNotEmpty)
+                      InkWell(
+                        onTap: p.inspirationProfileUrl.isEmpty
+                            ? null
+                            : () => _launch(p.inspirationProfileUrl),
+                        borderRadius: BorderRadius.circular(40),
+                        child: _MetaPill(
+                          icon: Icons.alternate_email,
+                          label: p.inspiration,
+                          accent: true,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // ── Expand toggle ─────────────────────────────────────
+          if (p.shots.isNotEmpty ||
+              p.songs.isNotEmpty ||
+              p.outcome.isNotEmpty ||
+              p.licenseFreeKeywords.isNotEmpty)
+            InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      _expanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _expanded ? 'Hide storyboard' : 'Show storyboard & music',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          AnimatedSize(
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeOutCubic,
+            child: _expanded ? _Expanded(p: p) : const SizedBox.shrink(),
+          ),
+
+          // ── Footer action ─────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+            child: widget.isLocked
+                ? Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: gradient),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.check_circle,
+                            color: Colors.white, size: 18),
+                        SizedBox(width: 8),
                         Text(
-                          '${p.points} points',
+                          'This week\'s prompt',
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.85),
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            letterSpacing: 0.3,
                           ),
                         ),
                       ],
                     ),
+                  )
+                : GradientButton(
+                    label: widget.isSelected ? 'Chosen' : 'Choose this prompt',
+                    icon: widget.isSelected
+                        ? Icons.check_circle
+                        : Icons.movie_creation_outlined,
+                    gradient: gradient,
+                    onTap: widget.isSelected ? null : widget.onChoose,
                   ),
-                  // Source badge
-                  if (p.source == 'ai')
-                    _SourceBadge(label: 'AI', color: Colors.white.withValues(alpha: 0.25)),
-                  if (p.source == 'custom')
-                    _SourceBadge(label: 'CUSTOM', color: Colors.white.withValues(alpha: 0.25)),
-                  const SizedBox(width: 8),
-                  // Star button
-                  GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      if (isSaved) {
-                        ref.read(userSessionProvider.notifier).removeSavedPrompt(p.id);
-                      } else {
-                        ref.read(userSessionProvider.notifier).savePrompt(p);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Saved to Idea Bank')),
-                        );
-                      }
-                    },
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        isSaved ? Icons.bookmark : Icons.bookmark_border,
-                        key: ValueKey(isSaved),
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          ),
+        ],
+      ),
+    )
+        .animate(delay: Duration(milliseconds: widget.index * 80))
+        .fadeIn(duration: 350.ms)
+        .slideY(begin: 0.06, end: 0, curve: Curves.easeOutCubic);
+  }
+
+  Future<void> _launch(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
+
+// ── Sub-components ─────────────────────────────────────────────
+
+class _LevelChip extends StatelessWidget {
+  final String level;
+  final int points;
+
+  const _LevelChip({required this.level, required this.points});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(LevelGradient.icon(level), color: Colors.white, size: 13),
+          const SizedBox(width: 6),
+          Text(
+            '$level · $points pts',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              letterSpacing: 0.3,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-            // ── Prompt Text ────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-              child: Text(
-                p.text,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  height: 1.65,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? const Color(0xFFEEEEEE) : RawbyPalette.textLight,
-                ),
-              ),
+class _SourceChip extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _SourceChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+class _SaveStar extends StatelessWidget {
+  final bool saved;
+  final VoidCallback onTap;
+
+  const _SaveStar({required this.saved, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: saved ? Colors.white : Colors.white.withOpacity(0.18),
+          border: Border.all(color: Colors.white.withOpacity(0.4)),
+        ),
+        child: Icon(
+          saved ? Icons.bookmark : Icons.bookmark_border,
+          size: 16,
+          color: saved ? const Color(0xFFC97E2C) : Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool accent;
+
+  const _MetaPill({
+    required this.icon,
+    required this.label,
+    this.accent = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = accent
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: accent
+            ? theme.colorScheme.primary.withOpacity(0.10)
+            : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(
+          color: accent
+              ? theme.colorScheme.primary.withOpacity(0.3)
+              : theme.colorScheme.outline,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              color: color,
+              fontWeight: FontWeight.w600,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-            // ── Inspiration ────────────────────────────────────
-            if (p.inspiration.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 3,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: levelColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Inspired by ${p.inspiration}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: levelColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
+class _Expanded extends StatelessWidget {
+  final PromptModel p;
+
+  const _Expanded({required this.p});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (p.outcome.isNotEmpty || p.purpose.isNotEmpty) ...[
+            _Detail(
+              icon: Icons.flag_outlined,
+              title: 'Outcome',
+              body: p.outcome,
+            ),
+            if (p.purpose.isNotEmpty)
+              _Detail(
+                icon: Icons.menu_book_outlined,
+                title: 'Purpose',
+                body: p.purpose,
               ),
+            const SizedBox(height: 8),
+          ],
+          if (p.shots.isNotEmpty) ...[
+            Text(
+              'STORYBOARD',
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(letterSpacing: 1.4),
+            ),
+            const SizedBox(height: 8),
+            ...List.generate(p.shots.length, (i) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _ShotRow(index: i + 1, text: p.shots[i]),
+              );
+            }),
+            const SizedBox(height: 6),
+          ],
+          if (p.songs.isNotEmpty) ...[
+            Text(
+              'MUSIC',
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(letterSpacing: 1.4),
+            ),
+            const SizedBox(height: 8),
+            ...p.songs.map((s) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _SongTile(song: s),
+                )),
+          ],
+          if (p.licenseFreeKeywords.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'ROYALTY-FREE SEARCH',
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(letterSpacing: 1.4),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: p.licenseFreeKeywords
+                  .map((k) => FilmTag(
+                        label: k,
+                        filled: false,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ))
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
-            // ── Meta chips (outcome/purpose/emotion) ───────────
-            if (p.outcome.isNotEmpty || p.purpose.isNotEmpty || p.emotion.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    if (p.outcome.isNotEmpty)
-                      _MetaTag(label: '🎯 ${p.outcome}', isDark: isDark),
-                    if (p.purpose.isNotEmpty)
-                      _MetaTag(label: '💡 ${p.purpose}', isDark: isDark),
-                    if (p.emotion.isNotEmpty)
-                      _MetaTag(label: '🎭 ${p.emotion}', isDark: isDark),
-                  ],
-                ),
-              ),
+class _Detail extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
 
-            // ── Expand toggle ──────────────────────────────────
-            if (hasDetails)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: GestureDetector(
-                  onTap: _toggleExpanded,
-                  child: Row(
-                    children: [
-                      Text(
-                        _expanded ? 'Hide details' : 'Shot list & music',
-                        style: TextStyle(
-                          color: levelColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      AnimatedRotation(
-                        turns: _expanded ? 0.5 : 0.0,
-                        duration: const Duration(milliseconds: 300),
-                        child: Icon(
-                          Icons.keyboard_arrow_down,
-                          color: levelColor,
-                          size: 18,
-                        ),
-                      ),
-                    ],
+  const _Detail({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title.toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    letterSpacing: 1.2,
                   ),
                 ),
-              ),
-
-            // ── Expandable Details ─────────────────────────────
-            SizeTransition(
-              sizeFactor: _expandAnim,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Shots
-                    if (p.shots.isNotEmpty) ...[
-                      _SectionLabel(label: 'Shot List', icon: Icons.videocam_outlined),
-                      const SizedBox(height: 8),
-                      ...p.shots.asMap().entries.map((e) => Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  margin: const EdgeInsets.only(right: 10),
-                                  decoration: BoxDecoration(
-                                    color: levelColor.withValues(alpha: 0.12),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      '${e.key + 1}',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: levelColor,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    e.value,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )),
-                      const SizedBox(height: 8),
-                    ],
-
-                    // Songs
-                    if (p.songs.isNotEmpty) ...[
-                      _SectionLabel(label: 'Music Suggestions', icon: Icons.music_note_rounded),
-                      const SizedBox(height: 8),
-                      ...p.songs.map((song) => Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF1A1A1A)
-                                  : const Color(0xFFF8F8F8),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isDark
-                                    ? const Color(0xFF2A2A2A)
-                                    : RawbyPalette.lightBorder,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.music_note_rounded,
-                                      size: 14,
-                                      color: levelColor,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        '${song.title} — ${song.artist}',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: levelColor.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        song.type,
-                                        style: TextStyle(
-                                          color: levelColor,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (song.whyItWorks.isNotEmpty) ...[
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    song.whyItWorks,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          )),
-                    ],
-
-                    // License-free keywords
-                    if (p.licenseFreeKeywords.isNotEmpty) ...[
-                      _SectionLabel(
-                          label: 'Royalty-free search terms',
-                          icon: Icons.search_rounded),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: p.licenseFreeKeywords
-                            .map((kw) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? const Color(0xFF1A1A1A)
-                                        : const Color(0xFFF0F0F0),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(kw, style: theme.textTheme.labelSmall),
-                                ))
-                            .toList(),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                  ],
+                Text(
+                  body,
+                  style: theme.textTheme.bodySmall?.copyWith(height: 1.45),
                 ),
-              ),
+              ],
             ),
 
             // ── Choose Button ──────────────────────────────────
@@ -444,203 +602,42 @@ class _PromptCardState extends ConsumerState<PromptCard>
         .fadeIn(duration: 500.ms)
         .slideY(begin: 0.12, end: 0, curve: Curves.easeOutCubic);
   }
-
-  Color _levelColor(String level, ThemeData theme) {
-    switch (level) {
-      case 'Short Story': return theme.colorScheme.secondary;
-      case 'Story + Character': return RawbyPalette.basic500;
-      default: return theme.colorScheme.primary;
-    }
-  }
-
-  String _levelIcon(String level) {
-    switch (level) {
-      case 'Short Story': return '🎬';
-      case 'Story + Character': return '🎭';
-      default: return '🎞️';
-    }
-  }
-
-  List<Color> _levelGradient(String level, ThemeData theme) {
-    switch (level) {
-      case 'Short Story':
-        return [const Color(0xFF1A6B3A), const Color(0xFF0D4A28)];
-      case 'Story + Character':
-        return [const Color(0xFF7C4DFF), const Color(0xFF5E35B1)];
-      default:
-        return [
-          theme.colorScheme.primary.withValues(alpha: 0.9),
-          theme.colorScheme.primary.withValues(alpha: 0.6),
-        ];
-    }
-  }
 }
 
-// ── Choose Button ────────────────────────────────────────────
+class _ShotRow extends StatelessWidget {
+  final int index;
+  final String text;
 
-class _ChooseButton extends StatelessWidget {
-  final bool isSelected;
-  final Color levelColor;
-  final List<Color> levelGradient;
-  final VoidCallback? onTap;
-
-  const _ChooseButton({
-    required this.isSelected,
-    required this.levelColor,
-    required this.levelGradient,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (isSelected) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: levelGradient.map((c) => c.withValues(alpha: 0.15)).toList(),
-          ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: levelColor.withValues(alpha: 0.4)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_rounded, size: 16, color: levelColor),
-            const SizedBox(width: 8),
-            Text(
-              'Chosen',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: levelColor,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: levelGradient),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: levelColor.withValues(alpha: 0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.bolt_rounded, size: 16, color: Colors.white),
-            SizedBox(width: 8),
-            Text(
-              'Start This Challenge',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Locked Button ────────────────────────────────────────────
-
-class _LockedButton extends StatelessWidget {
-  final bool isSelected;
-  final Color levelColor;
-  final ThemeData theme;
-
-  const _LockedButton({
-    required this.isSelected,
-    required this.levelColor,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: levelColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: levelColor.withValues(alpha: 0.25)),
-      ),
-      child: Text(
-        isSelected ? '✓ This Week\'s Prompt' : 'Locked Until Next Cycle',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: levelColor,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-// ── Source Badge ─────────────────────────────────────────────
-
-class _SourceBadge extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _SourceBadge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 9,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
-  }
-}
-
-// ── Section Label ────────────────────────────────────────────
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  const _SectionLabel({required this.label, required this.icon});
+  const _ShotRow({required this.index, required this.text});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 6),
-        Text(
-          label.toUpperCase(),
-          style: theme.textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
+        Container(
+          width: 22,
+          height: 22,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            '$index',
+            style: TextStyle(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: theme.textTheme.bodySmall?.copyWith(height: 1.45),
           ),
         ),
       ],
@@ -648,26 +645,122 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// ── Meta Tag ─────────────────────────────────────────────────
+class _SongTile extends StatelessWidget {
+  final SongSuggestion song;
 
-class _MetaTag extends StatelessWidget {
-  final String label;
-  final bool isDark;
-  const _MetaTag({required this.label, required this.isDark});
+  const _SongTile({required this.song});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tierStyle = _tierStyle(song.type);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF0F0F0),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isDark ? const Color(0xFF2A2A2A) : RawbyPalette.lightBorder,
-        ),
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
-      child: Text(label, style: theme.textTheme.labelSmall),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: tierStyle.gradient),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child:
+                    Icon(tierStyle.icon, color: Colors.white, size: 14),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      song.title,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      song.artist,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: tierStyle.gradient),
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: Text(
+                  tierStyle.label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (song.whyItWorks.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              song.whyItWorks,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.45,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
+
+  _TierStyle _tierStyle(String type) {
+    switch (type) {
+      case 'trending':
+        return _TierStyle(
+          label: 'TRENDING',
+          icon: Icons.trending_up,
+          gradient: const [Color(0xFFE85D75), Color(0xFFB12B5C)],
+        );
+      case 'classic_fit':
+        return _TierStyle(
+          label: 'CLASSIC',
+          icon: Icons.access_time,
+          gradient: const [Color(0xFF7C4DFF), Color(0xFF512DA8)],
+        );
+      case 'best_match':
+      default:
+        return _TierStyle(
+          label: 'BEST FIT',
+          icon: Icons.star,
+          gradient: const [Color(0xFFE8B647), Color(0xFFC97E2C)],
+        );
+    }
+  }
+}
+
+class _TierStyle {
+  final String label;
+  final IconData icon;
+  final List<Color> gradient;
+  _TierStyle({
+    required this.label,
+    required this.icon,
+    required this.gradient,
+  });
 }

@@ -1,13 +1,42 @@
 // ============================================================
-// RAWBY — Settings Screen (Redesigned with sections)
+// RAWBY — Settings
+// AI provider/model, theme, accent, region, season, language.
 // ============================================================
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_session_provider.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/glass_card.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
+
+  static const _regions = [
+    'Northern Europe',
+    'Central Europe',
+    'Southern Europe',
+    'US Northeast',
+    'US South',
+    'US West',
+    'East Asia',
+    'Southeast Asia',
+    'Australia',
+    'Other',
+  ];
+
+  static const _groqModels = [
+    'llama-3.3-70b-versatile',
+    'llama-3.1-70b-versatile',
+    'llama-3.1-8b-instant',
+    'mixtral-8x7b-32768',
+  ];
+
+  static const _openAiModels = [
+    'gpt-4o',
+    'gpt-4o-mini',
+    'gpt-4-turbo',
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -15,908 +44,490 @@ class SettingsScreen extends ConsumerWidget {
     final prefs = session.preferences;
     final ai = session.aiSettings;
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        children: [
-          // ── SECTION 1: Account ──────────────────────────────────
-          _SectionHeader(title: 'Account', icon: Icons.person_outline),
-          const SizedBox(height: 8),
-          _SettingsTile(
-            icon: Icons.alternate_email,
-            title: 'Username',
-            subtitle: '@${session.username}',
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.email_outlined,
-            title: 'Email',
-            subtitle: session.email.isNotEmpty ? session.email : 'Not set',
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.badge_outlined,
-            title: 'Display Name',
-            subtitle: session.displayName.isNotEmpty ? session.displayName : session.username,
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.info_outline,
-            title: 'Bio',
-            subtitle: prefs.bio.isNotEmpty ? prefs.bio : 'Add a short bio...',
-            onTap: () => _showTextInput(context, ref, 'Bio', prefs.bio, (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(bio: v));
-            }),
-          ),
-
-          const SizedBox(height: 28),
-
-          // ── SECTION 2: Preferences ──────────────────────────────
-          _SectionHeader(title: 'Preferences', icon: Icons.tune_outlined),
-          const SizedBox(height: 8),
-          _SettingsTile(
-            icon: Icons.language,
-            title: 'Prompt Language',
-            subtitle: _langLabel(prefs.promptLanguage),
-            onTap: () => _showLanguagePicker(context, ref, prefs),
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.wb_sunny_outlined,
-            title: 'Seasonal Prompts',
-            subtitle: 'Adapt prompts to current season & weather',
-            trailing: Switch(
-              value: prefs.seasonalPrompts,
-              onChanged: (v) {
-                ref.read(userSessionProvider.notifier).updatePreferences(
-                      prefs.copyWith(seasonalPrompts: v),
-                    );
-              },
+      body: AuraBackground(
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar.large(
+              title: const Text('Settings'),
+              expandedHeight: 100,
+              floating: false,
+              pinned: true,
+              backgroundColor: Colors.transparent,
             ),
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.location_on_outlined,
-            title: 'Region',
-            subtitle: prefs.region.isNotEmpty ? prefs.region : 'Not set',
-            onTap: () => _showRegionPicker(context, ref, prefs),
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.movie_filter_outlined,
-            title: 'Filmmaking Goal',
-            subtitle: prefs.filmmakingGoal.isNotEmpty ? prefs.filmmakingGoal : 'Not set',
-            onTap: () => _showGoalPicker(context, ref, prefs),
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.videocam_outlined,
-            title: 'Content Type',
-            subtitle: prefs.contentType.isNotEmpty ? prefs.contentType : 'Not set',
-            onTap: () => _showContentTypePicker(context, ref, prefs),
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.event,
-            title: 'Cycle Start Day',
-            subtitle: prefs.cycleDay,
-            onTap: () => _showCycleDayPicker(context, ref, prefs),
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.access_time,
-            title: 'Timezone',
-            subtitle: prefs.timezone,
-          ),
-
-          // Manual likes info (for regular users)
-          if (!session.isAdmin) ...[
-            const SizedBox(height: 6),
-            _SettingsTile(
-              icon: Icons.favorite_border,
-              title: 'Manual Likes Entry',
-              subtitle: 'Record likes after the 7-day unlock period',
-              trailing: session.submittedAt != null &&
-                      DateTime.now().isAfter(
-                          DateTime.parse(session.submittedAt!).add(const Duration(days: 7)))
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: RawbyPalette.success.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate.fixed(
+                  [
+                    // ── AI Engine ─────────────────────────────────────
+                    const SectionHeader(
+                      title: 'AI Engine',
+                      subtitle:
+                          'Used for prompt generation and the Aurora assistant',
+                      padding: EdgeInsets.fromLTRB(4, 8, 4, 12),
+                    ),
+                    GlassCard(
+                      child: Column(
+                        children: [
+                          _ProviderToggle(
+                            current: ai.provider,
+                            onChange: (p) {
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updateAiSettings(
+                                    ai.copyWith(
+                                      provider: p,
+                                      model: p == 'openai'
+                                          ? 'gpt-4o'
+                                          : 'llama-3.3-70b-versatile',
+                                    ),
+                                  );
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          const _Label('Model'),
+                          const SizedBox(height: 6),
+                          _ModelDropdown(
+                            value: ai.model,
+                            items:
+                                ai.provider == 'openai' ? _openAiModels : _groqModels,
+                            onChange: (m) {
+                              if (m == null) return;
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updateAiSettings(ai.copyWith(model: m));
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 14,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Auto-applied to every regenerate. Set once here.',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        'Unlocked',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: RawbyPalette.success,
-                        ),
+                    ).animate().fadeIn().slideY(begin: 0.05),
+
+                    // ── Appearance ────────────────────────────────────
+                    const SectionHeader(title: 'Appearance'),
+                    GlassCard(
+                      child: Column(
+                        children: [
+                          _Label('Theme'),
+                          const SizedBox(height: 8),
+                          _PillSelector(
+                            options: const ['dark', 'light'],
+                            labels: const ['Dark', 'Light'],
+                            current: prefs.theme,
+                            onChange: (v) {
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updatePreferences(
+                                      prefs.copyWith(theme: v));
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _Label('Accent'),
+                          const SizedBox(height: 8),
+                          _AccentSelector(
+                            current: prefs.accent,
+                            onChange: (v) {
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updatePreferences(
+                                      prefs.copyWith(accent: v));
+                            },
+                          ),
+                        ],
                       ),
-                    )
-                  : null,
-            ),
-          ],
+                    ).animate(delay: 80.ms).fadeIn().slideY(begin: 0.05),
 
-          const SizedBox(height: 28),
-
-          // ── SECTION 3: Notifications ────────────────────────────
-          _SectionHeader(title: 'Notifications', icon: Icons.notifications_outlined),
-          const SizedBox(height: 8),
-          _SettingsTile(
-            icon: Icons.push_pin_outlined,
-            title: 'Push Notifications',
-            subtitle: 'Deadline reminders and stats alerts',
-            trailing: Switch(
-              value: true, // placeholder
-              onChanged: (v) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Notification settings coming soon')),
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 28),
-
-          // ── SECTION 4: Theme & Accent ───────────────────────────
-          _SectionHeader(title: 'Theme & Accent', icon: Icons.palette_outlined),
-          const SizedBox(height: 8),
-          _SettingsTile(
-            icon: isDark ? Icons.dark_mode : Icons.light_mode,
-            title: 'Dark Mode',
-            trailing: Switch(
-              value: prefs.theme == 'dark',
-              onChanged: (v) {
-                ref.read(userSessionProvider.notifier).updatePreferences(
-                      prefs.copyWith(theme: v ? 'dark' : 'light'),
-                    );
-              },
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text('Accent Color', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _AccentChip(
-                label: 'Green',
-                color: RawbyPalette.green500,
-                selected: prefs.accent == 'green',
-                onTap: () => ref.read(userSessionProvider.notifier).updatePreferences(
-                      prefs.copyWith(accent: 'green'),
+                    // ── Story Context ─────────────────────────────────
+                    const SectionHeader(
+                      title: 'Story Context',
+                      subtitle: 'Feeds into every AI prompt request',
                     ),
-              ),
-              const SizedBox(width: 8),
-              _AccentChip(
-                label: 'Grey',
-                color: RawbyPalette.grey500,
-                selected: prefs.accent == 'grey',
-                onTap: () => ref.read(userSessionProvider.notifier).updatePreferences(
-                      prefs.copyWith(accent: 'grey'),
-                    ),
-              ),
-              const SizedBox(width: 8),
-              _AccentChip(
-                label: 'Basic',
-                color: RawbyPalette.basic500,
-                selected: prefs.accent == 'basic',
-                onTap: () => ref.read(userSessionProvider.notifier).updatePreferences(
-                      prefs.copyWith(accent: 'basic'),
-                    ),
-              ),
-            ],
-          ),
+                    GlassCard(
+                      child: Column(
+                        children: [
+                          _Label('Region'),
+                          const SizedBox(height: 6),
+                          _ModelDropdown(
+                            value: prefs.region.isEmpty
+                                ? _regions[1]
+                                : prefs.region,
+                            items: _regions,
+                            onChange: (v) {
+                              if (v == null) return;
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updatePreferences(
+                                      prefs.copyWith(region: v));
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          SwitchListTile.adaptive(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Seasonal prompts',
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: const Text(
+                                'One of three prompts adapts to current season'),
+                            value: prefs.seasonalPrompts,
+                            onChanged: (v) {
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updatePreferences(
+                                      prefs.copyWith(seasonalPrompts: v));
+                            },
+                          ),
+                        ],
+                      ),
+                    ).animate(delay: 160.ms).fadeIn().slideY(begin: 0.05),
 
-          const SizedBox(height: 28),
-
-          // ── SECTION 5: AI Settings ──────────────────────────────
-          _SectionHeader(title: 'AI Settings', icon: Icons.auto_awesome_outlined),
-          const SizedBox(height: 8),
-          _SettingsTile(
-            icon: Icons.auto_fix_high,
-            title: 'Auto-generate prompts',
-            subtitle: 'Generate prompts automatically each week',
-            trailing: Switch(
-              value: ai.autoGenerate,
-              onChanged: (v) {
-                ref.read(userSessionProvider.notifier).updateAiSettings(
-                      ai.copyWith(autoGenerate: v),
-                    );
-              },
-            ),
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.cloud_outlined,
-            title: 'AI Provider',
-            subtitle: _providerLabel(ai.provider),
-            onTap: () => _showProviderPicker(context, ref, ai),
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.memory,
-            title: 'Model',
-            subtitle: ai.model,
-            onTap: () => _showModelPicker(context, ref, ai),
-          ),
-
-          const SizedBox(height: 28),
-
-          // ── SECTION 6: Social & Profile Visibility ──────────────
-          _SectionHeader(title: 'Social & Profile Visibility', icon: Icons.share_outlined),
-          const SizedBox(height: 8),
-          _SettingsTile(
-            icon: Icons.camera_alt_outlined,
-            title: 'Instagram Handle',
-            subtitle: prefs.instagramHandle.isNotEmpty ? '@${prefs.instagramHandle}' : 'Not set',
-            onTap: () => _showTextInput(context, ref, 'Instagram Handle', prefs.instagramHandle, (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(instagramHandle: v));
-            }),
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.play_circle_outline,
-            title: 'YouTube Channel',
-            subtitle: prefs.youtubeHandle.isNotEmpty ? prefs.youtubeHandle : 'Not set',
-            onTap: () => _showTextInput(context, ref, 'YouTube Channel', prefs.youtubeHandle, (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(youtubeHandle: v));
-            }),
-          ),
-
-          // Admin: Instagram auto-fetch
-          if (session.isAdmin) ...[
-            const SizedBox(height: 6),
-            _SettingsTile(
-              icon: Icons.sync,
-              title: 'Auto-fetch Instagram Stats',
-              subtitle: 'Fetch like counts from Instagram Reel URLs via API',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Instagram API integration coming soon — admin feature'),
-                  ),
-                );
-              },
-            ),
-          ],
-
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(
-              'Control what others see on your public profile',
-              style: theme.textTheme.bodySmall,
-            ),
-          ),
-          _SettingsTile(
-            icon: Icons.info_outline,
-            title: 'Bio',
-            subtitle: 'Your short bio text',
-            trailing: Switch(value: prefs.showBio, onChanged: (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(showBio: v));
-            }),
-          ),
-          const SizedBox(height: 4),
-          _SettingsTile(
-            icon: Icons.score_outlined,
-            title: 'Score & Rank',
-            subtitle: 'Total score and rank badge',
-            trailing: Switch(value: prefs.showScore, onChanged: (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(showScore: v));
-            }),
-          ),
-          const SizedBox(height: 4),
-          _SettingsTile(
-            icon: Icons.local_fire_department_outlined,
-            title: 'Streak',
-            subtitle: 'Weekly project streak',
-            trailing: Switch(value: prefs.showStreak, onChanged: (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(showStreak: v));
-            }),
-          ),
-          const SizedBox(height: 4),
-          _SettingsTile(
-            icon: Icons.bar_chart_outlined,
-            title: 'Engagement Stats',
-            subtitle: 'Total likes, views, and averages',
-            trailing: Switch(value: prefs.showEngagement, onChanged: (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(showEngagement: v));
-            }),
-          ),
-          const SizedBox(height: 4),
-          _SettingsTile(
-            icon: Icons.history,
-            title: 'Project History',
-            subtitle: 'Past projects and scores',
-            trailing: Switch(value: prefs.showHistory, onChanged: (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(showHistory: v));
-            }),
-          ),
-          const SizedBox(height: 4),
-          _SettingsTile(
-            icon: Icons.article_outlined,
-            title: 'Past Prompts',
-            subtitle: 'Prompt text from completed projects',
-            trailing: Switch(value: prefs.showPrompts, onChanged: (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(showPrompts: v));
-            }),
-          ),
-          const SizedBox(height: 4),
-          _SettingsTile(
-            icon: Icons.emoji_events_outlined,
-            title: 'Achievements',
-            subtitle: 'Earned badges and progress',
-            trailing: Switch(value: prefs.showAchievements, onChanged: (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(showAchievements: v));
-            }),
-          ),
-          const SizedBox(height: 4),
-          _SettingsTile(
-            icon: Icons.camera_outlined,
-            title: 'Gear',
-            subtitle: 'Equipment and subscriptions',
-            trailing: Switch(value: prefs.showGear, onChanged: (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(showGear: v));
-            }),
-          ),
-          const SizedBox(height: 4),
-          _SettingsTile(
-            icon: Icons.camera_alt_outlined,
-            title: 'Instagram',
-            subtitle: 'Show your Instagram handle',
-            trailing: Switch(value: prefs.showInstagram, onChanged: (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(showInstagram: v));
-            }),
-          ),
-          const SizedBox(height: 4),
-          _SettingsTile(
-            icon: Icons.play_circle_outline,
-            title: 'YouTube',
-            subtitle: 'Show your YouTube channel',
-            trailing: Switch(value: prefs.showYoutube, onChanged: (v) {
-              ref.read(userSessionProvider.notifier).updatePreferences(prefs.copyWith(showYoutube: v));
-            }),
-          ),
-
-          const SizedBox(height: 28),
-
-          // ── SECTION 7: Subscription ─────────────────────────────
-          _SectionHeader(title: 'Subscription', icon: Icons.workspace_premium_outlined),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? RawbyPalette.darkCard : RawbyPalette.lightCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDark ? RawbyPalette.darkBorder : RawbyPalette.lightBorder,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      session.isPaid ? Icons.workspace_premium : Icons.lock_outline,
-                      color: session.isPaid ? RawbyPalette.warning : theme.colorScheme.onSurfaceVariant,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      session.isPaid
-                          ? session.isOnTrial
-                              ? 'Rawby Pro (Trial)'
-                              : 'Rawby Pro'
-                          : 'Free Tier',
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                    ),
+                    // ── About ────────────────────────────────────────
+                    const SectionHeader(title: 'About'),
+                    GlassCard(
+                      child: Column(
+                        children: [
+                          _InfoRow(
+                              label: 'Username',
+                              value: '@${session.username}'),
+                          _InfoRow(
+                              label: 'Role',
+                              value: session.role.toUpperCase()),
+                          _InfoRow(
+                              label: 'Total Score',
+                              value: '${session.totalScore} pts'),
+                          _InfoRow(
+                              label: 'Rank',
+                              value: session.currentRank.label),
+                        ],
+                      ),
+                    ).animate(delay: 240.ms).fadeIn().slideY(begin: 0.05),
                   ],
                 ),
-                const SizedBox(height: 6),
-                if (session.isOnTrial && session.trialStartedAt != null)
-                  Text(
-                    'Trial expires: ${_formatTrialExpiry(session.trialStartedAt!)}',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                if (session.isFree)
-                  Text(
-                    'Upgrade to unlock all features',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                const SizedBox(height: 12),
-                if (session.isFree)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Subscription coming soon!')),
-                        );
-                      },
-                      icon: const Icon(Icons.workspace_premium, size: 18),
-                      label: const Text('Upgrade to Pro — 7 Days Free'),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 28),
-
-          // ── SECTION 8: Danger Zone ──────────────────────────────
-          _SectionHeader(title: 'Danger Zone', icon: Icons.warning_amber_outlined),
-          const SizedBox(height: 8),
-          _SettingsTile(
-            icon: Icons.logout,
-            title: 'Log Out',
-            titleColor: theme.colorScheme.error,
-            onTap: () => _confirmLogout(context, ref),
-          ),
-          const SizedBox(height: 6),
-          _SettingsTile(
-            icon: Icons.delete_forever_outlined,
-            title: 'Delete Account',
-            titleColor: theme.colorScheme.error,
-            onTap: () => _showDeleteAccountDialog(context),
-          ),
-
-          const SizedBox(height: 60),
-        ],
-      ),
-    );
-  }
-
-  // ── Helpers ──────────────────────────────────────────────────
-
-  String _formatTrialExpiry(String trialStartedAt) {
-    final start = DateTime.parse(trialStartedAt);
-    final expiry = start.add(const Duration(days: 7));
-    return '${expiry.day}/${expiry.month}/${expiry.year}';
-  }
-
-  String _providerLabel(String provider) {
-    switch (provider) {
-      case 'groq': return 'Groq (Fast, Free)';
-      case 'openai': return 'OpenAI (GPT)';
-      case 'anthropic': return 'Anthropic (Claude)';
-      case 'google': return 'Google (Gemini)';
-      default: return provider;
-    }
-  }
-
-  // ── Pickers ─────────────────────────────────────────────────
-
-  void _showProviderPicker(BuildContext context, WidgetRef ref, dynamic ai) {
-    _showOptionSheet(context, 'AI Provider', [
-      _Option('groq', 'Groq', 'Fast & free — Llama models'),
-      _Option('openai', 'OpenAI', 'GPT-4o and variants'),
-      _Option('anthropic', 'Anthropic', 'Claude Sonnet & Opus'),
-      _Option('google', 'Google', 'Gemini 2.0 Flash & 2.5 Pro'),
-    ], ai.provider, (v) {
-      String model;
-      switch (v) {
-        case 'groq': model = 'llama-3.3-70b-versatile'; break;
-        case 'openai': model = 'gpt-4o'; break;
-        case 'anthropic': model = 'claude-sonnet-4-6'; break;
-        case 'google': model = 'gemini-2.0-flash'; break;
-        default: model = 'llama-3.3-70b-versatile';
-      }
-      ref.read(userSessionProvider.notifier).updateAiSettings(
-            ai.copyWith(provider: v, model: model),
-          );
-    });
-  }
-
-  void _showModelPicker(BuildContext context, WidgetRef ref, dynamic ai) {
-    final List<_Option> models;
-    switch (ai.provider) {
-      case 'openai':
-        models = [
-          _Option('gpt-4o', 'GPT-4o', 'Recommended, best quality'),
-          _Option('gpt-4-turbo', 'GPT-4 Turbo', 'Previous best'),
-          _Option('gpt-4o-mini', 'GPT-4o Mini', 'Faster, cheaper'),
-        ];
-        break;
-      case 'anthropic':
-        models = [
-          _Option('claude-sonnet-4-6', 'Claude Sonnet 4.6', 'Balanced & smart'),
-          _Option('claude-opus-4-7', 'Claude Opus 4.7', 'Most capable'),
-          _Option('claude-haiku-4-5-20251001', 'Claude Haiku 4.5', 'Fast & efficient'),
-        ];
-        break;
-      case 'google':
-        models = [
-          _Option('gemini-2.0-flash', 'Gemini 2.0 Flash', 'Fast & capable'),
-          _Option('gemini-2.5-pro-preview-06-05', 'Gemini 2.5 Pro', 'Most capable'),
-        ];
-        break;
-      case 'groq':
-      default:
-        models = [
-          _Option('llama-3.3-70b-versatile', 'Llama 3.3 70B', 'Recommended'),
-          _Option('mixtral-8x7b-32768', 'Mixtral 8x7B', 'Long context'),
-          _Option('llama-3.1-8b-instant', 'Llama 3.1 8B', 'Fastest'),
-        ];
-    }
-    _showOptionSheet(context, 'Model', models, ai.model, (v) {
-      ref.read(userSessionProvider.notifier).updateAiSettings(
-            ai.copyWith(model: v),
-          );
-    });
-  }
-
-  void _showLanguagePicker(BuildContext context, WidgetRef ref, dynamic prefs) {
-    _showOptionSheet(context, 'Prompt Language', [
-      _Option('en', 'English', ''),
-      _Option('hu', 'Magyar', ''),
-      _Option('de', 'Deutsch', ''),
-      _Option('es', 'Español', ''),
-      _Option('fr', 'Français', ''),
-      _Option('ja', 'Japanese', ''),
-    ], prefs.promptLanguage, (v) {
-      ref.read(userSessionProvider.notifier).updatePreferences(
-            prefs.copyWith(promptLanguage: v),
-          );
-    });
-  }
-
-  void _showRegionPicker(BuildContext context, WidgetRef ref, dynamic prefs) {
-    _showOptionSheet(context, 'Region', [
-      _Option('Northern Europe', 'Northern Europe', ''),
-      _Option('Central Europe', 'Central Europe', ''),
-      _Option('Southern Europe', 'Southern Europe', ''),
-      _Option('US East', 'US East', ''),
-      _Option('US West', 'US West', ''),
-      _Option('US South', 'US South', ''),
-      _Option('Asia', 'Asia', ''),
-      _Option('Other', 'Other', ''),
-    ], prefs.region, (v) {
-      ref.read(userSessionProvider.notifier).updatePreferences(
-            prefs.copyWith(region: v),
-          );
-    });
-  }
-
-  void _showGoalPicker(BuildContext context, WidgetRef ref, dynamic prefs) {
-    _showOptionSheet(context, 'Filmmaking Goal', [
-      _Option('hobby', 'Hobby Filmmaker', 'Fun & creative expression'),
-      _Option('youtube', 'YouTube Creator', 'Build an audience'),
-      _Option('cinematic', 'Cinematic Storytelling', 'Narrative films'),
-      _Option('documentary', 'Documentary', 'Real-world stories'),
-      _Option('commercial', 'Commercial Work', 'Client projects'),
-      _Option('music_video', 'Music Videos', 'Visual music art'),
-    ], prefs.filmmakingGoal, (v) {
-      ref.read(userSessionProvider.notifier).updatePreferences(
-            prefs.copyWith(filmmakingGoal: v),
-          );
-    });
-  }
-
-  void _showContentTypePicker(BuildContext context, WidgetRef ref, dynamic prefs) {
-    _showOptionSheet(context, 'Content Type', [
-      _Option('short_film', 'Short Film', '1-10 min narrative'),
-      _Option('reel', 'Reel / Short', 'Under 60 seconds'),
-      _Option('vlog', 'Vlog', 'Personal video blog'),
-      _Option('cinematic_broll', 'Cinematic B-Roll', 'Visual storytelling'),
-      _Option('tutorial', 'Tutorial', 'Educational content'),
-      _Option('mixed', 'Mixed', 'All of the above'),
-    ], prefs.contentType, (v) {
-      ref.read(userSessionProvider.notifier).updatePreferences(
-            prefs.copyWith(contentType: v),
-          );
-    });
-  }
-
-  void _showCycleDayPicker(BuildContext context, WidgetRef ref, dynamic prefs) {
-    _showOptionSheet(context, 'Cycle Start Day', [
-      _Option('Monday', 'Monday', ''),
-      _Option('Tuesday', 'Tuesday', ''),
-      _Option('Wednesday', 'Wednesday', ''),
-      _Option('Thursday', 'Thursday', ''),
-      _Option('Friday', 'Friday', ''),
-      _Option('Saturday', 'Saturday', ''),
-      _Option('Sunday', 'Sunday', ''),
-    ], prefs.cycleDay, (v) {
-      ref.read(userSessionProvider.notifier).updatePreferences(
-            prefs.copyWith(cycleDay: v),
-          );
-    });
-  }
-
-  void _showOptionSheet(
-    BuildContext context,
-    String title,
-    List<_Option> options,
-    String currentValue,
-    void Function(String) onSelect,
-  ) {
-    final theme = Theme.of(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: theme.colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 12),
-            ...options.map((opt) => ListTile(
-                  title: Text(opt.label),
-                  subtitle: opt.desc.isNotEmpty ? Text(opt.desc, style: theme.textTheme.bodySmall) : null,
-                  trailing: opt.value == currentValue
-                      ? Icon(Icons.check_circle, color: theme.colorScheme.primary, size: 20)
-                      : null,
-                  onTap: () {
-                    onSelect(opt.value);
-                    Navigator.pop(ctx);
-                  },
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                )),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showTextInput(BuildContext context, WidgetRef ref, String title, String current, void Function(String) onSave) {
-    final controller = TextEditingController(text: current);
-    final theme = Theme.of(context);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: theme.colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 20, right: 20, top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              decoration: InputDecoration(hintText: 'Enter $title'),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  onSave(controller.text.trim());
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Save'),
               ),
             ),
-            const SizedBox(height: 8),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Log Out?'),
-        content: const Text('Your data is saved. You can log back in anytime.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Log Out', style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      ref.read(userSessionProvider.notifier).logout();
-    }
-  }
-
-  void _showDeleteAccountDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-          'To delete your account, please contact support at support@rawby.app. '
-          'Account deletion is permanent and cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _langLabel(String code) {
-    switch (code) {
-      case 'hu': return 'Magyar';
-      case 'de': return 'Deutsch';
-      case 'es': return 'Español';
-      case 'fr': return 'Français';
-      case 'ja': return 'Japanese';
-      default: return 'English';
-    }
   }
 }
 
-// ── Reusable Widgets ──────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  const _SectionHeader({required this.title, required this.icon});
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label(this.text);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 18, color: theme.colorScheme.primary),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ],
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        text.toUpperCase(),
+        style: theme.textTheme.labelMedium?.copyWith(
+          letterSpacing: 1.0,
+          fontWeight: FontWeight.w700,
         ),
-        const SizedBox(height: 6),
-        Divider(
-          color: isDark ? RawbyPalette.darkBorder : RawbyPalette.lightBorder,
-          thickness: 1,
-          height: 1,
+      ),
+    );
+  }
+}
+
+class _ProviderToggle extends StatelessWidget {
+  final String current;
+  final ValueChanged<String> onChange;
+
+  const _ProviderToggle({required this.current, required this.onChange});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _Tab(
+          label: 'Groq · Llama',
+          active: current == 'groq',
+          onTap: () => onChange('groq'),
+        ),
+        const SizedBox(width: 8),
+        _Tab(
+          label: 'OpenAI · GPT',
+          active: current == 'openai',
+          onTap: () => onChange('openai'),
         ),
       ],
     );
   }
 }
 
-class _SettingsTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-  final Color? titleColor;
-
-  const _SettingsTile({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-    this.titleColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return Material(
-      color: isDark ? RawbyPalette.darkCard : RawbyPalette.lightCard,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 20, color: titleColor ?? theme.colorScheme.onSurfaceVariant),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: theme.textTheme.titleMedium?.copyWith(
-                      color: titleColor,
-                      fontWeight: FontWeight.w500,
-                    )),
-                    if (subtitle != null)
-                      Text(subtitle!, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
-              if (trailing != null) trailing!
-              else if (onTap != null)
-                Icon(Icons.chevron_right, size: 20, color: theme.colorScheme.onSurfaceVariant),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AccentChip extends StatelessWidget {
+class _Tab extends StatelessWidget {
   final String label;
-  final Color color;
-  final bool selected;
+  final bool active;
   final VoidCallback onTap;
 
-  const _AccentChip({
+  const _Tab({
     required this.label,
-    required this.color,
-    required this.selected,
+    required this.active,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? color : theme.colorScheme.outline,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            gradient: active
+                ? LinearGradient(colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.secondary,
+                  ])
+                : null,
+            color: active ? null : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: active
+                  ? Colors.transparent
+                  : theme.colorScheme.outline,
             ),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(
-              fontSize: 13,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              color: selected ? color : theme.colorScheme.onSurface,
-            )),
-          ],
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                color: active
+                    ? Colors.white
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _Option {
+class _ModelDropdown extends StatelessWidget {
   final String value;
+  final List<String> items;
+  final ValueChanged<String?> onChange;
+
+  const _ModelDropdown({
+    required this.value,
+    required this.items,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.inputDecorationTheme.fillColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outline),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: items.contains(value) ? value : items.first,
+          isExpanded: true,
+          dropdownColor: theme.colorScheme.surfaceContainerHighest,
+          icon: Icon(Icons.expand_more,
+              color: theme.colorScheme.onSurfaceVariant, size: 20),
+          style: theme.textTheme.bodyMedium,
+          items: items
+              .map((i) => DropdownMenuItem(
+                    value: i,
+                    child: Text(i, style: theme.textTheme.bodyMedium),
+                  ))
+              .toList(),
+          onChanged: onChange,
+        ),
+      ),
+    );
+  }
+}
+
+class _PillSelector extends StatelessWidget {
+  final List<String> options;
+  final List<String> labels;
+  final String current;
+  final ValueChanged<String> onChange;
+
+  const _PillSelector({
+    required this.options,
+    required this.labels,
+    required this.current,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: theme.colorScheme.outline),
+      ),
+      child: Row(
+        children: List.generate(options.length, (i) {
+          final active = options[i] == current;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChange(options[i]),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  gradient: active
+                      ? LinearGradient(colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.secondary,
+                        ])
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    labels[i],
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight:
+                          active ? FontWeight.w700 : FontWeight.w500,
+                      color: active
+                          ? Colors.white
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _AccentSelector extends StatelessWidget {
+  final String current;
+  final ValueChanged<String> onChange;
+
+  const _AccentSelector({required this.current, required this.onChange});
+
+  static const _accents = [
+    {'key': 'cinema', 'name': 'Cinema', 'color': RawbyPalette.cinema500},
+    {'key': 'green', 'name': 'Forest', 'color': RawbyPalette.green500},
+    {'key': 'basic', 'name': 'Sepia', 'color': RawbyPalette.basic500},
+    {'key': 'grey', 'name': 'Mono', 'color': RawbyPalette.grey500},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: _accents.map((a) {
+        final selected = a['key'] == current;
+        return GestureDetector(
+          onTap: () => onChange(a['key'] as String),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: selected
+                  ? (a['color'] as Color).withOpacity(0.15)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(40),
+              border: Border.all(
+                color: a['color'] as Color,
+                width: selected ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: a['color'] as Color,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: (a['color'] as Color).withOpacity(0.4),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  a['name'] as String,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
   final String label;
-  final String desc;
-  const _Option(this.value, this.label, this.desc);
+  final String value;
+
+  const _InfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Text(label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              )),
+          const Spacer(),
+          Text(value,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
 }

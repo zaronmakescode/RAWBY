@@ -1,13 +1,13 @@
 // ============================================================
-// RAWBY — User Bar
-// Injected at the top of every page.
-// Shows: Name, Rank icon + label, Streak, Admin gear icon
+// RAWBY — User Bar (desktop header)
+// Identity + rank + streak + quick links (settings, assistant).
+// Mobile uses immersive in-screen headers instead.
 // ============================================================
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../providers/user_session_provider.dart';
 import '../providers/router_provider.dart';
+import '../providers/user_session_provider.dart';
 import '../theme/app_colors.dart';
 
 class UserBar extends ConsumerWidget {
@@ -23,33 +23,26 @@ class UserBar extends ConsumerWidget {
 
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 16,
-        right: 16,
-        bottom: 10,
+        top: MediaQuery.of(context).padding.top + 10,
+        left: 24,
+        right: 24,
+        bottom: 12,
       ),
       decoration: BoxDecoration(
         color: isDark ? RawbyPalette.darkSurface : RawbyPalette.lightSurface,
         border: Border(
           bottom: BorderSide(
             color: isDark ? RawbyPalette.darkBorder : RawbyPalette.lightBorder,
-            width: 1,
           ),
         ),
       ),
       child: Row(
         children: [
-          // Rank icon
           Text(
             rank.icon,
-            style: TextStyle(
-              fontSize: 18,
-              color: theme.colorScheme.primary,
-            ),
+            style: TextStyle(fontSize: 18, color: theme.colorScheme.primary),
           ),
-          const SizedBox(width: 8),
-
-          // Name + rank label
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,7 +53,7 @@ class UserBar extends ConsumerWidget {
                       ? session.displayName
                       : session.username,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -69,67 +62,42 @@ class UserBar extends ConsumerWidget {
                   rank.label,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
           ),
-
-          // Score badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.colorScheme.primary.withOpacity(0.15),
-              ),
-            ),
-            child: Text(
-              '${session.totalScore} pts',
-              style: TextStyle(
-                color: theme.colorScheme.primary,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+          _Chip(
+            label: '${session.totalScore} pts',
+            color: theme.colorScheme.primary,
           ),
-          const SizedBox(width: 6),
-
-          // Streak badge
           if (streak > 0) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('🔥', style: TextStyle(fontSize: 12)),
-                  const SizedBox(width: 3),
-                  Text(
-                    '$streak',
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(width: 6),
+            _Chip(
+              icon: Icons.local_fire_department,
+              label: '$streak',
+              color: const Color(0xFFE85D75),
             ),
-            const SizedBox(width: 8),
           ],
-
-          // Menu button
-          PopupMenuButton<String>(
-            icon: Icon(
-              Icons.menu,
-              color: isDark ? RawbyPalette.textDark : RawbyPalette.textLight,
-              size: 22,
+          const SizedBox(width: 12),
+          IconButton(
+            tooltip: 'Aurora assistant',
+            icon: Icon(Icons.auto_awesome,
+                color: theme.colorScheme.primary, size: 20),
+            onPressed: () => context.go(Routes.assistant),
+          ),
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.tune, size: 20),
+            onPressed: () => context.go(Routes.settings),
+          ),
+          if (session.isAdmin)
+            IconButton(
+              tooltip: 'Admin',
+              icon: Icon(Icons.shield_outlined,
+                  color: theme.colorScheme.primary, size: 20),
+              onPressed: () => context.go(Routes.admin),
             ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
@@ -204,6 +172,43 @@ class UserBar extends ConsumerWidget {
                   ),
                 ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final IconData? icon;
+
+  const _Chip({required this.label, required this.color, this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),

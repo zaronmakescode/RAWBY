@@ -1,13 +1,14 @@
 // ============================================================
 // RAWBY — Shell Scaffold
-// Responsive: bottom nav (mobile) / side nav (desktop)
+// Responsive: mobile (immersive content + glass bottom nav) vs
+// desktop (sidebar + top user bar).
 // ============================================================
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../constants/app_constants.dart';
-import '../../providers/user_session_provider.dart';
 import '../../providers/router_provider.dart';
+import '../../providers/user_session_provider.dart';
 import '../user_bar.dart';
 import 'bottom_nav.dart';
 import 'side_nav.dart';
@@ -51,16 +52,17 @@ class ShellScaffold extends ConsumerWidget {
       case Routes.gear:
         return 3;
       case Routes.profile:
+      case Routes.settings:
         return 4;
       case Routes.admin:
         return isAdmin ? 5 : 0;
+      case Routes.assistant:
+        return 6;
       default:
         return 0;
     }
   }
 }
-
-// ── Mobile Layout ────────────────────────────────────────────
 
 class _MobileLayout extends StatelessWidget {
   final Widget child;
@@ -76,12 +78,8 @@ class _MobileLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          const UserBar(),
-          Expanded(child: child),
-        ],
-      ),
+      extendBody: true,
+      body: child,
       bottomNavigationBar: RawbyBottomNav(
         currentIndex: currentIndex,
         isAdmin: isAdmin,
@@ -89,8 +87,6 @@ class _MobileLayout extends StatelessWidget {
     );
   }
 }
-
-// ── Desktop Layout ───────────────────────────────────────────
 
 class _DesktopLayout extends StatelessWidget {
   final Widget child;

@@ -3,7 +3,9 @@
 // Handles Firebase Cloud Messaging (FCM) and local notifications
 // ============================================================
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -18,24 +20,41 @@ class NotificationService {
   final ApiService _api;
   final StorageService _storage;
   final Ref _ref;
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  FirebaseMessaging? _fcm;
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  bool _firebaseReady = false;
 
   NotificationService(this._api, this._storage, this._ref) {
     _initializeNotifications();
   }
 
+  bool get _hasFirebase {
+    if (_firebaseReady) return true;
+    try {
+      Firebase.app();
+      _fcm ??= FirebaseMessaging.instance;
+      _firebaseReady = true;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _initializeNotifications() async {
-    // Request permission for iOS/macOS
-    await _fcm.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
+    if (!_hasFirebase) return;
+    try {
+      await _fcm!.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+    } catch (_) {
+      return;
+    }
 
     // Local notifications setup
     const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -57,17 +76,18 @@ class NotificationService {
   }
 
   Future<void> _getAndRegisterToken() async {
-    // Check if Firebase is available before trying to get token
-    if (!_ref.read(apiServiceProvider).hasAuthToken) { // Check if user is authenticated
-      return; // Firebase not initialized or not logged in
-    }
-    String? token = await _fcm.getToken();
-    if (token != null) {
-      await _api.registerFcmToken(token);
-      // Listen for token changes
-      _fcm.onTokenRefresh.listen((newToken) {
-        _api.registerFcmToken(newToken);
-      });
+    if (!_hasFirebase) return;
+    if (!_ref.read(apiServiceProvider).hasAuthToken) return;
+    try {
+      String? token = await _fcm!.getToken();
+      if (token != null) {
+        await _api.registerFcmToken(token);
+        _fcm!.onTokenRefresh.listen((newToken) {
+          _api.registerFcmToken(newToken);
+        });
+      }
+    } catch (_) {
+      // Firebase unavailable on this platform (e.g., web without config)
     }
   }
 
@@ -112,6 +132,7 @@ class NotificationService {
     required String body,
     required String id,
   }) async {
+    if (kIsWeb) return;
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute, 0);
 
@@ -129,24 +150,34 @@ class NotificationService {
     );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
 
-    await _flutterLocalNotificationsPlugin.zonedSchedule(
-      id.hashCode, // Unique ID for each notification
-      title,
-      body,
-      scheduledDate,
-      platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+    try {
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        id.hashCode,
+        title,
+        body,
+        scheduledDate,
+        platformChannelSpecifics,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (_) {
+      // Plugin unsupported on this platform
+    }
   }
 
   Future<void> cancelNotification(String id) async {
-    await _flutterLocalNotificationsPlugin.cancel(id.hashCode);
+    if (kIsWeb) return;
+    try {
+      await _flutterLocalNotificationsPlugin.cancel(id.hashCode);
+    } catch (_) {}
   }
 
   Future<void> cancelAllNotifications() async {
-    await _flutterLocalNotificationsPlugin.cancelAll();
+    if (kIsWeb) return;
+    try {
+      await _flutterLocalNotificationsPlugin.cancelAll();
+    } catch (_) {}
   }
 
   // ── Specific Scheduled Notifications ─────────────────────────

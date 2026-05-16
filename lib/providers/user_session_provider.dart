@@ -777,11 +777,12 @@ class UserSessionNotifier extends StateNotifier<UserSession> {
   void _save() {
     final storage = _ref.read(storageServiceProvider);
     storage.setString(AppConstants.storageKey, jsonEncode(state.toJson()));
-    // Trigger sync to backend
     _ref.read(syncServiceProvider).scheduleSync(state);
-
-    // Schedule notifications based on updated state
-    _scheduleNotifications();
+    try {
+      _scheduleNotifications();
+    } catch (_) {
+      // Notifications unavailable (e.g., web without Firebase config)
+    }
   }
 
   void saveNow() {

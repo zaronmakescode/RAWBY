@@ -30,6 +30,13 @@ class RawbyPalette {
   static const Color basic600 = Color(0xFF6B5A42);
   static const Color basic700 = Color(0xFF4A3F2F);
 
+  // Cinema (warm amber accent — flagship)
+  static const Color cinema500 = Color(0xFFE8B647);
+  static const Color cinema400 = Color(0xFFF0C868);
+  static const Color cinema300 = Color(0xFFF6DC9C);
+  static const Color cinema600 = Color(0xFFC9942C);
+  static const Color cinema700 = Color(0xFF8F6918);
+
   // Dark backgrounds
   static const Color darkBg = Color(0xFF0D0E10);
   static const Color darkSurface = Color(0xFF161719);
@@ -92,6 +99,13 @@ class AccentColors {
           primaryLight: RawbyPalette.basic400,
           primaryDark: RawbyPalette.basic600,
           onPrimary: Colors.white,
+        );
+      case 'cinema':
+        return const AccentColors(
+          primary: RawbyPalette.cinema500,
+          primaryLight: RawbyPalette.cinema400,
+          primaryDark: RawbyPalette.cinema600,
+          onPrimary: Color(0xFF1A1100),
         );
       case 'green':
       default:

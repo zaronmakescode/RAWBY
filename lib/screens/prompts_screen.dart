@@ -1,19 +1,23 @@
 // ============================================================
-// RAWBY — Prompts Screen (Full Implementation)
-// Shows the Weekly 3 prompts with AI regen, custom, Idea Bank
+// RAWBY — Prompts Screen
+// 3 weekly prompts + AI regen + custom + Idea Bank + submit /
+// record-stats CTAs (moved here from Home).
 // ============================================================
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../providers/user_session_provider.dart';
 import '../providers/router_provider.dart';
+import '../providers/user_session_provider.dart';
 import '../services/prompt_service.dart';
-import '../widgets/prompts/prompt_card.dart';
+import '../widgets/common/glass_card.dart';
 import '../widgets/prompts/ai_generate_modal.dart';
 import '../widgets/prompts/custom_prompt_modal.dart';
-import '../widgets/prompts/prompt_confirm_banner.dart';
-import '../theme/app_colors.dart';
+import '../widgets/prompts/prompt_card.dart';
+import '../widgets/projects/record_stats_modal.dart';
+import '../widgets/projects/submit_modal.dart';
 
 class PromptsScreen extends ConsumerWidget {
   const PromptsScreen({super.key});
@@ -26,239 +30,146 @@ class PromptsScreen extends ConsumerWidget {
     final regensLeft = session.regensLeft;
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          // Pull-to-refresh regenerates local prompts
-          if (!isLocked) {
-            final service = ref.read(promptServiceProvider);
-            final prompts = service.generateLocalPrompts();
-            ref.read(userSessionProvider.notifier).setPrompts(prompts);
-          }
-        },
-        color: theme.colorScheme.primary,
-        child: CustomScrollView(
-          slivers: [
-            // ── Header ──────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+      body: AuraBackground(
+        topOnly: true,
+        child: RefreshIndicator(
+          color: theme.colorScheme.primary,
+          onRefresh: () async {
+            if (!isLocked) {
+              final service = ref.read(promptServiceProvider);
+              final prompts = service.generateLocalPrompts();
+              ref.read(userSessionProvider.notifier).setPrompts(prompts);
+            }
+          },
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'This Week\'s Prompts',
-                                style: theme.textTheme.headlineMedium,
-                              ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
-                              const SizedBox(height: 2),
-                              Text(
-                                isLocked
-                                    ? 'Prompt locked — project in progress'
-                                    : 'Choose one to start your project',
-                                style: theme.textTheme.bodySmall,
-                              ).animate(delay: 80.ms).fadeIn(),
-                            ],
-                          ),
-                        ),
-                        // Idea Bank button
-                        IconButton(
-                          onPressed: () => context.go(Routes.ideaBank),
-                          icon: Stack(
-                            children: [
-                              const Icon(Icons.bookmark_border),
-                              if (session.savedPrompts.isNotEmpty)
-                                Positioned(
-                                  right: 0,
-                                  top: 0,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.primary,
-                                      shape: BoxShape.circle,
-                                    ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Prompts',
+                                    style: theme.textTheme.displaySmall
+                                        ?.copyWith(fontWeight: FontWeight.w700),
                                   ),
-                                ),
-                            ],
-                          ),
-                          tooltip: 'Idea Bank',
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    isLocked
+                                        ? 'Prompt locked — keep filming'
+                                        : 'Pick one. Three try-out songs included.',
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            _RoundIcon(
+                              icon: Icons.bookmark_border,
+                              badge: session.savedPrompts.length,
+                              onTap: () => context.push(Routes.ideaBank),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ── Action buttons ───────────────────────────
-                    if (!isLocked) ...[
-                      Row(
-                        children: [
-                          // AI Generate
-                          Expanded(
-                            child: _ActionButton(
-                              icon: Icons.auto_awesome,
-                              label: 'AI Generate',
-                              sublabel: '$regensLeft left',
-                              onTap: regensLeft > 0
-                                  ? () => _showAiModal(context, ref)
-                                  : null,
-                              isPrimary: true,
-                              theme: theme,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Custom Prompt
-                          Expanded(
-                            child: _ActionButton(
-                              icon: Icons.edit_outlined,
-                              label: 'Custom',
-                              sublabel: 'Write your own',
-                              onTap: () => _showCustomModal(context, ref),
-                              isPrimary: false,
-                              theme: theme,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Shuffle local
-                          _ActionButton(
-                            icon: Icons.shuffle,
-                            label: 'Shuffle',
-                            sublabel: 'Local',
-                            onTap: () {
-                              final service = ref.read(promptServiceProvider);
+                        const SizedBox(height: 14),
+                        if (!isLocked)
+                          _ActionRow(
+                            regensLeft: regensLeft,
+                            onAi: () => _showAiModal(context),
+                            onCustom: () => _showCustomModal(context),
+                            onShuffle: () {
+                              final service =
+                                  ref.read(promptServiceProvider);
                               final prompts = service.generateLocalPrompts();
                               ref
                                   .read(userSessionProvider.notifier)
                                   .setPrompts(prompts);
                             },
-                            isPrimary: false,
-                            theme: theme,
-                            compact: true,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // ── Locked banner ────────────────────────────
-                    if (isLocked)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: theme.colorScheme.primary.withOpacity(0.2),
+                        if (isLocked)
+                          _SubmitPanel(
+                            session: session,
+                            onSubmit: () => _showSubmitModal(context),
+                            onRecord: () => _showRecordStatsModal(context),
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.lock_outline,
-                              size: 16,
-                              color: theme.colorScheme.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'You\'ve submitted this week. Prompts unlock next cycle.',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      const PromptConfirmBanner(),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Prompt Cards ─────────────────────────────────────
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final prompt = session.prompts[index];
-                    final isSelected = session.selectedPromptId == prompt.id;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: PromptCard(
-                        prompt: prompt,
-                        isSelected: isSelected,
-                        isLocked: isLocked,
-                        index: index,
-                        onChoose: isLocked
-                            ? null
-                            : () {
-                                ref
-                                    .read(userSessionProvider.notifier)
-                                    .selectPrompt(prompt.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '${prompt.level} chosen! ${prompt.points} pts',
-                                    ),
-                                  ),
-                                );
-                              },
-                      ),
-                    );
-                  },
-                  childCount: session.prompts.length,
-                ),
-              ),
-            ),
-
-            // ── Empty state ──────────────────────────────────────
-            if (session.prompts.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.lightbulb_outline,
-                        size: 48,
-                        color: theme.colorScheme.outline,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No prompts yet',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          final service = ref.read(promptServiceProvider);
-                          final prompts = service.generateLocalPrompts();
-                          ref
-                              .read(userSessionProvider.notifier)
-                              .setPrompts(prompts);
-                        },
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Generate Local Prompts'),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                      ],
+                    ),
                   ),
                 ),
               ),
-          ],
+
+              if (session.prompts.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final prompt = session.prompts[index];
+                        final isSelected =
+                            session.selectedPromptId == prompt.id;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: PromptCard(
+                            prompt: prompt,
+                            isSelected: isSelected,
+                            isLocked: isLocked,
+                            index: index,
+                            onChoose: isLocked
+                                ? null
+                                : () {
+                                    HapticFeedback.mediumImpact();
+                                    ref
+                                        .read(userSessionProvider.notifier)
+                                        .selectPrompt(prompt.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '${prompt.level} chosen · ${prompt.points} pts',
+                                        ),
+                                        duration: const Duration(seconds: 2),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  },
+                          ),
+                        );
+                      },
+                      childCount: session.prompts.length,
+                    ),
+                  ),
+                ),
+
+              if (session.prompts.isEmpty && !isLocked)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _EmptyState(
+                    onGenerate: () {
+                      final service = ref.read(promptServiceProvider);
+                      final prompts = service.generateLocalPrompts();
+                      ref
+                          .read(userSessionProvider.notifier)
+                          .setPrompts(prompts);
+                    },
+                    onAi: () => _showAiModal(context),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Future<void> _showAiModal(BuildContext context, WidgetRef ref) async {
+  Future<void> _showAiModal(BuildContext context) async {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -267,7 +178,7 @@ class PromptsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showCustomModal(BuildContext context, WidgetRef ref) async {
+  Future<void> _showCustomModal(BuildContext context) async {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -275,111 +186,416 @@ class PromptsScreen extends ConsumerWidget {
       builder: (_) => const CustomPromptModal(),
     );
   }
+
+  Future<void> _showSubmitModal(BuildContext context) async {
+    final ok = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const SubmitModal(),
+    );
+    if (ok == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Project submitted! Stats unlock in 7 days.'),
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showRecordStatsModal(BuildContext context) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const RecordStatsModal(),
+    );
+  }
 }
 
-// ── Action Button ────────────────────────────────────────────
+class _RoundIcon extends StatelessWidget {
+  final IconData icon;
+  final int badge;
+  final VoidCallback onTap;
 
-class _ActionButton extends StatelessWidget {
+  const _RoundIcon({
+    required this.icon,
+    required this.badge,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: theme.colorScheme.surfaceContainerHighest,
+              border: Border.all(color: theme.colorScheme.outline),
+            ),
+            child: Icon(icon, size: 18, color: theme.colorScheme.primary),
+          ),
+          if (badge > 0)
+            Positioned(
+              top: -4,
+              right: -4,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.secondary,
+                  ]),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '$badge',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionRow extends StatelessWidget {
+  final int regensLeft;
+  final VoidCallback onAi;
+  final VoidCallback onCustom;
+  final VoidCallback onShuffle;
+
+  const _ActionRow({
+    required this.regensLeft,
+    required this.onAi,
+    required this.onCustom,
+    required this.onShuffle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: _Pill(
+            icon: Icons.auto_awesome,
+            label: 'AI Regen',
+            sub: '$regensLeft left',
+            primary: true,
+            onTap: regensLeft > 0 ? onAi : null,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _Pill(
+            icon: Icons.edit_outlined,
+            label: 'Custom',
+            sub: 'Write your own',
+            primary: false,
+            onTap: onCustom,
+          ),
+        ),
+        const SizedBox(width: 8),
+        _Pill(
+          icon: Icons.shuffle,
+          label: 'Shuffle',
+          sub: 'Local',
+          primary: false,
+          onTap: onShuffle,
+          compact: true,
+        ),
+      ],
+    ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.05);
+  }
+}
+
+class _Pill extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String sublabel;
+  final String sub;
+  final bool primary;
   final VoidCallback? onTap;
-  final bool isPrimary;
   final bool compact;
-  final ThemeData theme;
 
-  const _ActionButton({
+  const _Pill({
     required this.icon,
     required this.label,
-    required this.sublabel,
-    required this.onTap,
-    required this.isPrimary,
-    required this.theme,
+    required this.sub,
+    required this.primary,
+    this.onTap,
     this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = theme.brightness == Brightness.dark;
-    final isDisabled = onTap == null;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedOpacity(
-        opacity: isDisabled ? 0.4 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            vertical: 12,
-            horizontal: compact ? 10 : 14,
-          ),
-          decoration: BoxDecoration(
-            color: isPrimary
-                ? theme.colorScheme.primary.withOpacity(0.1)
-                : (isDark ? RawbyPalette.darkCard : RawbyPalette.lightCard),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isPrimary
-                  ? theme.colorScheme.primary.withOpacity(0.3)
-                  : (isDark
-                      ? RawbyPalette.darkBorder
-                      : RawbyPalette.lightBorder),
+    final theme = Theme.of(context);
+    final disabled = onTap == null;
+    final tint = primary
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
+    return Opacity(
+      opacity: disabled ? 0.4 : 1.0,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              vertical: 12,
+              horizontal: compact ? 12 : 12,
             ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              gradient: primary
+                  ? LinearGradient(colors: [
+                      theme.colorScheme.primary.withOpacity(0.16),
+                      theme.colorScheme.secondary.withOpacity(0.08),
+                    ])
+                  : null,
+              color: primary
+                  ? null
+                  : theme.colorScheme.surfaceContainerHighest,
+              border: Border.all(
+                color: primary
+                    ? theme.colorScheme.primary.withOpacity(0.35)
+                    : theme.colorScheme.outline,
+              ),
+            ),
+            child: compact
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, size: 18, color: tint),
+                      const SizedBox(height: 3),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: tint,
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Icon(icon, size: 16, color: tint),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: primary
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurface,
+                              ),
+                            ),
+                            Text(
+                              sub,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
           ),
-          child: compact
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(icon, size: 18, color: theme.colorScheme.primary),
-                    const SizedBox(height: 3),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    Icon(
-                      icon,
-                      size: 16,
-                      color: isPrimary
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isPrimary
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          Text(
-                            sublabel,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
         ),
       ),
+    );
+  }
+}
+
+class _SubmitPanel extends StatelessWidget {
+  final dynamic session;
+  final VoidCallback onSubmit;
+  final VoidCallback onRecord;
+
+  const _SubmitPanel({
+    required this.session,
+    required this.onSubmit,
+    required this.onRecord,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = session;
+    final theme = Theme.of(context);
+
+    Widget content;
+
+    if (s.statsReady) {
+      content = _Row(
+        title: 'Stats ready',
+        subtitle:
+            'Tap to record likes & views — your final score posts on submit',
+        actionLabel: 'Record stats',
+        icon: Icons.bar_chart_rounded,
+        onTap: onRecord,
+      );
+    } else if (s.isSubmitted) {
+      final days = s.statsUnlockDate.difference(DateTime.now()).inDays;
+      content = _Row(
+        title: 'Submitted',
+        subtitle:
+            'Stats unlock in $days day${days == 1 ? '' : 's'} (7-day rule)',
+        actionLabel: 'Locked',
+        icon: Icons.hourglass_top_outlined,
+      );
+    } else {
+      content = _Row(
+        title: 'Ready to submit?',
+        subtitle: 'Paste your Instagram URL — penalty kicks in after deadline',
+        actionLabel: 'Submit project',
+        icon: Icons.upload_outlined,
+        onTap: onSubmit,
+        gradient: true,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: GlassCard(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        radius: 18,
+        child: content,
+      ).animate().fadeIn().slideY(begin: 0.05),
+    );
+  }
+}
+
+class _Row extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String actionLabel;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool gradient;
+
+  const _Row({
+    required this.title,
+    required this.subtitle,
+    required this.actionLabel,
+    required this.icon,
+    this.onTap,
+    this.gradient = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: gradient
+                ? LinearGradient(colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.secondary,
+                  ])
+                : null,
+            color: gradient
+                ? null
+                : theme.colorScheme.primary.withOpacity(0.12),
+          ),
+          child: Icon(icon,
+              color: gradient ? Colors.white : theme.colorScheme.primary,
+              size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              Text(subtitle, style: theme.textTheme.bodySmall),
+            ],
+          ),
+        ),
+        if (onTap != null) ...[
+          const SizedBox(width: 8),
+          GradientButton(
+            label: actionLabel,
+            dense: true,
+            onTap: onTap,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final VoidCallback onGenerate;
+  final VoidCallback onAi;
+
+  const _EmptyState({required this.onGenerate, required this.onAi});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.movie_outlined,
+              size: 56, color: theme.colorScheme.primary.withOpacity(0.6)),
+          const SizedBox(height: 16),
+          Text(
+            'Nothing this week yet',
+            style: theme.textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Generate three story prompts with AI — or shuffle our curated locals.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 24),
+          GradientButton(
+            label: 'Generate with AI',
+            icon: Icons.auto_awesome,
+            onTap: onAi,
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: onGenerate,
+            icon: const Icon(Icons.shuffle, size: 16),
+            label: const Text('Use local prompts'),
+          ),
+        ],
+      ).animate().fadeIn().slideY(begin: 0.06),
     );
   }
 }

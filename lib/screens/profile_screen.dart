@@ -3,10 +3,12 @@
 // Shows user stats, achievements, and project history
 // ============================================================
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../providers/router_provider.dart';
 import '../providers/user_session_provider.dart';
-import '../services/api_service.dart';
+import '../widgets/common/glass_card.dart';
 import '../widgets/projects/history_list.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -61,102 +63,69 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final earned = achievements.where((a) => a.earned).toList();
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile header
-            Row(
+      body: AuraBackground(
+        topOnly: true,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 120),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-                  child: Text(
-                    session.displayName.isNotEmpty
-                        ? session.displayName[0].toUpperCase()
-                        : '?',
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
+                Row(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.secondary,
+                        ]),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
                         session.displayName.isNotEmpty
-                            ? session.displayName
-                            : session.username,
-                        style: theme.textTheme.headlineSmall,
-                      ),
-                      Text(
-                        '@${session.username}',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            // Bio
-            if (prefs.bio.isNotEmpty && prefs.showBio) ...[
-              const SizedBox(height: 10),
-              Text(
-                prefs.bio,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-
-            // Social handles
-            if ((prefs.instagramHandle.isNotEmpty && prefs.showInstagram) ||
-                (prefs.youtubeHandle.isNotEmpty && prefs.showYoutube)) ...[
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 12,
-                runSpacing: 6,
-                children: [
-                  if (prefs.instagramHandle.isNotEmpty && prefs.showInstagram)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.camera_alt_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Text(
-                          '@${prefs.instagramHandle}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
+                            ? session.displayName[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
                         ),
-                      ],
+                      ),
                     ),
-                  if (prefs.youtubeHandle.isNotEmpty && prefs.showYoutube)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.play_circle_outline, size: 14, color: theme.colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Text(
-                          prefs.youtubeHandle,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w500,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            session.displayName.isNotEmpty
+                                ? session.displayName
+                                : session.username,
+                            style: theme.textTheme.headlineLarge,
                           ),
-                        ),
-                      ],
+                          Text(
+                            '@${session.username}',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 16),
+                    IconButton(
+                      tooltip: 'Settings',
+                      icon: const Icon(Icons.tune),
+                      onPressed: () => context.push(Routes.settings),
+                    ),
+                    IconButton(
+                      tooltip: 'Gear',
+                      icon: const Icon(Icons.camera_outlined),
+                      onPressed: () => context.push(Routes.gear),
+                    ),
+                  ],
+                ).animate().fadeIn().slideX(begin: -0.04),
+                const SizedBox(height: 16),
 
             // Rank progress card (always show — it's the core identity)
             TweenAnimationBuilder<double>(
@@ -463,7 +432,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 40),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );

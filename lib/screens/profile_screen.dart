@@ -3,8 +3,12 @@
 // Shows user stats, achievements, and project history
 // ============================================================
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../providers/router_provider.dart';
 import '../providers/user_session_provider.dart';
+import '../widgets/common/glass_card.dart';
 import '../widgets/projects/history_list.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -18,49 +22,69 @@ class ProfileScreen extends ConsumerWidget {
     final earned = achievements.where((a) => a.earned).toList();
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile header
-            Row(
+      body: AuraBackground(
+        topOnly: true,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 120),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-                  child: Text(
-                    session.displayName.isNotEmpty
-                        ? session.displayName[0].toUpperCase()
-                        : '?',
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
+                Row(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.secondary,
+                        ]),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
                         session.displayName.isNotEmpty
-                            ? session.displayName
-                            : session.username,
-                        style: theme.textTheme.headlineSmall,
+                            ? session.displayName[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                      Text(
-                        '@${session.username}',
-                        style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            session.displayName.isNotEmpty
+                                ? session.displayName
+                                : session.username,
+                            style: theme.textTheme.headlineLarge,
+                          ),
+                          Text(
+                            '@${session.username}',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+                    ),
+                    IconButton(
+                      tooltip: 'Settings',
+                      icon: const Icon(Icons.tune),
+                      onPressed: () => context.push(Routes.settings),
+                    ),
+                    IconButton(
+                      tooltip: 'Gear',
+                      icon: const Icon(Icons.camera_outlined),
+                      onPressed: () => context.push(Routes.gear),
+                    ),
+                  ],
+                ).animate().fadeIn().slideX(begin: -0.04),
+                const SizedBox(height: 16),
 
             // Rank progress card
             Container(
@@ -309,7 +333,9 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 40),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );

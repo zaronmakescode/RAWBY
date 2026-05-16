@@ -46,7 +46,7 @@ class UserPreferences extends HiveObject {
 
   UserPreferences({
     this.theme = 'dark',
-    this.accent = 'green',
+    this.accent = 'cinema',
     this.language = 'en',
     this.promptLanguage = 'en',
     this.cycleDay = 'Friday',
@@ -111,8 +111,8 @@ class UserPreferences extends HiveObject {
       };
 
   static String _validateAccent(String? accent) {
-    const valid = {'green', 'grey', 'basic'};
-    return valid.contains(accent) ? accent! : 'green';
+    const valid = {'green', 'grey', 'basic', 'cinema'};
+    return valid.contains(accent) ? accent! : 'cinema';
   }
 }
 

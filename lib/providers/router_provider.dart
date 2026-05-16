@@ -13,11 +13,12 @@ import "../screens/gear_screen.dart";
 import "../screens/profile_screen.dart";
 import "../screens/admin_screen.dart";
 import "../screens/idea_bank_screen.dart";
-import "../screens/feedback_wall_screen.dart"; // New import
+import "../screens/feedback_wall_screen.dart";
+import "../screens/assistant_screen.dart";
+import "../screens/settings_screen.dart";
 import "../widgets/navigation/shell_scaffold.dart";
 import "user_session_provider.dart";
 
-// Route names
 class Routes {
   Routes._();
   static const login = "/login";
@@ -25,11 +26,13 @@ class Routes {
   static const home = "/";
   static const prompts = "/prompts";
   static const ideaBank = "/prompts/idea-bank";
+  static const assistant = "/assistant";
   static const leaderboard = "/leaderboard";
   static const gear = "/gear";
   static const profile = "/profile";
+  static const settings = "/settings";
   static const admin = "/admin";
-  static const feedbackWall = "/admin/feedback"; // New route
+  static const feedbackWall = "/admin/feedback";
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -132,6 +135,22 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _fadeTransition(
               state,
               const ProfileScreen(),
+            ),
+          ),
+          GoRoute(
+            path: Routes.assistant,
+            name: "assistant",
+            pageBuilder: (context, state) => _fadeTransition(
+              state,
+              const AssistantScreen(),
+            ),
+          ),
+          GoRoute(
+            path: Routes.settings,
+            name: "settings",
+            pageBuilder: (context, state) => _fadeTransition(
+              state,
+              const SettingsScreen(),
             ),
           ),
           GoRoute(

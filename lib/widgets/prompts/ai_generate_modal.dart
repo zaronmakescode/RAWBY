@@ -1,12 +1,16 @@
 // ============================================================
 // RAWBY — AI Generate Modal
-// Triggers Groq/OpenAI prompt generation via Render backend
+// Provider/model picker lives in Settings — modal only collects
+// per-week context (region, season, goal, content type).
 // ============================================================
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../providers/router_provider.dart';
 import '../../providers/user_session_provider.dart';
 import '../../services/prompt_service.dart';
-import '../../theme/app_colors.dart';
+import '../common/glass_card.dart';
 
 class AiGenerateModal extends ConsumerStatefulWidget {
   const AiGenerateModal({super.key});
@@ -19,9 +23,6 @@ class _AiGenerateModalState extends ConsumerState<AiGenerateModal> {
   bool _isGenerating = false;
   String? _error;
 
-  // Form state — mirrors UserPreferences
-  late String _provider;
-  late String _model;
   late bool _seasonalPrompts;
   late String _region;
   late String _filmmakingGoal;
@@ -63,13 +64,12 @@ class _AiGenerateModalState extends ConsumerState<AiGenerateModal> {
     super.initState();
     final session = ref.read(userSessionProvider);
     final prefs = session.preferences;
-    final ai = session.aiSettings;
-    _provider = ai.provider;
-    _model = ai.model;
     _seasonalPrompts = prefs.seasonalPrompts;
     _region = prefs.region.isNotEmpty ? prefs.region : _regions[1];
-    _filmmakingGoal = prefs.filmmakingGoal.isNotEmpty ? prefs.filmmakingGoal : _goals[0];
-    _contentType = prefs.contentType.isNotEmpty ? prefs.contentType : _contentTypes[0];
+    _filmmakingGoal =
+        prefs.filmmakingGoal.isNotEmpty ? prefs.filmmakingGoal : _goals[0];
+    _contentType =
+        prefs.contentType.isNotEmpty ? prefs.contentType : _contentTypes[0];
   }
 
   Future<void> _generate() async {
@@ -84,7 +84,6 @@ class _AiGenerateModalState extends ConsumerState<AiGenerateModal> {
       _error = null;
     });
 
-    // Save preferences back
     ref.read(userSessionProvider.notifier).updatePreferences(
           session.preferences.copyWith(
             region: _region,
@@ -93,18 +92,13 @@ class _AiGenerateModalState extends ConsumerState<AiGenerateModal> {
             contentType: _contentType,
           ),
         );
-    ref.read(userSessionProvider.notifier).updateAiSettings(
-          session.aiSettings.copyWith(
-            provider: _provider,
-            model: _model,
-          ),
-        );
 
     try {
       final service = ref.read(promptServiceProvider);
+      final ai = session.aiSettings;
       final prompts = await service.generateAiPrompts(
-        provider: _provider,
-        model: _model,
+        provider: ai.provider,
+        model: ai.model,
         seasonalPrompts: _seasonalPrompts,
         region: _region,
         filmmakingGoal: _filmmakingGoal,
@@ -130,9 +124,11 @@ class _AiGenerateModalState extends ConsumerState<AiGenerateModal> {
       return 'AI rate limit hit. Try again in a moment.';
     }
     if (msg.contains('401') || msg.contains('unauthorized')) {
-      return 'API key issue. Check your backend config.';
+      return 'API key missing on the server. Check backend env vars.';
     }
-    if (msg.contains('network') || msg.contains('socket') || msg.contains('connection')) {
+    if (msg.contains('network') ||
+        msg.contains('socket') ||
+        msg.contains('connection')) {
       return 'No connection. Using local prompts instead.';
     }
     return 'Generation failed. Try again or use local prompts.';
@@ -142,380 +138,322 @@ class _AiGenerateModalState extends ConsumerState<AiGenerateModal> {
   Widget build(BuildContext context) {
     final session = ref.watch(userSessionProvider);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final regensLeft = session.regensLeft;
+    final ai = session.aiSettings;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? RawbyPalette.darkSurface : RawbyPalette.lightSurface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.outline,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            border: Border(
+              top: BorderSide(
+                color: theme.colorScheme.outline,
+                width: 1,
               ),
-              const SizedBox(height: 16),
-
-              // Header
-              Row(
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.auto_awesome,
-                      color: theme.colorScheme.primary,
-                      size: 18,
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.outline,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Generate with AI',
-                          style: theme.textTheme.titleLarge,
-                        ),
-                        Text(
-                          '$regensLeft regen${regensLeft == 1 ? '' : 's'} left this week',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: regensLeft <= 1
-                                ? theme.colorScheme.error
-                                : theme.colorScheme.primary,
+                  const SizedBox(height: 18),
+
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              theme.colorScheme.primary,
+                              theme.colorScheme.secondary,
+                            ],
                           ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.auto_awesome,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Generate prompts',
+                                style: theme.textTheme.titleLarge),
+                            Text(
+                              '$regensLeft regen${regensLeft == 1 ? '' : 's'} left · ${_modelLabel(ai.provider, ai.model)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: regensLeft <= 1
+                                    ? theme.colorScheme.error
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.of(context).pop(false),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  _LabelRow(
+                    label: 'Region',
+                    icon: Icons.public_outlined,
+                  ),
+                  const SizedBox(height: 6),
+                  _Dropdown(
+                    value: _region,
+                    items: _regions,
+                    onChanged: (v) => setState(() => _region = v!),
+                  ),
+                  const SizedBox(height: 14),
+
+                  _LabelRow(
+                    label: 'Filmmaking goal',
+                    icon: Icons.flag_outlined,
+                  ),
+                  const SizedBox(height: 6),
+                  _Dropdown(
+                    value: _filmmakingGoal,
+                    items: _goals,
+                    onChanged: (v) => setState(() => _filmmakingGoal = v!),
+                  ),
+                  const SizedBox(height: 14),
+
+                  _LabelRow(
+                    label: 'Content style',
+                    icon: Icons.movie_filter_outlined,
+                  ),
+                  const SizedBox(height: 6),
+                  _Dropdown(
+                    value: _contentType,
+                    items: _contentTypes,
+                    onChanged: (v) => setState(() => _contentType = v!),
+                  ),
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: theme.colorScheme.outline),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.wb_sunny_outlined,
+                          size: 18,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Seasonal mode',
+                                  style: theme.textTheme.bodyMedium),
+                              Text(
+                                'Tailor 1 of 3 prompts to current season',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _seasonalPrompts,
+                          onChanged: (v) =>
+                              setState(() => _seasonalPrompts = v),
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(false),
-                    iconSize: 20,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
-              // Provider toggle
-              Text('AI Provider', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  _ProviderChip(
-                    label: 'Groq (Llama 3)',
-                    selected: _provider == 'groq',
-                    onTap: () => setState(() {
-                      _provider = 'groq';
-                      _model = 'llama-3.3-70b-versatile';
-                    }),
-                    theme: theme,
-                  ),
-                  const SizedBox(width: 8),
-                  _ProviderChip(
-                    label: 'OpenAI (GPT-4o)',
-                    selected: _provider == 'openai',
-                    onTap: () => setState(() {
-                      _provider = 'openai';
-                      _model = 'gpt-4o';
-                    }),
-                    theme: theme,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Region
-              Text('Your Region', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              _DropdownField(
-                value: _region,
-                items: _regions,
-                onChanged: (v) => setState(() => _region = v!),
-                theme: theme,
-                isDark: isDark,
-              ),
-              const SizedBox(height: 16),
-
-              // Filmmaking Goal
-              Text('Filmmaking Goal', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              _DropdownField(
-                value: _filmmakingGoal,
-                items: _goals,
-                onChanged: (v) => setState(() => _filmmakingGoal = v!),
-                theme: theme,
-                isDark: isDark,
-              ),
-              const SizedBox(height: 16),
-
-              // Content Type
-              Text('Content Type', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              _DropdownField(
-                value: _contentType,
-                items: _contentTypes,
-                onChanged: (v) => setState(() => _contentType = v!),
-                theme: theme,
-                isDark: isDark,
-              ),
-              const SizedBox(height: 16),
-
-              // Seasonal toggle
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: theme.colorScheme.outline),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.wb_sunny_outlined,
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant,
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                      context.push(Routes.settings);
+                    },
+                    icon: const Icon(Icons.tune, size: 16),
+                    label: Text(
+                      'Change AI model in Settings',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+
+                  if (_error != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.error.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: theme.colorScheme.error.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
                         children: [
-                          Text('Seasonal Mode', style: theme.textTheme.bodyMedium),
-                          Text(
-                            'Tailor prompts to current season & weather',
-                            style: theme.textTheme.bodySmall,
+                          Icon(Icons.error_outline,
+                              color: theme.colorScheme.error, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _error!,
+                              style: TextStyle(
+                                color: theme.colorScheme.error,
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    Switch(
-                      value: _seasonalPrompts,
-                      onChanged: (v) => setState(() => _seasonalPrompts = v),
-                    ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-              // Error
-              if (_error != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.error.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: theme.colorScheme.error.withOpacity(0.3),
-                    ),
+                  GradientButton(
+                    icon: Icons.auto_awesome,
+                    label: _isGenerating
+                        ? 'Generating...'
+                        : 'Generate 3 prompts',
+                    loading: _isGenerating,
+                    onTap: regensLeft <= 0 ? null : _generate,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: theme.colorScheme.error,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                            color: theme.colorScheme.error,
-                            fontSize: 13,
-                          ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: TextButton(
+                      onPressed: _isGenerating
+                          ? null
+                          : () {
+                              final service = ref.read(promptServiceProvider);
+                              final prompts = service.generateLocalPrompts();
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .setPrompts(prompts);
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .setAutoGenPending(false);
+                              Navigator.of(context).pop(false);
+                            },
+                      child: Text(
+                        'Use local prompts instead',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              // Generate button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: (_isGenerating || regensLeft <= 0) ? null : _generate,
-                  icon: _isGenerating
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.auto_awesome, size: 18),
-                  label: Text(
-                    _isGenerating ? 'Generating...' : 'Generate 3 Prompts',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Use local fallback
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: _isGenerating
-                      ? null
-                      : () {
-                          final service = ref.read(promptServiceProvider);
-                          final prompts = service.generateLocalPrompts();
-                          ref.read(userSessionProvider.notifier).setPrompts(prompts);
-                          ref.read(userSessionProvider.notifier).setAutoGenPending(false);
-                          Navigator.of(context).pop(false);
-                        },
-                  child: Text(
-                    'Use local prompts instead',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+                ],
+              )
+                  .animate()
+                  .fadeIn(duration: 300.ms)
+                  .slideY(begin: 0.04, end: 0, curve: Curves.easeOutCubic),
+            ),
           ),
         ),
       ),
     );
   }
+
+  String _modelLabel(String provider, String model) {
+    if (provider == 'openai') return 'OpenAI · $model';
+    return 'Groq · $model';
+  }
 }
 
-// ── Helper Widgets ───────────────────────────────────────────
-
-class _ProviderChip extends StatelessWidget {
+class _LabelRow extends StatelessWidget {
   final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final ThemeData theme;
+  final IconData icon;
 
-  const _ProviderChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    required this.theme,
-  });
+  const _LabelRow({required this.label, required this.icon});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: selected
-                ? theme.colorScheme.primary.withOpacity(0.12)
-                : theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: selected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outline,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              color: selected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
-            ),
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Text(
+          label.toUpperCase(),
+          style: theme.textTheme.labelMedium?.copyWith(
+            letterSpacing: 0.8,
+            fontWeight: FontWeight.w700,
           ),
         ),
-      ),
+      ],
     );
   }
 }
 
-class _DropdownField extends StatelessWidget {
+class _Dropdown extends StatelessWidget {
   final String value;
   final List<String> items;
   final ValueChanged<String?> onChanged;
-  final ThemeData theme;
-  final bool isDark;
 
-  const _DropdownField({
+  const _Dropdown({
     required this.value,
     required this.items,
     required this.onChanged,
-    required this.theme,
-    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? RawbyPalette.inputCreamDark : RawbyPalette.inputCream,
-        borderRadius: BorderRadius.circular(10),
+        color: theme.inputDecorationTheme.fillColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: value,
+          value: items.contains(value) ? value : items.first,
           isExpanded: true,
-          dropdownColor:
-              isDark ? RawbyPalette.darkCard : RawbyPalette.lightSurface,
-          style: TextStyle(
-            color: const Color(0xFF2A2A1A),
-            fontSize: 14,
-          ),
+          dropdownColor: theme.colorScheme.surfaceContainerHighest,
+          style: theme.textTheme.bodyMedium,
           icon: Icon(
             Icons.keyboard_arrow_down,
-            color: const Color(0xFF8A8A7A),
-            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+            size: 20,
           ),
           items: items
               .map((item) => DropdownMenuItem(
                     value: item,
-                    child: Text(
-                      item,
-                      style: TextStyle(
-                        color: isDark
-                            ? RawbyPalette.textDark
-                            : const Color(0xFF2A2A1A),
-                        fontSize: 14,
-                      ),
-                    ),
+                    child: Text(item, style: theme.textTheme.bodyMedium),
                   ))
               .toList(),
           onChanged: onChanged,

@@ -141,24 +141,6 @@ class RawbySideNav extends StatelessWidget {
         activeIcon: Icons.camera,
         route: Routes.gear,
       ),
-      _NavItem(
-        label: 'Profile',
-        icon: Icons.person_outline,
-        activeIcon: Icons.person,
-        route: Routes.profile,
-      ),
-      _NavItem(
-        label: 'Aurora',
-        icon: Icons.auto_awesome_outlined,
-        activeIcon: Icons.auto_awesome,
-        route: Routes.assistant,
-      ),
-      _NavItem(
-        label: 'Settings',
-        icon: Icons.tune,
-        activeIcon: Icons.tune,
-        route: Routes.settings,
-      ),
     ];
 
     if (isAdmin) {

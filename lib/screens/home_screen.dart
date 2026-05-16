@@ -163,47 +163,43 @@ class _HeaderBar extends StatelessWidget {
                 ],
               ),
             ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _HeaderIcon(
-                  icon: Icons.auto_awesome,
-                  tooltip: 'Aurora',
-                  onTap: () => context.push(Routes.assistant),
-                ),
-                _HeaderIcon(
-                  icon: Icons.person_outline,
-                  tooltip: 'Profile',
-                  onTap: () => context.push(Routes.profile),
-                ),
-                _HeaderIcon(
-                  icon: Icons.tune,
-                  tooltip: 'Settings',
-                  onTap: () => context.push(Routes.settings),
-                ),
-              ],
+            GestureDetector(
+              onTap: () => context.push(Routes.profile),
+              child: Consumer(
+                builder: (ctx, ref, _) {
+                  final s = ref.watch(userSessionProvider);
+                  final initial = (s.displayName.isNotEmpty
+                          ? s.displayName
+                          : s.username)
+                      .substring(0, 1)
+                      .toUpperCase();
+                  final theme = Theme.of(ctx);
+                  return Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.secondary,
+                      ]),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _HeaderIcon extends StatelessWidget {
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  const _HeaderIcon({required this.icon, required this.tooltip, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return IconButton(
-      tooltip: tooltip,
-      icon: Icon(icon, size: 22, color: theme.colorScheme.onSurfaceVariant),
-      onPressed: onTap,
     );
   }
 }
@@ -472,7 +468,7 @@ class _BentoGrid extends StatelessWidget {
         crossAxisCount: 3,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 0.95,
+        childAspectRatio: 1.3,
       ),
       itemCount: cells.length,
       itemBuilder: (ctx, i) {

@@ -328,6 +328,38 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen>
     final session = ref.watch(userSessionProvider);
     final isPro = session.role == 'admin' || session.role == 'paid';
 
+    if (!session.isPro) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.auto_awesome, size: 64, color: theme.colorScheme.primary),
+                const SizedBox(height: 20),
+                Text(
+                  'Aurora is Pro',
+                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Upgrade to unlock your AI filmmaker copilot — voice control, story help, and full app navigation.',
+                  style: theme.textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => context.push(Routes.paywall),
+                  child: const Text('Upgrade to Pro'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: AuraBackground(
         colors: [

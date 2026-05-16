@@ -198,7 +198,7 @@ class StatTile extends StatelessWidget {
     final tint = color ?? theme.colorScheme.primary;
     return GlassCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(10),
       radius: 16,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +219,7 @@ class StatTile extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: theme.textTheme.headlineMedium?.copyWith(
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
               height: 1,
             ),
@@ -227,9 +227,8 @@ class StatTile extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 11,
             ),
           ),
         ],

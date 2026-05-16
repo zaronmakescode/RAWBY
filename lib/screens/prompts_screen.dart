@@ -152,12 +152,17 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
                             },
                             onBigProject: () => _showBigProjectModal(context),
                           ),
-                        if (isLocked)
-                          _SubmitPanel(
-                            session: session,
-                            onSubmit: () => _showSubmitModal(context),
-                            onRecord: () => _showRecordStatsModal(context),
-                          ),
+                        Builder(builder: (ctx) {
+                          final allDone = session.workflow.isNotEmpty &&
+                              session.workflow.every((t) => t.done);
+                          if (isLocked || allDone)
+                            return _SubmitPanel(
+                              session: session,
+                              onSubmit: () => _showSubmitModal(context),
+                              onRecord: () => _showRecordStatsModal(context),
+                            );
+                          return const SizedBox.shrink();
+                        }),
                         const SizedBox(height: 16),
                       ],
                     ),
@@ -203,6 +208,14 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
                       },
                       childCount: session.prompts.length,
                     ),
+                  ),
+                ),
+
+              if (session.selectedPromptId != null && session.workflow.isNotEmpty && !session.isSubmitted)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: _PromptsWorkflowPanel(session: session),
                   ),
                 ),
 
@@ -637,6 +650,123 @@ class _Row extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _PromptsWorkflowPanel extends ConsumerWidget {
+  final dynamic session;
+
+  const _PromptsWorkflowPanel({required this.session});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final s = session;
+    final done = (s.workflow as List).where((t) => t.done == true).length;
+    final total = (s.workflow as List).length;
+    final progress = total == 0 ? 0.0 : done / total;
+
+    return GlassCard(
+      radius: 20,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'WORKFLOW',
+                style: theme.textTheme.labelMedium?.copyWith(letterSpacing: 1.4),
+              ),
+              const Spacer(),
+              Text(
+                '$done/$total',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...s.workflow.map<Widget>((t) => Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: _PromptsTask(task: t, ref: ref),
+          )),
+        ],
+      ),
+    );
+  }
+}
+
+class _PromptsTask extends StatelessWidget {
+  final dynamic task;
+  final WidgetRef ref;
+
+  const _PromptsTask({required this.task, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: task.done
+          ? null
+          : () => ref.read(userSessionProvider.notifier).completeWorkflowTask(task.id),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: task.done
+              ? theme.colorScheme.primary.withOpacity(0.06)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: task.done
+                ? theme.colorScheme.primary.withOpacity(0.25)
+                : theme.colorScheme.outline,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              task.done ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: task.done
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                task.label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  decoration: task.done ? TextDecoration.lineThrough : null,
+                  color: task.done
+                      ? theme.colorScheme.onSurfaceVariant
+                      : theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Text(
+              task.day,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

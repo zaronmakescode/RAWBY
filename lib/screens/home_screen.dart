@@ -83,15 +83,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
             ),
 
-            // ── Workflow ──────────────────────────────────────
-            if (session.selectedPromptId != null && !session.isSubmitted)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-                  child: _WorkflowPanel(session: session, ref: ref),
-                ),
-              ),
-
             // ── History ───────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
@@ -459,16 +450,28 @@ class _BentoGrid extends StatelessWidget {
         label: 'REGENS',
         color: const Color(0xFF7C4DFF),
       ),
+      StatTile(
+        icon: Icons.favorite,
+        value: session.history.isNotEmpty ? _kFormat(session.history.last.likes) : '—',
+        label: 'LAST LIKES',
+        color: const Color(0xFFE85D75),
+      ),
+      StatTile(
+        icon: Icons.stars_rounded,
+        value: session.history.isNotEmpty ? '${session.history.last.finalScore}' : '—',
+        label: 'LAST PTS',
+        color: const Color(0xFFE8B647),
+      ),
     ];
 
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+        crossAxisCount: 4,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 1.3,
+        childAspectRatio: 1.1,
       ),
       itemCount: cells.length,
       itemBuilder: (ctx, i) {
@@ -559,126 +562,6 @@ class _AuroraCTA extends StatelessWidget {
           ],
         ),
       ).animate(delay: 280.ms).fadeIn().slideY(begin: 0.08, end: 0),
-    );
-  }
-}
-
-// ── Workflow Panel ───────────────────────────────────────────
-
-class _WorkflowPanel extends StatelessWidget {
-  final UserSession session;
-  final WidgetRef ref;
-
-  const _WorkflowPanel({required this.session, required this.ref});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final done = session.workflow.where((t) => t.done).length;
-    final total = session.workflow.length;
-    final progress = total == 0 ? 0.0 : done / total;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: GlassCard(
-        radius: 20,
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text('WORKFLOW',
-                    style: theme.textTheme.labelMedium
-                        ?.copyWith(letterSpacing: 1.4)),
-                const Spacer(),
-                Text(
-                  '$done/$total',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 6,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...session.workflow.map((t) =>
-                Padding(padding: const EdgeInsets.only(bottom: 6), child: _Task(task: t, ref: ref))),
-          ],
-        ),
-      ).animate(delay: 340.ms).fadeIn(),
-    );
-  }
-}
-
-class _Task extends StatelessWidget {
-  final WorkflowTask task;
-  final WidgetRef ref;
-
-  const _Task({required this.task, required this.ref});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: task.done
-          ? null
-          : () =>
-              ref.read(userSessionProvider.notifier).completeWorkflowTask(task.id),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: task.done
-              ? theme.colorScheme.primary.withOpacity(0.06)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: task.done
-                ? theme.colorScheme.primary.withOpacity(0.25)
-                : theme.colorScheme.outline,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              task.done ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: task.done
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
-              size: 18,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                task.label,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  decoration: task.done ? TextDecoration.lineThrough : null,
-                  color: task.done
-                      ? theme.colorScheme.onSurfaceVariant
-                      : theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Text(
-              task.day,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -1,0 +1,533 @@
+// ============================================================
+// RAWBY — Settings
+// AI provider/model, theme, accent, region, season, language.
+// ============================================================
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/user_session_provider.dart';
+import '../theme/app_colors.dart';
+import '../widgets/common/glass_card.dart';
+
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
+
+  static const _regions = [
+    'Northern Europe',
+    'Central Europe',
+    'Southern Europe',
+    'US Northeast',
+    'US South',
+    'US West',
+    'East Asia',
+    'Southeast Asia',
+    'Australia',
+    'Other',
+  ];
+
+  static const _groqModels = [
+    'llama-3.3-70b-versatile',
+    'llama-3.1-70b-versatile',
+    'llama-3.1-8b-instant',
+    'mixtral-8x7b-32768',
+  ];
+
+  static const _openAiModels = [
+    'gpt-4o',
+    'gpt-4o-mini',
+    'gpt-4-turbo',
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(userSessionProvider);
+    final prefs = session.preferences;
+    final ai = session.aiSettings;
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      body: AuraBackground(
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar.large(
+              title: const Text('Settings'),
+              expandedHeight: 100,
+              floating: false,
+              pinned: true,
+              backgroundColor: Colors.transparent,
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate.fixed(
+                  [
+                    // ── AI Engine ─────────────────────────────────────
+                    const SectionHeader(
+                      title: 'AI Engine',
+                      subtitle:
+                          'Used for prompt generation and the Aurora assistant',
+                      padding: EdgeInsets.fromLTRB(4, 8, 4, 12),
+                    ),
+                    GlassCard(
+                      child: Column(
+                        children: [
+                          _ProviderToggle(
+                            current: ai.provider,
+                            onChange: (p) {
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updateAiSettings(
+                                    ai.copyWith(
+                                      provider: p,
+                                      model: p == 'openai'
+                                          ? 'gpt-4o'
+                                          : 'llama-3.3-70b-versatile',
+                                    ),
+                                  );
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          const _Label('Model'),
+                          const SizedBox(height: 6),
+                          _ModelDropdown(
+                            value: ai.model,
+                            items:
+                                ai.provider == 'openai' ? _openAiModels : _groqModels,
+                            onChange: (m) {
+                              if (m == null) return;
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updateAiSettings(ai.copyWith(model: m));
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 14,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Auto-applied to every regenerate. Set once here.',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn().slideY(begin: 0.05),
+
+                    // ── Appearance ────────────────────────────────────
+                    const SectionHeader(title: 'Appearance'),
+                    GlassCard(
+                      child: Column(
+                        children: [
+                          _Label('Theme'),
+                          const SizedBox(height: 8),
+                          _PillSelector(
+                            options: const ['dark', 'light'],
+                            labels: const ['Dark', 'Light'],
+                            current: prefs.theme,
+                            onChange: (v) {
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updatePreferences(
+                                      prefs.copyWith(theme: v));
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _Label('Accent'),
+                          const SizedBox(height: 8),
+                          _AccentSelector(
+                            current: prefs.accent,
+                            onChange: (v) {
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updatePreferences(
+                                      prefs.copyWith(accent: v));
+                            },
+                          ),
+                        ],
+                      ),
+                    ).animate(delay: 80.ms).fadeIn().slideY(begin: 0.05),
+
+                    // ── Story Context ─────────────────────────────────
+                    const SectionHeader(
+                      title: 'Story Context',
+                      subtitle: 'Feeds into every AI prompt request',
+                    ),
+                    GlassCard(
+                      child: Column(
+                        children: [
+                          _Label('Region'),
+                          const SizedBox(height: 6),
+                          _ModelDropdown(
+                            value: prefs.region.isEmpty
+                                ? _regions[1]
+                                : prefs.region,
+                            items: _regions,
+                            onChange: (v) {
+                              if (v == null) return;
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updatePreferences(
+                                      prefs.copyWith(region: v));
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          SwitchListTile.adaptive(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Seasonal prompts',
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: const Text(
+                                'One of three prompts adapts to current season'),
+                            value: prefs.seasonalPrompts,
+                            onChanged: (v) {
+                              ref
+                                  .read(userSessionProvider.notifier)
+                                  .updatePreferences(
+                                      prefs.copyWith(seasonalPrompts: v));
+                            },
+                          ),
+                        ],
+                      ),
+                    ).animate(delay: 160.ms).fadeIn().slideY(begin: 0.05),
+
+                    // ── About ────────────────────────────────────────
+                    const SectionHeader(title: 'About'),
+                    GlassCard(
+                      child: Column(
+                        children: [
+                          _InfoRow(
+                              label: 'Username',
+                              value: '@${session.username}'),
+                          _InfoRow(
+                              label: 'Role',
+                              value: session.role.toUpperCase()),
+                          _InfoRow(
+                              label: 'Total Score',
+                              value: '${session.totalScore} pts'),
+                          _InfoRow(
+                              label: 'Rank',
+                              value: session.currentRank.label),
+                        ],
+                      ),
+                    ).animate(delay: 240.ms).fadeIn().slideY(begin: 0.05),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        text.toUpperCase(),
+        style: theme.textTheme.labelMedium?.copyWith(
+          letterSpacing: 1.0,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProviderToggle extends StatelessWidget {
+  final String current;
+  final ValueChanged<String> onChange;
+
+  const _ProviderToggle({required this.current, required this.onChange});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _Tab(
+          label: 'Groq · Llama',
+          active: current == 'groq',
+          onTap: () => onChange('groq'),
+        ),
+        const SizedBox(width: 8),
+        _Tab(
+          label: 'OpenAI · GPT',
+          active: current == 'openai',
+          onTap: () => onChange('openai'),
+        ),
+      ],
+    );
+  }
+}
+
+class _Tab extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _Tab({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            gradient: active
+                ? LinearGradient(colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.secondary,
+                  ])
+                : null,
+            color: active ? null : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: active
+                  ? Colors.transparent
+                  : theme.colorScheme.outline,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                color: active
+                    ? Colors.white
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModelDropdown extends StatelessWidget {
+  final String value;
+  final List<String> items;
+  final ValueChanged<String?> onChange;
+
+  const _ModelDropdown({
+    required this.value,
+    required this.items,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.inputDecorationTheme.fillColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outline),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: items.contains(value) ? value : items.first,
+          isExpanded: true,
+          dropdownColor: theme.colorScheme.surfaceContainerHighest,
+          icon: Icon(Icons.expand_more,
+              color: theme.colorScheme.onSurfaceVariant, size: 20),
+          style: theme.textTheme.bodyMedium,
+          items: items
+              .map((i) => DropdownMenuItem(
+                    value: i,
+                    child: Text(i, style: theme.textTheme.bodyMedium),
+                  ))
+              .toList(),
+          onChanged: onChange,
+        ),
+      ),
+    );
+  }
+}
+
+class _PillSelector extends StatelessWidget {
+  final List<String> options;
+  final List<String> labels;
+  final String current;
+  final ValueChanged<String> onChange;
+
+  const _PillSelector({
+    required this.options,
+    required this.labels,
+    required this.current,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: theme.colorScheme.outline),
+      ),
+      child: Row(
+        children: List.generate(options.length, (i) {
+          final active = options[i] == current;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChange(options[i]),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  gradient: active
+                      ? LinearGradient(colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.secondary,
+                        ])
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    labels[i],
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight:
+                          active ? FontWeight.w700 : FontWeight.w500,
+                      color: active
+                          ? Colors.white
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _AccentSelector extends StatelessWidget {
+  final String current;
+  final ValueChanged<String> onChange;
+
+  const _AccentSelector({required this.current, required this.onChange});
+
+  static const _accents = [
+    {'key': 'cinema', 'name': 'Cinema', 'color': RawbyPalette.cinema500},
+    {'key': 'green', 'name': 'Forest', 'color': RawbyPalette.green500},
+    {'key': 'basic', 'name': 'Sepia', 'color': RawbyPalette.basic500},
+    {'key': 'grey', 'name': 'Mono', 'color': RawbyPalette.grey500},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: _accents.map((a) {
+        final selected = a['key'] == current;
+        return GestureDetector(
+          onTap: () => onChange(a['key'] as String),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: selected
+                  ? (a['color'] as Color).withOpacity(0.15)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(40),
+              border: Border.all(
+                color: a['color'] as Color,
+                width: selected ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: a['color'] as Color,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: (a['color'] as Color).withOpacity(0.4),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  a['name'] as String,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Text(label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              )),
+          const Spacer(),
+          Text(value,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}

@@ -153,9 +153,10 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
                             onBigProject: () => _showBigProjectModal(context),
                           ),
                         Builder(builder: (ctx) {
+                          final activeBig = session.activeBigProject;
                           final allDone = session.workflow.isNotEmpty &&
                               session.workflow.every((t) => t.done);
-                          if (isLocked || allDone)
+                          if (isLocked || allDone || activeBig != null)
                             return _SubmitPanel(
                               session: session,
                               onSubmit: () => _showSubmitModal(context),
@@ -211,11 +212,16 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
                   ),
                 ),
 
-              if (session.selectedPromptId != null && session.workflow.isNotEmpty && !session.isSubmitted)
+              if ((session.selectedPromptId != null || session.activeBigProject != null) &&
+                  session.workflow.isNotEmpty &&
+                  !session.isSubmitted)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                    child: _PromptsWorkflowPanel(session: session),
+                    child: _PromptsWorkflowPanel(
+                      session: session,
+                      hideDays: session.activeBigProject != null,
+                    ),
                   ),
                 ),
 
@@ -656,8 +662,9 @@ class _Row extends StatelessWidget {
 
 class _PromptsWorkflowPanel extends ConsumerWidget {
   final dynamic session;
+  final bool hideDays;
 
-  const _PromptsWorkflowPanel({required this.session});
+  const _PromptsWorkflowPanel({required this.session, this.hideDays = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -676,7 +683,7 @@ class _PromptsWorkflowPanel extends ConsumerWidget {
           Row(
             children: [
               Text(
-                'WORKFLOW',
+                hideDays ? 'BIG PROJECT WORKFLOW' : 'WORKFLOW',
                 style: theme.textTheme.labelMedium?.copyWith(letterSpacing: 1.4),
               ),
               const Spacer(),
@@ -701,7 +708,7 @@ class _PromptsWorkflowPanel extends ConsumerWidget {
           const SizedBox(height: 16),
           ...s.workflow.map<Widget>((t) => Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: _PromptsTask(task: t, ref: ref),
+            child: _PromptsTask(task: t, ref: ref, hideDays: hideDays),
           )),
         ],
       ),
@@ -712,8 +719,9 @@ class _PromptsWorkflowPanel extends ConsumerWidget {
 class _PromptsTask extends StatelessWidget {
   final dynamic task;
   final WidgetRef ref;
+  final bool hideDays;
 
-  const _PromptsTask({required this.task, required this.ref});
+  const _PromptsTask({required this.task, required this.ref, this.hideDays = false});
 
   @override
   Widget build(BuildContext context) {
@@ -758,12 +766,13 @@ class _PromptsTask extends StatelessWidget {
                 ),
               ),
             ),
-            Text(
-              task.day,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            if (!hideDays)
+              Text(
+                task.day,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
           ],
         ),
       ),

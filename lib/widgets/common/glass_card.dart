@@ -219,8 +219,9 @@ class StatTile extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
               height: 1,
             ),
           ),

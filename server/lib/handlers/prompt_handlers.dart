@@ -168,7 +168,7 @@ Future<String> _callGroq({required String model, required String userPrompt}) as
     body: jsonEncode({
       'model': model,
       'temperature': 0.85,
-      'max_tokens': 4000,
+      'max_tokens': 8000,
       'response_format': {'type': 'json_object'},
       'messages': [
         {'role': 'system', 'content': _systemPrompt},
@@ -196,7 +196,7 @@ Future<String> _callOpenAi({required String model, required String userPrompt}) 
     body: jsonEncode({
       'model': model,
       'temperature': 0.85,
-      'max_tokens': 4000,
+      'max_tokens': 8000,
       'response_format': {'type': 'json_object'},
       'messages': [
         {'role': 'system', 'content': _systemPrompt},

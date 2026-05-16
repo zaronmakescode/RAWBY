@@ -202,19 +202,16 @@ class UserSessionNotifier extends StateNotifier<UserSession> {
       'Thursday': 4, 'Friday': 5, 'Saturday': 6,
     };
     final idx = dayIndex[cycleDay] ?? 5;
-    final next = dayMap[(idx + 1) % 7];
-    final dayAfter = dayMap[(idx + 2) % 7];
-    final twoAfter = dayMap[(idx + 3) % 7];
-    final threeAfter = dayMap[(idx + 4) % 7];
+    String d(int offset) => dayMap[(idx + offset) % 7];
 
     return [
-      WorkflowTask(id: 'script_music', label: 'Script and music selected', day: cycleDay),
-      WorkflowTask(id: 'filming', label: 'Filming finished', day: '$next or $dayAfter'),
-      WorkflowTask(id: 'editing', label: 'Rough edit done', day: dayAfter),
-      WorkflowTask(id: 'vfx', label: 'VFX done', day: '$dayAfter or $twoAfter'),
-      WorkflowTask(id: 'sound', label: 'Sound design done', day: '$twoAfter or $threeAfter'),
-      WorkflowTask(id: 'grading', label: 'Color grading done', day: '$threeAfter or $cycleDay'),
-      WorkflowTask(id: 'publish', label: 'Published', day: cycleDay),
+      WorkflowTask(id: 'script_music', label: 'Song & prompt selected', day: cycleDay),
+      WorkflowTask(id: 'filming',      label: 'Filming finished',        day: '${d(1)} or ${d(2)}'),
+      WorkflowTask(id: 'editing',      label: 'Rough edit done',         day: '${d(3)} or ${d(4)}'),
+      WorkflowTask(id: 'vfx',          label: 'VFX & text done',         day: '${d(4)} or ${d(5)}'),
+      WorkflowTask(id: 'sound',        label: 'SFX done',                day: '${d(4)} or ${d(5)}'),
+      WorkflowTask(id: 'grading',      label: 'Colour done',             day: '${d(5)} or ${d(6)}'),
+      WorkflowTask(id: 'publish',      label: 'Polish & publish',        day: cycleDay),
     ];
   }
 

@@ -11,7 +11,15 @@ import 'package:shelf/shelf.dart';
 const _jsonHeaders = {'content-type': 'application/json'};
 
 const _systemPrompt = '''
-You write hyper-specific weekly story prompts for a SOLO videographer who films themselves. Write in English. Keep writing clear and direct: short sentences, common vocabulary, no jargon, no flowery language. Output ONLY a JSON array with exactly 3 objects. Each object has these keys:
+You write hyper-specific weekly story prompts for a SOLO videographer who films themselves. Write in English. Keep writing clear and direct: short sentences, common vocabulary, no jargon, no flowery language. Output ONLY a JSON array with exactly 3 objects.
+
+CRITICAL UNIQUENESS RULES — enforce these strictly:
+- Every song title and artist across all 3 prompts MUST be different. Zero repeated artists or tracks.
+- Every story scenario, location type, and emotional core MUST be different across the 3 prompts. No two prompts may share a similar plot, setting category, or mood.
+- Categories must be freshly invented each call — do not reuse common templates like "morning_routine", "late_night", or "decision_moment".
+- Vary the protagonist's activity type: one prompt should involve objects/environment only (no direct-to-camera), one should involve the person doing something physical, one should involve waiting/observing.
+
+Each object has these keys:
 - text: the prompt itself (the scene the videographer will shoot). 100 to 160 words. Describe the exact location, time of day, what the videographer does in the scene, what objects are present, what changes or happens, and the mood. Be cinematic and specific — name surfaces, textures, weather, the position of light, small actions. Do NOT include camera or shooting instructions in text; those go in the shots array.
 - shots: an array of 3 to 5 strings. Each string is one specific camera angle or shot. Start each shot with WHEN in the scene to use it (e.g. "Opening — ", "When they pick up the phone — ", "Final shot — "). Then include lens focal length, camera movement, lighting direction, and framing. CRITICAL: For Sequence and Short Story levels, the videographer is ALONE — there is nobody behind the camera. ALL shots must be achievable solo: tripod, locked-off, timer, or camera placed on a surface. Do NOT suggest handheld tracking, dolly, or pan-follows for these levels (nobody is there to operate the camera while the subject is in frame). Handheld shots are ONLY allowed when shooting objects/details with nobody in frame, or for the Story + Character level where a friend can hold the camera. Each shot: 15-25 words.
 - outcome: one sentence naming the closing image or what the viewer sees at the end. Concrete and visual.
@@ -141,7 +149,9 @@ Future<Response> handleGeneratePrompts(Request request) async {
 
     final rawText = provider == 'openai'
         ? await _callOpenAi(model: model, userPrompt: userPromptText)
-        : await _callGroq(model: model, userPrompt: userPromptText);
+        : provider == 'claude'
+            ? await _callClaudePrompts(model: model, userPrompt: userPromptText)
+            : await _callGroq(model: model, userPrompt: userPromptText);
 
     final prompts = _parsePrompts(rawText);
     return Response.ok(jsonEncode({'prompts': prompts}), headers: _jsonHeaders);
@@ -208,6 +218,34 @@ Future<String> _callOpenAi({required String model, required String userPrompt}) 
     throw HttpException('OpenAI ${res.statusCode}: ${res.body}');
   }
   return _extractContent(res.body, 'OpenAI');
+}
+
+Future<String> _callClaudePrompts({required String model, required String userPrompt}) async {
+  final key = Platform.environment['ANTHROPIC_API_KEY'];
+  if (key == null || key.isEmpty) throw StateError('ANTHROPIC_API_KEY not set');
+
+  final res = await http.post(
+    Uri.parse('https://api.anthropic.com/v1/messages'),
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'model': model,
+      'max_tokens': 8000,
+      'system': _systemPrompt,
+      'messages': [
+        {'role': 'user', 'content': userPrompt},
+      ],
+    }),
+  );
+  if (res.statusCode >= 400) {
+    throw HttpException('Anthropic ${res.statusCode}: ${res.body}');
+  }
+  final data = jsonDecode(res.body) as Map<String, dynamic>;
+  final content = (data['content'] as List).first as Map;
+  return (content['text'] as String).trim();
 }
 
 String _extractContent(String responseBody, String label) {

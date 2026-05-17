@@ -10,6 +10,7 @@ import '../providers/user_session_provider.dart';
 import '../providers/router_provider.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+import '../widgets/rawby_logo.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -75,6 +76,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   String _parseError(Object e) {
     final msg = e.toString().toLowerCase();
+    if (msg.contains('403') || msg.contains('email_not_verified') || msg.contains('verify')) {
+      return 'Please verify your email before logging in. Check your inbox.';
+    }
     if (msg.contains('401') || msg.contains('invalid') || msg.contains('wrong')) {
       return 'Invalid username or password.';
     }
@@ -133,7 +137,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 '• Workflow planner — structured weekly tasks\n'
                 '• Leaderboard — compete with other creators\n'
                 '• Rank progression — climb from Starter to Legend\n'
-                '• Achievement system — unlock milestones as you grow',
+                '• Achievement system — unlock milestones as you grow\n'
+                '• AI assistant (Aurora) — your creative filmmaking coach',
+              ),
+              const SizedBox(height: 16),
+              _dialogSection(theme, 'Availability',
+                'RAWBY is a web app — no download required. Install it as a home screen app on any device: iOS (Safari → Add to Home Screen), Android (Chrome → Install App), or use it in any browser.',
               ),
               const SizedBox(height: 16),
               Text(
@@ -187,7 +196,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 '• To operate the weekly challenge cycle and scoring\n'
                 '• To display your profile and rank on the leaderboard\n'
                 '• To send opt-in push notifications\n'
-                '• To generate AI-powered prompts via Groq\n'
+                '• To generate AI-powered prompts and coaching via Groq / Anthropic APIs\n'
                 '• We do not sell, rent, or share your data with third parties\n'
                 '• We do not use your data for advertising',
               ),
@@ -206,8 +215,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 '• Service is provided "as-is" without warranty',
               ),
               const SizedBox(height: 16),
-              _dialogSection(theme, '5. Contact',
-                'Questions or data deletion requests: reach out through the Feedback Wall or contact us directly.',
+              _dialogSection(theme, '5. Subscription',
+                '• RAWBY may offer a paid tier for advanced features\n'
+                '• Payments processed securely via Stripe\n'
+                '• You can cancel your subscription at any time\n'
+                '• Free tier features remain accessible after cancellation',
+              ),
+              const SizedBox(height: 16),
+              _dialogSection(theme, '6. Contact',
+                'Questions or data deletion requests: zaron.films@gmail.com or reach out through the Feedback Wall.',
               ),
             ],
           ),
@@ -281,28 +297,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   const SizedBox(height: 64),
                   // Logo
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: primary.withValues(alpha: 0.25),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Icon(Icons.videocam_rounded, color: primary, size: 40),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'RAWBY',
-                    style: theme.textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+                  const RawbyLogo(size: 52),
+                  const SizedBox(height: 12),
                   Text(
                     'Create. Compete. Grow.',
                     style: theme.textTheme.bodyMedium?.copyWith(

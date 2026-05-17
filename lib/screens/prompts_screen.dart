@@ -29,16 +29,29 @@ class PromptsScreen extends ConsumerStatefulWidget {
 class _PromptsScreenState extends ConsumerState<PromptsScreen> {
   bool _regenLoading = false;
 
-  Future<void> _silentRegen() async {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final session = ref.read(userSessionProvider);
+      if (session.autoGenPending && !session.isLocked) {
+        _silentRegen(silent: true);
+      }
+    });
+  }
+
+  Future<void> _silentRegen({bool silent = false}) async {
     final session = ref.read(userSessionProvider);
     if (!session.isPro) {
-      context.push(Routes.paywall);
+      if (!silent) context.push(Routes.paywall);
       return;
     }
     if (session.regensLeft <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No regenerations left this week.'), behavior: SnackBarBehavior.floating),
-      );
+      if (!silent && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No regenerations left this week.'), behavior: SnackBarBehavior.floating),
+        );
+      }
       return;
     }
     setState(() => _regenLoading = true);
@@ -47,17 +60,17 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
       final prefs = session.preferences;
       final service = ref.read(promptServiceProvider);
       final prompts = await service.generateAiPrompts(
-        provider: 'groq',
-        model: 'llama-3.3-70b-versatile',
+        provider: ai.provider,
+        model: ai.provider == 'claude' ? 'claude-sonnet-4-6' : 'llama-3.3-70b-versatile',
         seasonalPrompts: prefs.seasonalPrompts,
         region: prefs.region.isNotEmpty ? prefs.region : 'Central Europe',
         filmmakingGoal: prefs.filmmakingGoal.isNotEmpty ? prefs.filmmakingGoal : 'Grow my audience',
         contentType: prefs.contentType.isNotEmpty ? prefs.contentType : 'Cinematic reels',
       );
       ref.read(userSessionProvider.notifier).setPrompts(prompts);
-      ref.read(userSessionProvider.notifier).incrementRegenCount();
+      if (!silent) ref.read(userSessionProvider.notifier).incrementRegenCount();
       ref.read(userSessionProvider.notifier).setAutoGenPending(false);
-      if (mounted) {
+      if (!silent && mounted) {
         final remaining = ref.read(userSessionProvider).regensLeft;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -68,13 +81,16 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && !silent) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('AI failed — showing local prompts'), behavior: SnackBarBehavior.floating),
+          const SnackBar(content: Text('AI failed — showing local prompts'), behavior: SnackBarBehavior.floating),
         );
+      }
+      if (mounted) {
         final service = ref.read(promptServiceProvider);
         final fallback = service.generateLocalPrompts();
         ref.read(userSessionProvider.notifier).setPrompts(fallback);
+        ref.read(userSessionProvider.notifier).setAutoGenPending(false);
       }
     } finally {
       if (mounted) setState(() => _regenLoading = false);
@@ -94,11 +110,7 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
         child: RefreshIndicator(
           color: theme.colorScheme.primary,
           onRefresh: () async {
-            if (!isLocked) {
-              final service = ref.read(promptServiceProvider);
-              final prompts = service.generateLocalPrompts();
-              ref.read(userSessionProvider.notifier).setPrompts(prompts);
-            }
+            if (!isLocked) await _silentRegen(silent: true);
           },
           child: CustomScrollView(
             slivers: [

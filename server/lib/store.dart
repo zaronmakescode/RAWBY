@@ -97,6 +97,30 @@ class Store {
     }).toList();
   }
 
+  Future<void> setVerificationToken(String userId, String token) async {
+    await _users.updateOne(
+      where.eq('userId', userId),
+      modify.set('verificationToken', token).set('emailVerified', false),
+    );
+  }
+
+  Future<Map<String, dynamic>?> getUserByVerificationToken(String token) async {
+    final doc = await _users.findOne(where.eq('verificationToken', token));
+    return doc;
+  }
+
+  Future<void> markUserVerified(String userId) async {
+    await _users.updateOne(
+      where.eq('userId', userId),
+      modify.set('emailVerified', true).unset('verificationToken'),
+    );
+  }
+
+  Future<String?> getUserEmailById(String userId) async {
+    final doc = await _users.findOne(where.eq('userId', userId));
+    return doc?['email'] as String?;
+  }
+
   // ── Snapshots (sync) ───────────────────────────────────────────
 
   Future<void> saveSnapshot(String userId, Map<String, dynamic> snapshot) async {

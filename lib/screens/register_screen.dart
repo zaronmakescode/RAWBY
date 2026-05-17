@@ -10,6 +10,7 @@ import '../providers/user_session_provider.dart';
 import '../providers/router_provider.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+import '../widgets/rawby_logo.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -30,6 +31,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   String? _errorMessage;
+  bool _pendingVerification = false;
 
   @override
   void dispose() {
@@ -56,6 +58,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+      if (result['pending'] == true) {
+        if (mounted) setState(() => _pendingVerification = true);
+        return;
+      }
 
       final token = result['token'] as String?;
       if (token != null) {
@@ -134,19 +141,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   const SizedBox(height: 48),
 
                   // Logo
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: primary.withValues(alpha: 0.25),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Icon(Icons.videocam_rounded, color: primary, size: 36),
-                  ),
+                  const RawbyLogo(size: 48),
                   const SizedBox(height: 16),
                   Text(
                     'RAWBY',
@@ -164,6 +159,44 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 36),
+
+                  if (_pendingVerification) ...[
+                    Container(
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: theme.colorScheme.outlineVariant),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.mark_email_read_outlined,
+                              size: 48, color: theme.colorScheme.primary),
+                          const SizedBox(height: 16),
+                          Text('Check your email',
+                              style: theme.textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 8),
+                          Text(
+                            'We sent a verification link to\n${_emailController.text.trim()}',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              onPressed: () => context.go(Routes.login),
+                              child: const Text('Go to Login'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
 
                   // Form card
                   Container(
@@ -313,6 +346,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                     ),
                   ),
+
+                  ], // end else
 
                   const SizedBox(height: 20),
 

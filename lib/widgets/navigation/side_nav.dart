@@ -29,18 +29,37 @@ class RawbySideNav extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 16),
-            // Logo placeholder
             Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.15),
+                color: theme.colorScheme.primary,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                Icons.videocam_rounded,
-                color: theme.colorScheme.primary,
-                size: 22,
+              child: Center(
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.4),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'R',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 24),

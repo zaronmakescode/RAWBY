@@ -219,17 +219,23 @@ class ApiService {
     return response.data as List<dynamic>;
   }
 
-  Future<Map<String, dynamic>> aiChat({
-    required String message,
-    required List<Map<String, dynamic>> history,
+  Future<String> aiChat({
+    required List<Map<String, String>> messages,
     required Map<String, dynamic> context,
+    String provider = 'groq',
   }) async {
-    final response = await _dio.post("/api/chat", data: {
-      "message": message,
-      "history": history,
-      "context": context,
-    });
-    return response.data as Map<String, dynamic>;
+    final response = await _dio.post(
+      "/api/chat",
+      data: {
+        "messages": messages
+            .map((m) => {'role': m['role'], 'content': m['content']})
+            .toList(),
+        "context": context,
+        "provider": provider,
+      },
+    );
+    final data = response.data as Map<String, dynamic>;
+    return data['reply'] as String? ?? 'Something went wrong.';
   }
 
   Future<Map<String, dynamic>> fetchInstagramHandleStats(String handle) async {

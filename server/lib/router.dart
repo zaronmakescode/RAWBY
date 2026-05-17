@@ -26,6 +26,7 @@ Handler buildRouter() {
   // ── Public Auth routes ─────────────────────────────────────────
   router.post('/api/login', handleLogin);
   router.post('/api/register', handleRegister);
+  router.get('/api/verify-email', handleVerifyEmail);
 
   // ── Protected routes (wrapped with auth check) ─────────────────
 

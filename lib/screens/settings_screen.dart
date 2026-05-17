@@ -61,27 +61,29 @@ class SettingsScreen extends ConsumerWidget {
                       padding: EdgeInsets.fromLTRB(4, 8, 4, 12),
                     ),
                     GlassCard(
-                      child: Row(
+                      child: Column(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(Icons.auto_awesome, size: 18, color: theme.colorScheme.primary),
+                          _AiProviderTile(
+                            provider: 'groq',
+                            label: 'Groq · llama-3.3-70b',
+                            subtitle: 'Fast, private, always-on',
+                            icon: Icons.bolt,
+                            selected: session.aiSettings.provider == 'groq',
+                            onTap: () => ref.read(userSessionProvider.notifier)
+                                .updateAiSettings(session.aiSettings.copyWith(provider: 'groq')),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Groq · llama-3.3-70b-versatile',
-                                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-                                Text('Fast, private, always-on', style: theme.textTheme.bodySmall),
-                              ],
+                          if (session.isAdmin) ...[
+                            const Divider(height: 1),
+                            _AiProviderTile(
+                              provider: 'claude',
+                              label: 'Claude · Sonnet 4.6',
+                              subtitle: 'Admin only · Anthropic',
+                              icon: Icons.auto_awesome,
+                              selected: session.aiSettings.provider == 'claude',
+                              onTap: () => ref.read(userSessionProvider.notifier)
+                                  .updateAiSettings(session.aiSettings.copyWith(provider: 'claude')),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ).animate().fadeIn().slideY(begin: 0.05),
@@ -259,6 +261,9 @@ class SettingsScreen extends ConsumerWidget {
                           _InfoRow(
                               label: 'Rank',
                               value: session.currentRank.label),
+                          const Divider(height: 20),
+                          _InfoRow(label: 'App', value: 'RAWBY v1.0'),
+                          _InfoRow(label: 'Contact', value: 'zaron.films@gmail.com'),
                         ],
                       ),
                     ).animate(delay: 400.ms).fadeIn().slideY(begin: 0.05),
@@ -665,6 +670,76 @@ class _SuggestionSectionState extends ConsumerState<_SuggestionSection> {
               );
             }),
         ],
+      ),
+    );
+  }
+}
+
+class _AiProviderTile extends StatelessWidget {
+  final String provider;
+  final String label;
+  final String subtitle;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _AiProviderTile({
+    required this.provider,
+    required this.label,
+    required this.subtitle,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: selected
+                    ? theme.colorScheme.primary.withOpacity(0.15)
+                    : theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                size: 18,
+                color: selected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: selected ? theme.colorScheme.primary : null,
+                    ),
+                  ),
+                  Text(subtitle, style: theme.textTheme.bodySmall),
+                ],
+              ),
+            ),
+            if (selected)
+              Icon(Icons.check_circle, size: 18, color: theme.colorScheme.primary)
+            else
+              Icon(Icons.radio_button_unchecked, size: 18, color: theme.colorScheme.outline),
+          ],
+        ),
       ),
     );
   }

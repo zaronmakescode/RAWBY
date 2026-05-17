@@ -165,11 +165,14 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
       final session = ref.read(userSessionProvider);
       final api = ref.read(apiServiceProvider);
 
-      final historyForApi = _messages
+      final allMsgs = _messages
           .where((m) => m.role != 'typing')
-          .take(10)
-          .map((m) => {'role': m.role, 'content': m.text})
+          .map((m) => <String, String>{'role': m.role, 'content': m.text})
           .toList();
+      final firstUser = allMsgs.indexWhere((m) => m['role'] == 'user');
+      final historyForApi = firstUser < 0
+          ? <Map<String, String>>[]
+          : allMsgs.sublist(firstUser).take(10).toList();
 
       final ctx = {
         'totalScore': session.totalScore,
@@ -180,16 +183,11 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
         'username': session.username,
       };
 
-      final result = await api.aiChat(
-        message: text,
-        history: historyForApi.cast<Map<String, dynamic>>(),
+      final response = await api.aiChat(
+        messages: historyForApi,
         context: ctx,
+        provider: session.aiSettings.provider,
       );
-
-      final response = result['reply'] as String? ??
-          result['message'] as String? ??
-          result['content'] as String? ??
-          _generateResponse(text);
 
       if (mounted) {
         setState(() {
@@ -198,10 +196,13 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
         });
         _scrollToBottom();
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() {
-          _messages.add(_ChatMessage(role: 'assistant', text: _generateResponse(text)));
+          _messages.add(_ChatMessage(
+            role: 'assistant',
+            text: 'Something went wrong. Check your connection and try again.',
+          ));
           _loading = false;
         });
         _scrollToBottom();

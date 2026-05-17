@@ -1,11 +1,11 @@
 {
-    "name": "_flutter_packages",
-    "short_name": "_flutter_packages",
+    "name": "RAWBY",
+    "short_name": "RAWBY",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0D0E10",
+    "theme_color": "#5A8A5E",
+    "description": "Weekly filmmaking challenge. Pick a prompt. Film it. Grow.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

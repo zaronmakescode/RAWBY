@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 
 class RawbyLogo extends StatelessWidget {
   final double size;
@@ -7,18 +6,23 @@ class RawbyLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final keySize = size * 0.68;
+
     return Container(
-      width: size * 2.5,
-      height: size,
+      padding: EdgeInsets.symmetric(
+        horizontal: size * 0.14,
+        vertical: size * 0.13,
+      ),
       decoration: BoxDecoration(
-        color: RawbyPalette.green700,
-        borderRadius: BorderRadius.circular(size * 0.15),
+        color: primary,
+        borderRadius: BorderRadius.circular(size * 0.18),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: 'RAWBY'.split('').map((letter) => _TypewriterKey(
           letter: letter,
-          size: size * 0.7,
+          size: keySize,
         )).toList(),
       ),
     );
@@ -28,23 +32,27 @@ class RawbyLogo extends StatelessWidget {
 class _TypewriterKey extends StatelessWidget {
   final String letter;
   final double size;
+
   const _TypewriterKey({required this.letter, required this.size});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: size * 0.04),
-      width: size * 0.62,
-      height: size * 0.62,
+      margin: EdgeInsets.symmetric(horizontal: size * 0.05),
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        color: RawbyPalette.green600,
-        borderRadius: BorderRadius.circular(size * 0.1),
-        border: Border.all(color: RawbyPalette.green500.withOpacity(0.6), width: 1),
+        shape: BoxShape.circle,
+        color: Colors.white.withOpacity(0.16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.4),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            offset: Offset(0, size * 0.05),
-            blurRadius: size * 0.08,
+            color: Colors.black.withOpacity(0.35),
+            offset: Offset(0, size * 0.08),
+            blurRadius: size * 0.12,
           ),
         ],
       ),
@@ -52,10 +60,9 @@ class _TypewriterKey extends StatelessWidget {
         child: Text(
           letter,
           style: TextStyle(
-            color: const Color(0xFFE8F5E9),
+            color: Colors.white,
             fontSize: size * 0.42,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0,
+            fontWeight: FontWeight.w800,
             height: 1,
           ),
         ),

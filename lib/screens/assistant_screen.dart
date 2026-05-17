@@ -14,6 +14,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../models/user_session.dart';
 import '../providers/router_provider.dart';
 import '../providers/user_session_provider.dart';
+import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/glass_card.dart';
 
@@ -29,6 +30,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen>
   final _input = TextEditingController();
   final _scroll = ScrollController();
   final List<_Msg> _messages = [];
+  final List<Map<String, String>> _chatHistory = [];
   late final AnimationController _orb;
   late final stt.SpeechToText _speech;
   bool _listening = false;
@@ -185,21 +187,66 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen>
     HapticFeedback.selectionClick();
     setState(() {
       _messages.add(_Msg(role: 'me', text: text, at: DateTime.now()));
+      _chatHistory.add({'role': 'user', 'content': text});
       _input.clear();
       _thinking = true;
     });
     _scrollToBottom();
 
-    final navigated = _tryNavigate(text);
-    await Future<void>.delayed(const Duration(milliseconds: 700));
-
-    if (!navigated) {
-      _bot(_localResponse(text));
-    } else {
+    // Handle navigation commands instantly without AI round-trip
+    if (_tryNavigate(text)) {
       _bot('Done. Anything else?');
+      _chatHistory.add({'role': 'assistant', 'content': 'Done. Anything else?'});
+      setState(() => _thinking = false);
+      _scrollToBottom();
+      return;
     }
-    setState(() => _thinking = false);
-    _scrollToBottom();
+
+    // Real Groq call via server
+    try {
+      final session = ref.read(userSessionProvider);
+      final api = ref.read(apiServiceProvider);
+
+      final deadline = DateTime.tryParse(session.deadline)?.toLocal();
+      final now = DateTime.now();
+      final daysLeft = deadline == null
+          ? 0
+          : DateTime(deadline.year, deadline.month, deadline.day)
+              .difference(DateTime(now.year, now.month, now.day))
+              .inDays
+              .clamp(0, 999);
+
+      final selectedPrompt = session.prompts.isEmpty
+          ? null
+          : session.prompts.where((p) => p.id == session.selectedPromptId).firstOrNull;
+
+      final reply = await api.aiChat(
+        messages: List<Map<String, String>>.from(_chatHistory),
+        context: {
+          'displayName': session.displayName,
+          'rank': session.currentRank.label,
+          'totalScore': session.totalScore,
+          'streak': session.streak,
+          'regensLeft': session.regensLeft,
+          'daysLeft': daysLeft,
+          'promptLevel': selectedPrompt?.level,
+          'promptText': selectedPrompt?.text ?? '',
+        },
+        provider: session.aiSettings.provider,
+      );
+
+      _chatHistory.add({'role': 'assistant', 'content': reply});
+      _bot(reply);
+    } catch (e) {
+      final err = 'Error: $e';
+      _chatHistory.add({'role': 'assistant', 'content': err});
+      _bot(err);
+    }
+
+    if (mounted) {
+      setState(() => _thinking = false);
+      _scrollToBottom();
+    }
   }
 
   void _bot(String text) {
@@ -231,81 +278,6 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen>
       }
     }
     return false;
-  }
-
-  String _localResponse(String input) {
-    final t = input.toLowerCase();
-    final s = ref.read(userSessionProvider);
-
-    if (t.contains('recommend') || t.contains('pick') || t.contains('choose')) {
-      if (s.prompts.isEmpty) {
-        return 'No prompts to choose from. Generate first — say "generate prompts" or open the Prompts screen.';
-      }
-      final p = s.prompts.firstWhere(
-        (p) => p.level == 'Short Story',
-        orElse: () => s.prompts.first,
-      );
-      return 'Try the ${p.level} — "${_firstSentence(p.text)}" Worth ${p.points} pts. Tap a card on the Prompts screen to lock it in.';
-    }
-
-    if (t.contains('deadline') || t.contains('how long') || t.contains('when')) {
-      final d = DateTime.tryParse(s.deadline);
-      if (d == null) return 'No active week.';
-      final hours = d.difference(DateTime.now()).inHours;
-      return 'Deadline: ${d.toLocal()}. That\'s ${hours} hours from now. Submit early — penalty kicks in after the deadline (0.9× day 1, 0.75× day 2, 0.5× after).';
-    }
-
-    if (t.contains('streak')) {
-      return 'Current streak: ${s.streak} week${s.streak == 1 ? '' : 's'}. Each consecutive Friday-to-Friday submission keeps it alive.';
-    }
-
-    if (t.contains('score') || t.contains('points')) {
-      return 'Total score: ${s.totalScore} pts. Level scores: Sequence 10, Short Story 30, Story+Character 50. Likes multiplier kicks in after stats unlock.';
-    }
-
-    if (t.contains('light')) {
-      return 'Lighting fast rules: 1) one key source, 2) keep faces 45° off-axis from key, 3) practical lights = soul. For solo work, window + bounce card beats most kit. Avoid mixed color temps.';
-    }
-
-    if (t.contains('sound') || t.contains('audio')) {
-      return 'Sound carries the cut. Record 30s of room tone on every location. For solo dialog use a wired lav or your phone in a pocket — sync in post. Music: choose tempo before story locks.';
-    }
-
-    if (t.contains('color') || t.contains('grade') || t.contains('lut')) {
-      return 'Grade in 3 passes: 1) match shots (exposure + WB), 2) creative look (LUT or curves), 3) shape attention (power windows on faces). Keep skin in the 60-70 luminance range.';
-    }
-
-    if (t.contains('story') || t.contains('script')) {
-      return 'A 30-sec story needs: a setup (5s), a turn (10s), a release (15s). Write the LAST shot first — work backwards. The thing the viewer takes away is the only thing that matters.';
-    }
-
-    if (t.contains('post') || t.contains('caption') || t.contains('instagram')) {
-      return 'IG Reels: 1) lead frame is your hook — full-frame motion in frame 1, 2) caption length 60-90 chars, 3) post Thu-Sun 18-21 local time, 4) reuse trending audio that matches your story\'s tempo.';
-    }
-
-    if (t.contains('gear')) {
-      final spent = s.gearPurchases.fold<int>(0, (acc, g) => acc + g.pointCost);
-      return 'You\'ve declared $spent gear pts (${s.gearPurchases.length} items, ${s.subscriptions.where((x) => x.isActive).length} active subs). Add or edit on the Gear screen.';
-    }
-
-    if (t.contains('regen') || t.contains('generate')) {
-      if (s.regensLeft <= 0) {
-        return 'You\'re out of regens this week — comes back next Friday. Need a custom angle on a current prompt? I can suggest variations.';
-      }
-      return 'You\'ve got ${s.regensLeft} regen${s.regensLeft == 1 ? '' : 's'} left. Open Prompts → tap "Regenerate" — or say "go to prompts".';
-    }
-
-    if (t.contains('help') || t.contains('?')) {
-      return 'Try: "recommend a prompt", "how long until deadline", "lighting tips", "go to leaderboard", "explain scoring".';
-    }
-
-    return 'Heard. I can give filmmaking advice, navigate the app, or coach you through the workflow. Try the suggestion chips below or ask me anything.';
-  }
-
-  String _firstSentence(String text) {
-    final idx = text.indexOf('.');
-    if (idx == -1) return text.length > 80 ? '${text.substring(0, 80)}…' : text;
-    return text.substring(0, idx + 1);
   }
 
   void _scrollToBottom() {

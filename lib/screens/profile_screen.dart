@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../providers/router_provider.dart';
 import '../providers/user_session_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/common/glass_card.dart';

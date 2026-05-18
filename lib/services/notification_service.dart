@@ -11,21 +11,19 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'api_service.dart';
-import 'storage_service.dart';
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
-  return NotificationService(ref.read(apiServiceProvider), ref.read(storageServiceProvider), ref);
+  return NotificationService(ref.read(apiServiceProvider), ref);
 });
 
 class NotificationService {
   final ApiService _api;
-  final StorageService _storage;
   final Ref _ref;
   FirebaseMessaging? _fcm;
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   bool _firebaseReady = false;
 
-  NotificationService(this._api, this._storage, this._ref) {
+  NotificationService(this._api, this._ref) {
     _initializeNotifications();
   }
 

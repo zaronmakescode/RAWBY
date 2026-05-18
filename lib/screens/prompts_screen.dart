@@ -562,7 +562,6 @@ class _SubmitPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = session;
-    final theme = Theme.of(context);
 
     Widget content;
 

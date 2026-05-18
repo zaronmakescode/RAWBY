@@ -34,36 +34,8 @@ class PromptCard extends ConsumerStatefulWidget {
   ConsumerState<PromptCard> createState() => _PromptCardState();
 }
 
-class _PromptCardState extends ConsumerState<PromptCard>
-    with TickerProviderStateMixin {
+class _PromptCardState extends ConsumerState<PromptCard> {
   bool _expanded = false;
-  late AnimationController _expandCtrl;
-  late Animation<double> _expandAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _expandCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _expandAnim = CurvedAnimation(parent: _expandCtrl, curve: Curves.easeOutCubic);
-  }
-
-  @override
-  void dispose() {
-    _expandCtrl.dispose();
-    super.dispose();
-  }
-
-  void _toggleExpanded() {
-    setState(() => _expanded = !_expanded);
-    if (_expanded) {
-      _expandCtrl.forward();
-    } else {
-      _expandCtrl.reverse();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

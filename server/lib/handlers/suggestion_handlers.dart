@@ -5,11 +5,18 @@ import '../store.dart';
 
 final _json = {'content-type': 'application/json'};
 
+Future<bool> _checkAdmin(Request request) async {
+  final userId = getUserId(request);
+  final user = await Store.instance.getUserById(userId);
+  final role = user?['role'] as String? ?? '';
+  final username = user?['username'] as String? ?? '';
+  return role == 'admin' || username == 'zaron.films';
+}
+
 // POST /api/suggestions — submit suggestion (any auth user)
 Future<Response> handleSubmitSuggestion(Request request) async {
-  final claims = request.context['claims'] as Map<String, dynamic>;
-  final userId = claims['sub'] as String;
-  final username = claims['username'] as String? ?? '';
+  final userId = getUserId(request);
+  final username = getUsername(request);
 
   final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
   final text = (body['text'] as String?)?.trim() ?? '';
@@ -30,26 +37,25 @@ Future<Response> handleSubmitSuggestion(Request request) async {
 
 // GET /api/suggestions — get user's own suggestions
 Future<Response> handleGetMySuggestions(Request request) async {
-  final claims = request.context['claims'] as Map<String, dynamic>;
-  final userId = claims['sub'] as String;
+  final userId = getUserId(request);
   final suggestions = await Store.instance.getSuggestionsForUser(userId);
   return Response.ok(jsonEncode({'suggestions': suggestions}), headers: _json);
 }
 
 // GET /api/admin/suggestions — get all suggestions (admin only)
 Future<Response> handleGetAllSuggestions(Request request) async {
-  final claims = request.context['claims'] as Map<String, dynamic>;
-  final isAdmin = claims['isAdmin'] == true;
-  if (!isAdmin) return Response(403, body: jsonEncode({'error': 'Admin only'}), headers: _json);
+  if (!await _checkAdmin(request)) {
+    return Response(403, body: jsonEncode({'error': 'Admin only'}), headers: _json);
+  }
   final suggestions = await Store.instance.getAllSuggestions();
   return Response.ok(jsonEncode({'suggestions': suggestions}), headers: _json);
 }
 
 // POST /api/admin/suggestions/:id/reply — admin replies (admin only)
 Future<Response> handleReplySuggestion(Request request, String id) async {
-  final claims = request.context['claims'] as Map<String, dynamic>;
-  final isAdmin = claims['isAdmin'] == true;
-  if (!isAdmin) return Response(403, body: jsonEncode({'error': 'Admin only'}), headers: _json);
+  if (!await _checkAdmin(request)) {
+    return Response(403, body: jsonEncode({'error': 'Admin only'}), headers: _json);
+  }
 
   final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
   final reply = (body['reply'] as String?)?.trim() ?? '';

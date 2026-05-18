@@ -9,7 +9,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../models/project_model.dart';
 import '../models/user_session.dart';
 import '../providers/router_provider.dart';
 import '../providers/user_session_provider.dart';
@@ -46,9 +45,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(userSessionProvider);
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Scaffold(
       body: AuraBackground(
         topOnly: true,

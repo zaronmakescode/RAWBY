@@ -245,45 +245,6 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
     }
   }
 
-  String _generateResponse(String input) {
-    final session = ref.read(userSessionProvider);
-    final lower = input.toLowerCase();
-
-    if (lower.contains('stat') || lower.contains('score') || lower.contains('rank')) {
-      final next = session.nextRank;
-      return "Current status:\n• Score: ${session.totalScore} pts — ${session.currentRank.label}\n• Streak: ${session.streak} weeks\n• Avg likes: ${session.avgLikes}\n\n${next != null ? 'Next rank: ${next.label} (${next.minScore} pts).' : 'Top rank achieved.'}";
-    }
-    if (lower.contains('prompt') || lower.contains('idea') || lower.contains('challenge')) {
-      return "Best prompt approach: constrain yourself.\n\nPick: (1) one emotion, (2) one unexpected location, (3) one rule — like no cuts. Now make a 30-second film.\n\nConstraints force creativity. Go to Prompts for this week's official challenge.";
-    }
-    if (lower.contains('improve') || lower.contains('better') || lower.contains('tip')) {
-      return "Three things that immediately improve any film:\n\n1. Cut 20% of your shots — the weakest ones\n2. Hook viewers in the first 3 seconds\n3. Sound design carries 50% of the emotion\n\nWhich of these are you struggling with most?";
-    }
-    if (lower.contains('like') || lower.contains('engagement') || lower.contains('instagram')) {
-      final avg = session.avgLikes;
-      return "Your avg: $avg likes per video.\n\nTo grow: post Tue–Thu 7–9 PM, write a hook in the first caption line, reply to every comment in the first hour.\n\nReels with a strong opening 3 seconds get 3x more reach. Go to Profile to see your full stats.";
-    }
-    if (lower.contains('streak') || lower.contains('consistent')) {
-      return "Streak: ${session.streak} weeks.\n\nConsistency beats perfection every time. A 60-second film shipped on time is worth more than a 5-minute masterpiece that's 80% done.\n\nThe habit is the skill.";
-    }
-    if (lower.contains('big project')) {
-      return "Big Project = 14–24 days, 150 base points.\n\nKey: write a one-paragraph story before filming. Define your 7 workflow steps in the first two days.\n\nDay 1 = pre-production. Not shooting.";
-    }
-    if (lower.contains('gear') || lower.contains('camera') || lower.contains('equipment')) {
-      return "The camera you have is the right camera.\n\nGear matters less than light and story. A phone in golden hour beats a cinema camera in fluorescent light.\n\nInvest in one good lens. Learn it completely before buying anything else.";
-    }
-    if (lower.contains('edit') || lower.contains('color') || lower.contains('grading')) {
-      return "Cinematic color grade in 3 steps:\n\n1. Boost contrast, lift shadows\n2. Push orange into shadows, teal into midtones\n3. Desaturate skin by 10%\n\nThat's the classic film look. No LUT needed.";
-    }
-    if (lower.contains('light') || lower.contains('lighting')) {
-      return "Lighting rules that always work:\n\n1. Golden hour = free beauty light\n2. One key light + negative fill = cinematic contrast\n3. Background separation matters more than you think\n\nAvoid overhead fluorescent at all costs.";
-    }
-    if (lower.contains('audio') || lower.contains('sound')) {
-      return "Audio is 50% of filmmaking and 90% of first impressions.\n\nRule: if you can't record clean audio, don't shoot. A phone mic 12\" from the subject is better than a camera mic 6 feet away.\n\nGet a lav mic before any other gear.";
-    }
-    return "Understood. The filmmakers who grow fastest aren't the most talented — they ship every week without exception.\n\nWhat specific challenge are you working on? Give me more detail and I'll give you targeted direction.";
-  }
-
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {

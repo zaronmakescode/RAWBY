@@ -736,7 +736,6 @@ class _Composer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         16,

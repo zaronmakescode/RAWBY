@@ -4,7 +4,7 @@ import 'package:shelf/shelf.dart';
 import 'package:http/http.dart' as http;
 
 final _json = {'content-type': 'application/json'};
-const _igBase = 'https://graph.instagram.com/v19.0';
+const _igBase = 'https://graph.instagram.com/v21.0';
 
 String? get _token => Platform.environment['INSTAGRAM_ACCESS_TOKEN'];
 

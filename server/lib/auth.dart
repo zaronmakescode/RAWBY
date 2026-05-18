@@ -1,11 +1,17 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:shelf/shelf.dart';
 
 // ── Config ───────────────────────────────────────────────────────
-// In production, use env vars for the secret
-const _jwtSecret = 'rawby_jwt_secret_change_me_in_production';
+String get _jwtSecret {
+  final secret = Platform.environment['JWT_SECRET'];
+  if (secret == null || secret.isEmpty) {
+    throw StateError('JWT_SECRET env var not set');
+  }
+  return secret;
+}
 const _tokenExpiry = Duration(days: 30);
 
 // ── Password Hashing ─────────────────────────────────────────────

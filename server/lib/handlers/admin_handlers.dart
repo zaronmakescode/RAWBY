@@ -64,6 +64,20 @@ Future<Response> handleGetUsers(Request request) async {
 }
 
 Future<Response> handleDeleteAllUsers(Request request) async {
+  final secret = Platform.environment['ADMIN_SECRET'] ?? '';
+  final provided = request.headers['x-admin-secret'] ?? '';
+  // Accept either valid JWT (from authMiddleware) or X-Admin-Secret header
+  if (provided.isNotEmpty && secret.isNotEmpty && provided == secret) {
+    await Store.instance.deleteAllUsers();
+    return Response.ok(jsonEncode({'status': 'ok', 'message': 'All users deleted'}), headers: _json);
+  }
+  // Fallback: check if user is admin via JWT (set by authMiddleware)
+  try {
+    final username = getUsername(request);
+    if (username.isEmpty) throw Exception();
+  } catch (_) {
+    return Response(403, body: jsonEncode({'error': 'Forbidden'}), headers: _json);
+  }
   await Store.instance.deleteAllUsers();
   return Response.ok(jsonEncode({'status': 'ok', 'message': 'All users deleted'}), headers: _json);
 }

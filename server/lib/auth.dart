@@ -1,6 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:crypto/crypto.dart';
+import 'package:bcrypt/bcrypt.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:shelf/shelf.dart';
 
@@ -17,12 +16,11 @@ const _tokenExpiry = Duration(days: 30);
 // ── Password Hashing ─────────────────────────────────────────────
 
 String hashPassword(String password) {
-  final bytes = utf8.encode(password);
-  return sha256.convert(bytes).toString();
+  return BCrypt.hashpw(password, BCrypt.gensalt());
 }
 
 bool verifyPassword(String password, String hash) {
-  return hashPassword(password) == hash;
+  return BCrypt.checkpw(password, hash);
 }
 
 // ── JWT ──────────────────────────────────────────────────────────

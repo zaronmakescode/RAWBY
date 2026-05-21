@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
 import '../auth.dart';
@@ -60,6 +61,26 @@ Future<Response> handleGetUsers(Request request) async {
   }).toList();
 
   return Response.ok(jsonEncode(users), headers: _json);
+}
+
+Future<Response> handleDeleteAllUsers(Request request) async {
+  await Store.instance.deleteAllUsers();
+  return Response.ok(jsonEncode({'status': 'ok', 'message': 'All users deleted'}), headers: _json);
+}
+
+Future<Response> handleMakeAdmin(Request request) async {
+  final secret = Platform.environment['ADMIN_SECRET'] ?? '';
+  final provided = request.headers['x-admin-secret'] ?? '';
+  if (secret.isEmpty || provided != secret) {
+    return Response(403, body: jsonEncode({'error': 'Forbidden'}), headers: _json);
+  }
+  final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+  final username = (body['username'] as String?)?.trim() ?? '';
+  if (username.isEmpty) {
+    return Response(400, body: jsonEncode({'error': 'username required'}), headers: _json);
+  }
+  await Store.instance.setUserAdmin(username, true);
+  return Response.ok(jsonEncode({'status': 'ok', 'username': username, 'isAdmin': true}), headers: _json);
 }
 
 // ── FCM Token ────────────────────────────────────────────────────

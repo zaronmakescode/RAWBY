@@ -111,6 +111,19 @@ class Store {
     return doc;
   }
 
+  Future<void> deleteAllUsers() async {
+    await _users.deleteMany({});
+    await _snapshots.deleteMany({});
+    await _fcmTokens.deleteMany({});
+  }
+
+  Future<void> setUserAdmin(String username, bool isAdmin) async {
+    await _users.updateOne(
+      where.eq('usernameLower', username.toLowerCase()),
+      modify.set('isAdmin', isAdmin),
+    );
+  }
+
   Future<void> markUserVerified(String userId) async {
     await _users.updateOne(
       where.eq('userId', userId),

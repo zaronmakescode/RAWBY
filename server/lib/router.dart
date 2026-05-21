@@ -69,6 +69,9 @@ Handler buildRouter() {
   router.post('/api/updates', protect(handlePostUpdate));
   router.get('/api/updates', protect(handleGetUpdates));
   router.get('/api/users', protect(handleGetUsers));
+  router.delete('/api/admin/users/all', protect(handleDeleteAllUsers));
+  // No JWT needed — protected by X-Admin-Secret header in handler
+  router.post('/api/admin/set-admin', handleMakeAdmin);
 
   // FCM
   router.post('/api/fcm-token', protect(handleRegisterFcmToken));

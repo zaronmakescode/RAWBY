@@ -18,7 +18,12 @@ Future<void> main(List<String> args) async {
 
   final handler = const Pipeline()
       .addMiddleware(logRequests())
-      .addMiddleware(corsHeaders())
+      .addMiddleware(corsHeaders(headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, PUT, PATCH, HEAD, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Secret, Accept',
+        'Access-Control-Max-Age': '86400',
+      }))
       .addHandler(app);
 
   final server = await shelf_io.serve(handler, InternetAddress.anyIPv4, port);

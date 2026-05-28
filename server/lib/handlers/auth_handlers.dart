@@ -66,15 +66,15 @@ Future<Response> handleLogin(Request request) async {
       return Response(401, body: jsonEncode({'error': 'Invalid username or password'}), headers: _json);
     }
 
-    final storedHash = user['passwordHash'] as String?;
-    if (storedHash == null || !verifyPassword(password, storedHash)) {
+    final storedHash = user['passwordHash'] as String? ?? '';
+    if (!verifyPassword(password, storedHash)) {
       return Response(401, body: jsonEncode({'error': 'Invalid username or password'}), headers: _json);
     }
 
-    // Upgrade legacy SHA-256 hash to bcrypt transparently
-    final upgraded = upgradeHashIfNeeded(password, storedHash);
-    if (upgraded != null) {
-      await Store.instance.updateUserField(userId, 'passwordHash', upgraded);
+    // Silently upgrade legacy SHA-256 hash to bcrypt on successful login
+    final newHash = upgradeLegacyHash(password, storedHash);
+    if (newHash != null) {
+      await Store.instance.updateUser(userId, {...user, 'passwordHash': newHash});
     }
 
     final isAdmin = user['isAdmin'] == true || username == 'zaron.films';
@@ -94,13 +94,13 @@ Future<Response> handleLogin(Request request) async {
         'username': user['username'],
         'displayName': user['displayName'] ?? username,
         'email': user['email'] ?? '',
-        'isAdmin': isAdmin,
+        'isAdmin': user['isAdmin'] == true || username == 'zaron.films',
         'createdAt': user['createdAt'],
       },
     }), headers: _json);
   } catch (e, st) {
-    print('[handleLogin] error: $e\n$st');
-    return Response.internalServerError(body: jsonEncode({'error': 'Internal server error'}), headers: _json);
+    print('[login] Unhandled error: $e\n$st');
+    return Response(500, body: jsonEncode({'error': 'Internal server error'}), headers: _json);
   }
 }
 

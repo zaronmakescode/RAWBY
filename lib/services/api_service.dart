@@ -17,8 +17,12 @@ class ApiService {
   ApiService() {
     _dio = Dio(BaseOptions(
       baseUrl: AppConstants.apiBaseUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 30),
+      // Render free dynos sleep after ~15 min idle; a cold start can take
+      // 30-60s. Short timeouts here caused first-login failures ("can't sign
+      // in" / "not loading"). Generous timeouts + retry below absorb the wake.
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
+      sendTimeout: const Duration(seconds: 60),
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -42,7 +46,28 @@ class ApiService {
         }
         handler.next(options);
       },
-      onError: (error, handler) {
+      onError: (error, handler) async {
+        // Cold-start retry: when the server is waking, requests fail with a
+        // timeout/connection error and no response. Retry a few times with
+        // backoff before surfacing the error.
+        final opts = error.requestOptions;
+        final attempt = (opts.extra["retry_attempt"] as int?) ?? 0;
+        const maxRetries = 3;
+        final isTransient = error.type == DioExceptionType.connectionTimeout ||
+            error.type == DioExceptionType.receiveTimeout ||
+            error.type == DioExceptionType.sendTimeout ||
+            error.type == DioExceptionType.connectionError;
+        if (isTransient && attempt < maxRetries) {
+          opts.extra["retry_attempt"] = attempt + 1;
+          await Future<void>.delayed(Duration(milliseconds: 1500 * (attempt + 1)));
+          try {
+            final res = await _dio.fetch<dynamic>(opts);
+            return handler.resolve(res);
+          } on DioException catch (e) {
+            return handler.next(e);
+          }
+        }
+
         if (error.response?.statusCode == 401) {
           // Token expired — clear auth
           _authToken = null;

@@ -82,6 +82,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (msg.contains('401') || msg.contains('invalid') || msg.contains('wrong')) {
       return 'Invalid username or password.';
     }
+    if (msg.contains('timeout') || msg.contains('timed out')) {
+      return 'Server is waking up (free hosting sleeps when idle). Give it a few seconds and tap Log in again.';
+    }
     if (msg.contains('network') || msg.contains('connection') || msg.contains('socket')) {
       return 'No connection. Check your internet.';
     }

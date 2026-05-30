@@ -18,6 +18,7 @@ class Store {
   late DbCollection _fcmTokens;
   late DbCollection _suggestions;
   late DbCollection _communityPrompts;
+  late DbCollection _generatedPrompts;
 
   Future<void> initialize() async {
     final mongoUri = Platform.environment['MONGO_URI'] ??
@@ -33,6 +34,7 @@ class Store {
     _fcmTokens = _db.collection('fcm_tokens');
     _suggestions = _db.collection('suggestions');
     _communityPrompts = _db.collection('community_prompts');
+    _generatedPrompts = _db.collection('generated_prompts');
 
     // Ensure indexes
     await _users.createIndex(keys: {'username': 1}, unique: true);
@@ -248,6 +250,23 @@ class Store {
 
   Future<List<Map<String, dynamic>>> getRecentCommunityPrompts({int limit = 6}) async {
     final docs = await _communityPrompts
+        .find(where.sortBy('createdAt', descending: true).limit(limit))
+        .toList();
+    return docs.map((d) { d.remove('_id'); return Map<String, dynamic>.from(d); }).toList();
+  }
+
+  // ── Generated Prompts (anti-repetition memory) ─────────────────
+
+  /// Store a compact fingerprint of a generated prompt so future
+  /// generations can be told what to avoid repeating.
+  Future<void> saveGeneratedPrompt(Map<String, dynamic> data) async {
+    data['id'] = _uuid.v4();
+    data['createdAt'] = DateTime.now().toIso8601String();
+    await _generatedPrompts.insertOne(data);
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentGeneratedPrompts({int limit = 12}) async {
+    final docs = await _generatedPrompts
         .find(where.sortBy('createdAt', descending: true).limit(limit))
         .toList();
     return docs.map((d) { d.remove('_id'); return Map<String, dynamic>.from(d); }).toList();

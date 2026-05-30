@@ -5,6 +5,7 @@
 // ============================================================
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:shelf/shelf.dart';
 import '../store.dart';
@@ -13,6 +14,15 @@ const _jsonHeaders = {'content-type': 'application/json'};
 
 const _systemPrompt = '''
 You write weekly short-film prompts for a solo videographer. Clear, direct English. No jargon. Cinematic but human. Output ONLY a valid JSON array with exactly 3 objects — no markdown, no commentary.
+
+═══════════════════════════════════════
+VARIETY IS YOUR #1 JOB — read this first
+═══════════════════════════════════════
+These prompts are generated every week. The single worst failure is sameness — prompts that feel interchangeable with last week's. Treat every generation as a deliberate swing AWAY from the obvious. Surprise the videographer. If an idea feels like the first thing any AI would write, discard it and dig for the second or third idea.
+
+BANNED DEFAULT SCENE (do NOT write this, in any disguise): the "rainy window / quiet kitchen / 6am / lukewarm coffee or espresso / staring at a phone or a letter / melancholy indecision" scene. It has been used to death. Also avoid as a crutch: someone lying in an unmade bed at noon, journaling by candlelight, and "staring wistfully into the middle distance." Mood ≠ a person being sad indoors near a window. Mood can be energy, texture, motion, humour, tension, joy, defiance.
+
+Honour the CREATIVE SEED supplied in the user message as binding constraints, not suggestions. It exists specifically to push each week somewhere new.
 
 ═══════════════════════════════════════
 THEME UNIVERSE — pick freely and boldly
@@ -63,6 +73,138 @@ JSON SCHEMA (each of the 3 objects)
 - licenseFreeKeywords: array of 2-3 specific royalty-free search phrases (mood + genre, e.g. "melancholy acoustic guitar dusk", "lo-fi rainy window morning")
 ''';
 
+// ════════════════════════════════════════════════════════════
+// CREATIVE-SEED ENGINE — the main defence against repetition.
+// Every call randomly draws constraints from these pools and bakes
+// them into the user prompt, so two generations are never anchored
+// to the same location / time / mood / visual device. Without this,
+// the model collapses to the same handful of "safe" scenes weekly.
+// ════════════════════════════════════════════════════════════
+
+final _rng = Random.secure();
+
+T _pick<T>(List<T> xs) => xs[_rng.nextInt(xs.length)];
+
+List<T> _pickN<T>(List<T> xs, int n) {
+  final pool = List<T>.of(xs)..shuffle(_rng);
+  return pool.take(n).toList();
+}
+
+/// Location families — forces spatial variety beyond "indoors near a window".
+const _locationFamilies = [
+  'inside a moving vehicle (car, bus, train, passenger seat)',
+  'on or beside water (river, lake, sea, pool, canal, harbour)',
+  'a threshold or in-between space (doorway, stairwell, lift, hallway, platform, bridge)',
+  'a high or open place (rooftop, hilltop, balcony, car park top deck, overpass)',
+  'an enclosed or underground space (basement, tunnel, garage, storage unit, attic)',
+  'open natural landscape (field, forest, desert, beach, moor, orchard)',
+  'a workplace or institution after or before hours (office, gym, classroom, shop, studio)',
+  'a place loaded with memory (childhood room, old route, family kitchen, an ex\'s neighbourhood)',
+  'somewhere public and busy, used for solitude (laundromat, station, market, food court, library)',
+  'a place of making or repair (workshop, kitchen mid-cook, garage build, garden, darkroom)',
+  'a transitional life-space (half-packed room, new empty flat, hotel, hospital corridor, waiting area)',
+  'a place of play or movement (skate park, court, pool hall, dance floor, arcade, trail)',
+];
+
+/// Time windows — break the dawn/blue-hour monoculture.
+const _timeWindows = [
+  'pre-dawn dark, before the light',
+  'hard bright midday, no soft light at all',
+  'flat grey overcast afternoon',
+  'the harsh fluorescent of a late shift',
+  'golden hour, but used against type (energetic, not wistful)',
+  'full night, lit only by practical/artificial sources',
+  'that specific 3pm Sunday emptiness',
+  'first light just breaking, cold and blue',
+];
+
+/// Emotional registers — proves mood isn\'t only sadness-by-a-window.
+const _emotionalRegisters = [
+  'restless anticipation',
+  'quiet contentment / ease',
+  'controlled, simmering anger',
+  'playful mischief or humour',
+  'awe and wonder at something ordinary',
+  'nervous, jittery excitement',
+  'defiance / proving something to yourself',
+  'flow and total focus on a craft',
+  'tenderness toward a person or object',
+  'boredom that cracks open into spontaneity',
+  'nostalgia that is warm, not mournful',
+  'relief after something hard ended',
+  'curiosity pulling you somewhere new',
+];
+
+/// Visual devices — a single constraint that shapes the whole piece and
+/// forces formal invention instead of default coverage.
+const _visualDevices = [
+  'tell it almost entirely in reflections (windows, water, mirrors, screens, chrome)',
+  'never show a human face the whole piece',
+  'shoot through something — glass, fabric, leaves, steam, a doorway',
+  'build the whole thing on ONE repeated action',
+  'make it feel like a single unbroken take',
+  'tell it with hands and objects only',
+  'commit to one dominant colour motif',
+  'use lots of negative space / empty frame',
+  'work in silhouette and shadow',
+  'cut macro textures against exactly one wide shot',
+  'the subject never stops moving',
+  'the camera never moves at all — every shot locked off',
+  'match-cut on shape or motion between every shot',
+  'let one sound (not music) drive the edit',
+];
+
+/// Genre pools to force genuinely different song palettes each week.
+const _genrePalette = [
+  'indie folk', 'bedroom pop', 'classical piano', 'lo-fi hip-hop',
+  'ambient electronic', 'jazz', 'soul/R&B', 'alternative rock',
+  'singer-songwriter', 'cinematic score', 'synth-pop', 'neo-soul',
+  'acoustic', 'dream pop', 'trap', 'art pop', 'punk',
+  'country/Americana', 'bossa nova', 'post-rock', 'gospel', 'shoegaze',
+];
+
+/// Rotating concrete EXAMPLES. We hand the model exactly ONE, chosen at
+/// random, purely as a format reference — so the in-context anchor moves
+/// every call instead of always being the rainy-kitchen scene.
+const _exampleScenes = [
+  'noon on a dead-straight desert highway. Heat shimmer warps the tarmac. You step out of the car, leave the door open, the engine ticking, and just listen to the wind. You touch the hot metal of the roof, then walk a few steps into the scrub and stop. Nothing is wrong. You just needed the size of it.',
+  'a laundromat at 11pm, every machine but one empty. Strip lighting hums. You fold a stranger\'s abandoned shirt out of habit, then catch yourself. The dryer thuds. You sit on the folding table, socked feet swinging, and for once your phone stays in your pocket.',
+  'a garage mid-build. Sawdust hangs in a shaft of work-light. You measure twice, swear once, and the cut finally lands clean. You blow the dust off, run a thumb along the edge, and grin at no one. The radio is playing something you\'d never admit to liking.',
+  'a public pool at opening, water glass-flat. You\'re the first in. The shock of cold, then the line of bubbles as you push off. Lap after lap, the city noise gone underwater. You stop at the wall, breathing hard, hair flat, completely awake.',
+  'backstage before a small gig, ten minutes out. Someone\'s gaffer-taping a setlist to the floor. You retune by ear, miss, retune again. Hands not quite steady. You roll your shoulders, blow out a breath, and walk toward the noise.',
+  'a kitchen full of family mid-cook, four conversations at once, a pot about to boil over. You reach past three people for the salt, get elbowed, laugh. Steam fogs your glasses. Nobody is filming a moment; the moment is just happening too fast to hold.',
+  'a skate park emptying out at dusk. One kid keeps trying the same trick and eating it. You stop pretending to leave and watch. They land it. The whole park — six people — loses it. You\'re yelling too before you decide to.',
+  'moving day, the flat finally empty. Your voice echoes differently now. You find one forgotten drawing pin in the carpet, hold it, then leave it on the windowsill on purpose. Keys on the counter. You don\'t look back from the doorway — you just go.',
+];
+
+/// Build the per-call CREATIVE SEED block. This is appended to the user
+/// prompt as binding constraints; the random seed integer also nudges the
+/// model away from token-for-token repetition between runs.
+String _creativeSeedBlock() {
+  final seed = _rng.nextInt(1 << 32);
+  final loc = _pickN(_locationFamilies, 3);
+  final times = _pickN(_timeWindows, 3);
+  final moods = _pickN(_emotionalRegisters, 3);
+  final devices = _pickN(_visualDevices, 3);
+  final genres = _pickN(_genrePalette, 3);
+
+  return '''
+
+═══════════════════════════════════════
+THIS WEEK'S CREATIVE SEED (uniqueness id: $seed) — BINDING
+═══════════════════════════════════════
+These are mandatory divergence constraints for THIS generation only. Obey them; do not drift back to defaults.
+
+- LOCATIONS: assign each of the 3 prompts a DIFFERENT family from this set — ${loc.join(' · ')}. None of the 3 may be "indoors at a window".
+- TIME OF DAY: spread the 3 prompts across these registers — ${times.join(' · ')}. Do not put all three in the same light.
+- EMOTIONAL CORES: the 3 prompts must carry distinct emotional registers drawn from — ${moods.join(' · ')}. At most one may be melancholy/reflective; the rest must NOT be.
+- VISUAL DEVICE: give at least one prompt a strong formal constraint — pick from: ${devices.join(' · ')}. State it inside that prompt's shots.
+- SONG GENRES: across the 3 "best_match" songs, lean into these three different genres — ${genres.join(', ')}. No two best_match songs may share a genre.
+
+Use the uniqueness id ($seed) as a reason to make fresh, specific, unexpected choices — not the safe first idea.
+''';
+}
+
 Future<String?> _getSpotifyToken() async {
   final id = Platform.environment['SPOTIFY_CLIENT_ID'] ?? '';
   final secret = Platform.environment['SPOTIFY_CLIENT_SECRET'] ?? '';
@@ -103,6 +245,7 @@ String _userPrompt({
   required bool seasonalPrompts,
   List<String> spotifySongs = const [],
   List<String> communityPrompts = const [],
+  List<String> avoidPrompts = const [],
 }) {
   final inspirationGuide = inspirations
       .map((i) =>
@@ -110,6 +253,17 @@ String _userPrompt({
       .join('\n');
 
   final locationHint = _buildLocationHint(region: region, seasonal: seasonalPrompts);
+  final seedBlock = _creativeSeedBlock();
+  final exampleScene = _pick(_exampleScenes);
+
+  final avoidBlock = avoidPrompts.isEmpty ? '' : '''
+
+═══════════════════════════════════════
+ALREADY USED — DO NOT REPEAT
+═══════════════════════════════════════
+These scenarios were generated in recent weeks. Do NOT reuse their locations, core situations, objects, or song picks. Go somewhere clearly different:
+${avoidPrompts.take(12).map((p) => '• $p').join('\n')}
+''';
 
   final spotifyBlock = spotifySongs.isEmpty ? '' : '''
 
@@ -125,7 +279,7 @@ ${communityPrompts.map((p) => '• $p').join('\n')}
 ''';
 
   return '''
-Create 3 weekly prompts. Each prompt MUST be a CONCRETE scenario, not abstract. Bad: "a conversation about life". Good: "you sit in your kitchen at 6 AM, rain streaking the window, staring at a job offer email on your phone. The espresso machine hisses. A half-packed suitcase is open on the floor. You trace the rim of the mug with your thumb. You pick up the phone, put it down, then open the kitchen window and let the cold air in. Outside the street is empty. You stand there breathing and decide nothing."$spotifyBlock$communityBlock
+Create 3 weekly prompts. Each prompt MUST be a CONCRETE scenario, not abstract. Bad: "a conversation about life". This is ONLY a format reference for how concrete and sensory to get — do NOT copy its location, mood, or objects: "$exampleScene"$seedBlock$avoidBlock$spotifyBlock$communityBlock
 
 The text field MUST be 100 to 160 words. Describe the scene in cinematic detail: location, time, light, objects, small specific actions, the emotional arc. Do NOT put camera instructions in text — those go in the shots array.
 
@@ -234,12 +388,20 @@ Future<Response> handleGeneratePrompts(Request request) async {
       communityPrompts.addAll(recent.map((p) => p['text'] as String? ?? '').where((t) => t.isNotEmpty));
     } catch (_) {}
 
+    // Fetch our OWN recently generated prompts to actively avoid repeating them.
+    final List<String> avoidPrompts = [];
+    try {
+      final recent = await Store.instance.getRecentGeneratedPrompts(limit: 12);
+      avoidPrompts.addAll(recent.map((p) => p['fingerprint'] as String? ?? '').where((t) => t.isNotEmpty));
+    } catch (_) {}
+
     final userPromptText = _userPrompt(
       inspirations: inspirations,
       region: region,
       seasonalPrompts: seasonalPrompts,
       spotifySongs: spotifySongs,
       communityPrompts: communityPrompts,
+      avoidPrompts: avoidPrompts,
     );
 
     final rawText = provider == 'openai'
@@ -249,6 +411,14 @@ Future<Response> handleGeneratePrompts(Request request) async {
             : await _callGroq(model: model, userPrompt: userPromptText);
 
     final prompts = _parsePrompts(rawText);
+
+    // Persist compact fingerprints so next week's generation can dodge them.
+    try {
+      for (final p in prompts) {
+        await Store.instance.saveGeneratedPrompt({'fingerprint': _fingerprint(p)});
+      }
+    } catch (_) {}
+
     return Response.ok(jsonEncode({'prompts': prompts}), headers: _jsonHeaders);
   } catch (e, st) {
     stderr.writeln('[generate-prompts] $e\n$st');
@@ -272,7 +442,12 @@ Future<String> _callGroq({required String model, required String userPrompt}) as
     },
     body: jsonEncode({
       'model': model,
-      'temperature': 0.85,
+      // Higher temperature + nucleus sampling for range; presence/frequency
+      // penalties push the model off its repeated phrasings and scenes.
+      'temperature': 0.95,
+      'top_p': 0.95,
+      'presence_penalty': 0.6,
+      'frequency_penalty': 0.3,
       'max_tokens': 8000,
       'response_format': {'type': 'json_object'},
       'messages': [
@@ -300,7 +475,10 @@ Future<String> _callOpenAi({required String model, required String userPrompt}) 
     },
     body: jsonEncode({
       'model': model,
-      'temperature': 0.85,
+      'temperature': 0.95,
+      'top_p': 0.95,
+      'presence_penalty': 0.6,
+      'frequency_penalty': 0.3,
       'max_tokens': 8000,
       'response_format': {'type': 'json_object'},
       'messages': [
@@ -329,6 +507,7 @@ Future<String> _callClaudePrompts({required String model, required String userPr
     body: jsonEncode({
       'model': model,
       'max_tokens': 8000,
+      'temperature': 1.0,
       'system': _systemPrompt,
       'messages': [
         {'role': 'user', 'content': userPrompt},
@@ -401,6 +580,32 @@ List<Map<String, dynamic>> _parsePrompts(String raw) {
       'licenseFreeKeywords': m['licenseFreeKeywords'] ?? [],
     };
   }).toList();
+}
+
+/// Compact one-line signature of a generated prompt — enough for the next
+/// run to recognise and avoid the same location/situation/song, without
+/// bloating the context with full prompt bodies.
+String _fingerprint(Map<String, dynamic> p) {
+  final text = (p['text'] as String? ?? '').trim();
+  final words = text.split(RegExp(r'\s+')).take(24).join(' ');
+  final emotion = (p['emotion'] as String? ?? '').trim();
+  final category = (p['category'] as String? ?? '').trim();
+  final songs = (p['songs'] as List<dynamic>? ?? []);
+  final bestSong = songs.isEmpty
+      ? ''
+      : (() {
+          final s = Map<String, dynamic>.from(songs.first as Map);
+          final t = (s['title'] ?? '').toString();
+          final a = (s['artist'] ?? '').toString();
+          return t.isEmpty ? '' : '"$t"${a.isEmpty ? '' : ' — $a'}';
+        })();
+  final parts = <String>[
+    if (emotion.isNotEmpty) emotion,
+    if (category.isNotEmpty) category,
+    if (words.isNotEmpty) words,
+    if (bestSong.isNotEmpty) 'song: $bestSong',
+  ];
+  return parts.join(' · ');
 }
 
 String _stripFences(String s) {

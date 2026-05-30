@@ -11,4 +11,4 @@ services:
       - key: MONGO_URI
         sync: false  # Set this manually in Render dashboard
       - key: JWT_SECRET
-        generateValue: true  # Render generates a secure random secret; without it /api/login 500s
+        sync: false  # Set manually in Render dashboard. Must stay stable, else all issued tokens invalidate on redeploy.

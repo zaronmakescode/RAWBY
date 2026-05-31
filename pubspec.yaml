@@ -29,6 +29,21 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
+
+# App launcher icon (pine-green frosted glass squircle). Regenerate with:
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/icons/app_icon.png"
+  android: true
+  ios: false
+  adaptive_icon_background: "#070E0A"
+  adaptive_icon_foreground: "assets/icons/app_icon.png"
+  web:
+    generate: true
+  windows:
+    generate: true
+    icon_size: 256
 
 flutter:
   uses-material-design: true

@@ -1,9 +1,10 @@
-# render.yaml sets `rootDir: server`, so the Docker build context IS the server/
-# directory. Copy its contents directly (the previous `COPY server/ .` looked for
-# a nonexistent server/server/ path and failed every deploy).
+# Render's Docker build context for this service is the REPO ROOT, and the repo
+# root holds the Flutter app's pubspec (name: rawby, depends on flutter_test).
+# So copy ONLY the server/ subdir into /app — `COPY . .` would pull the Flutter
+# pubspec and make `dart pub get` fail (flutter_test has no Flutter SDK here).
 FROM dart:stable AS build
 WORKDIR /app
-COPY . .
+COPY server/ .
 RUN dart pub get
 
 FROM dart:stable

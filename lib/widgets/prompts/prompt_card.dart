@@ -603,7 +603,10 @@ class _SongTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tierStyle = _tierStyle(song.type);
-    return Container(
+    return InkWell(
+      onTap: _openInSpotify,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
@@ -661,6 +664,10 @@ class _SongTile extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
+              // Tap to open this track in Spotify (search by title + artist).
+              const Icon(Icons.play_circle_fill,
+                  color: Color(0xFF1DB954), size: 24),
             ],
           ),
           if (song.whyItWorks.isNotEmpty) ...[
@@ -675,6 +682,16 @@ class _SongTile extends StatelessWidget {
           ],
         ],
       ),
+      ),
+    );
+  }
+
+  Future<void> _openInSpotify() async {
+    final q = Uri.encodeComponent('${song.title} ${song.artist}'.trim());
+    if (q.isEmpty) return;
+    await launchUrl(
+      Uri.parse('https://open.spotify.com/search/$q'),
+      mode: LaunchMode.externalApplication,
     );
   }
 

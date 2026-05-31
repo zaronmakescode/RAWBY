@@ -44,18 +44,14 @@ LESS IS MORE — this is a law, not a tip
 At least one prompt per week MUST be minimal. Simple idea. One location. Quiet. No plot. Pure mood. Example: someone sits on their kitchen floor eating cereal at 2am. That's the whole story. No explanation needed. The best Reels often have the simplest concept executed with feeling. Not every prompt needs an emotional arc. Some just need presence.
 
 ═══════════════════════════════════════
-SONGS — diversity is mandatory
+SONGS — real, recognizable, fitting
 ═══════════════════════════════════════
-The 3 prompts must have songs from DIFFERENT genres. Mix from: indie folk, bedroom pop, classical piano, lo-fi hip-hop, ambient electronic, jazz, soul/R&B, alternative rock, singer-songwriter, cinematic score, synth-pop, neo-soul, acoustic, dream pop, trap, art pop, punk, country/Americana, bossa nova.
+Suggest ONLY real songs that genuinely exist, by the correct artist. Prefer songs a normal listener would actually recognize — popular and well-loved beats obscure-and-clever every time. If you are not certain a song is real AND correctly attributed, pick a famous one instead. NEVER invent songs. NEVER guess what is "currently trending" on TikTok/Reels — you cannot know, so don't try. Never mangle title/artist pairs. A little variety in vibe across the 3 prompts is fine, but recognizability always wins: if in doubt, choose the song most people would know.
 
-BANNED OVERUSED SONGS (never suggest these): "Glimpse of Us" Joji, "Bad Guy" Billie Eilish, "Heat Waves" Glass Animals, "Drivers License" Olivia Rodrigo, "Blinding Lights" The Weeknd, "Watermelon Sugar" Harry Styles, "As It Was" Harry Styles, "lovely" Billie Eilish & Khalid, "River" Bishop Briggs, "The Night We Met" Lord Huron, "Clair de Lune" Debussy (as a cliché), "Fade" Alan Walker, anything by Marshmello or The Chainsmokers.
-
-Think beyond the obvious. Some examples of songs that work well but are underused in Reels: "Lua" Bright Eyes, "Motion Picture Soundtrack" Radiohead, "Holocene" Bon Iver, "Comptine d'un autre été" Yann Tiersen, "Funeral" Phoebe Bridgers, "First Day of My Life" Bright Eyes, "Pink + White" Frank Ocean, "Sunday Morning" Maroon 5, "Coffee" beabadoobee, "Golden" Harry Styles (golden hour footage), "Lavender Haze" Taylor Swift (slow burn), "Buttercup" Hippo Campus, "Ribs" Lorde, "Youth" Daughter, "Oblivion" Grimes, "Motion Sickness" Phoebe Bridgers, "Video Games" Lana Del Rey, "Skinny Love" Bon Iver, "Bloom" The Paper Kites, "Let Her Go" Passenger, "Flightless Bird" Iron & Wine, "Falling" Trevor Daniel, "Heartbeats" José González, "Run" Hozier, "Cherry Wine" Hozier, "Like Real People Do" Hozier, "The Joke" Brandi Carlile, "Heaven" Bryan Adams, "Atlas Hands" Benjamin Francis Leftwich, "Slow Burn" Kacey Musgraves, "Rainbow" Kacey Musgraves, "Mess Is Mine" Vance Joy, "Riptide" Vance Joy, "Tenerife Sea" Ed Sheeran, "Supermarket Flowers" Ed Sheeran, "Retrograde" James Blake, "Digital Witness" St. Vincent, "Liability" Lorde, "Perfect Places" Lorde.
-
-SONG STRUCTURE (for each prompt — must be exactly these tiers):
-1. "best_match" — the song that GENUINELY fits the mood. Think freely. Any era. Not necessarily popular.
-2. "trending" — a song currently used heavily on Instagram Reels or TikTok (2024-2026). Must also fit the theme.
-3. "classic_fit" — timeless or widely known. Still resonates. Fits the scene.
+SONG STRUCTURE (for each prompt — exactly these 3 tiers, keys unchanged):
+1. "best_match" — the real song that best fits the mood. May be popular. Must genuinely fit.
+2. "trending" — a genuinely popular, widely-known hit (a real song people actually recognize) that also fits the theme.
+3. "classic_fit" — a timeless, broadly recognized song that fits the scene.
 
 ═══════════════════════════════════════
 JSON SCHEMA (each of the 3 objects)
@@ -199,7 +195,7 @@ These are mandatory divergence constraints for THIS generation only. Obey them; 
 - TIME OF DAY: spread the 3 prompts across these registers — ${times.join(' · ')}. Do not put all three in the same light.
 - EMOTIONAL CORES: the 3 prompts must carry distinct emotional registers drawn from — ${moods.join(' · ')}. At most one may be melancholy/reflective; the rest must NOT be.
 - VISUAL DEVICE: give at least one prompt a strong formal constraint — pick from: ${devices.join(' · ')}. State it inside that prompt's shots.
-- SONG GENRES: across the 3 "best_match" songs, lean into these three different genres — ${genres.join(', ')}. No two best_match songs may share a genre.
+- SONGS: pick real, recognizable songs that genuinely fit each scene. Light variety in vibe is welcome (loose inspiration only: ${genres.join(', ')}), but recognizability ALWAYS wins — never force an obscure genre, and never pick a song most people wouldn't know.
 
 Use the uniqueness id ($seed) as a reason to make fresh, specific, unexpected choices — not the safe first idea.
 ''';

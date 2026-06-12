@@ -16,34 +16,11 @@ import '../theme/app_colors.dart';
 import '../widgets/common/glass_card.dart';
 import '../widgets/projects/history_list.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends ConsumerState<HomeScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _jarvisCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _jarvisCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _jarvisCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(userSessionProvider);
     return Scaffold(
       body: AuraBackground(
@@ -106,6 +83,9 @@ class _HeaderBar extends StatelessWidget {
     final name = session.displayName.isNotEmpty
         ? session.displayName.split(' ').first
         : (session.username.isNotEmpty ? session.username : 'creator');
+    final avatarName = session.displayName.isNotEmpty
+        ? session.displayName
+        : session.username;
 
     final weekStart = DateTime.tryParse(session.weekStart)?.toLocal();
     final deadline = DateTime.tryParse(session.deadline)?.toLocal();
@@ -152,33 +132,25 @@ class _HeaderBar extends StatelessWidget {
             ),
             GestureDetector(
               onTap: () => context.push(Routes.profile),
-              child: Consumer(
-                builder: (ctx, ref, _) {
-                  final s = ref.watch(userSessionProvider);
-                  final name = s.displayName.isNotEmpty ? s.displayName : s.username;
-                  final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-                  final theme = Theme.of(ctx);
-                  return Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.secondary,
-                      ]),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      initial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  );
-                },
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.secondary,
+                  ]),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  avatarName.isNotEmpty ? avatarName[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
             ),
           ],
@@ -463,22 +435,32 @@ class _BentoGrid extends StatelessWidget {
       ),
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        mainAxisExtent: 72,
-      ),
-      itemCount: cells.length,
-      itemBuilder: (ctx, i) {
-        return cells[i].animate(delay: (40 * i).ms).fadeIn().slideY(
-              begin: 0.08,
-              end: 0,
-              curve: Curves.easeOutCubic,
-            );
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        // 4 tiles per row leaves ~85px tiles on phones — labels get
+        // truncated to "WE…". Drop to 2 readable columns under 480px.
+        final crossAxisCount = constraints.maxWidth >= 480 ? 4 : 2;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          // Without this the grid absorbs the ambient bottom inset from the
+          // floating nav bar and renders a phantom gap below the tiles.
+          padding: EdgeInsets.zero,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            mainAxisExtent: crossAxisCount == 4 ? 72 : 58,
+          ),
+          itemCount: cells.length,
+          itemBuilder: (ctx, i) {
+            return cells[i].animate(delay: (40 * i).ms).fadeIn().slideY(
+                  begin: 0.08,
+                  end: 0,
+                  curve: Curves.easeOutCubic,
+                );
+          },
+        );
       },
     );
   }

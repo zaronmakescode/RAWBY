@@ -2,11 +2,16 @@
 // RAWBY — Shared design primitives
 // Glass card, level gradients, bento tile, stat tile, film tag.
 // ============================================================
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 
 /// Frosted glass card with optional gradient border and tap callback.
+///
+/// The frosted look is painted with translucent tints instead of a
+/// [BackdropFilter]: screens stack many of these cards, and a real backdrop
+/// blur forces a saveLayer + gaussian pass per card per frame. Over the
+/// soft aura backgrounds the two are visually indistinguishable, but this
+/// version costs a single rounded-rect fill.
 class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -14,7 +19,6 @@ class GlassCard extends StatelessWidget {
   final VoidCallback? onTap;
   final List<Color>? gradient;
   final Color? tint;
-  final double blur;
   final double borderOpacity;
 
   const GlassCard({
@@ -25,7 +29,6 @@ class GlassCard extends StatelessWidget {
     this.onTap,
     this.gradient,
     this.tint,
-    this.blur = 10,
     this.borderOpacity = 0.12,
   });
 
@@ -34,51 +37,46 @@ class GlassCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final baseTint = tint ??
-        (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.55));
+        (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.60));
+    final borderRadius = BorderRadius.circular(radius);
 
-    final card = ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: Container(
-          decoration: BoxDecoration(
-            color: gradient == null ? baseTint : null,
-            borderRadius: BorderRadius.circular(radius),
-            gradient: gradient == null
-                ? null
-                : LinearGradient(
-                    colors: gradient!,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-            border: Border.all(
-              color: (isDark ? Colors.white : Colors.black)
-                  .withValues(alpha: borderOpacity),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
+    final card = Container(
+      decoration: BoxDecoration(
+        color: gradient == null ? baseTint : null,
+        borderRadius: borderRadius,
+        gradient: gradient == null
+            ? null
+            : LinearGradient(
+                colors: gradient!,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
-          padding: padding,
-          child: child,
+        border: Border.all(
+          color: (isDark ? Colors.white : Colors.black)
+              .withValues(alpha: borderOpacity),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
+      child: onTap == null
+          ? Padding(padding: padding, child: child)
+          : Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: borderRadius,
+                child: Padding(padding: padding, child: child),
+              ),
+            ),
     );
 
-    if (onTap == null) return card;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(radius),
-        child: card,
-      ),
-    );
+    return card;
   }
 }
 
@@ -403,10 +401,12 @@ class AuraBackground extends StatelessWidget {
           theme.colorScheme.primary.withValues(alpha: isDark ? 0.20 : 0.14),
           theme.colorScheme.secondary.withValues(alpha: isDark ? 0.16 : 0.10),
         ];
+    // The blobs fade out through extra gradient stops, which reads the same
+    // as the old full-screen BackdropFilter blur but costs nothing per frame.
     return Stack(
       fit: StackFit.expand,
       children: [
-        Container(color: theme.colorScheme.surface),
+        ColoredBox(color: theme.colorScheme.surface),
         Positioned(
           left: -120,
           top: -120,
@@ -418,12 +418,6 @@ class AuraBackground extends StatelessWidget {
             bottom: -120,
             child: _blob(c[1], 280),
           ),
-        Positioned.fill(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 36, sigmaY: 36),
-            child: Container(color: Colors.transparent),
-          ),
-        ),
         child,
       ],
     );
@@ -435,7 +429,12 @@ class AuraBackground extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: RadialGradient(
-            colors: [color, color.withValues(alpha: 0)],
+            colors: [
+              color,
+              color.withValues(alpha: color.a * 0.55),
+              color.withValues(alpha: 0),
+            ],
+            stops: const [0.0, 0.45, 1.0],
           ),
         ),
       );

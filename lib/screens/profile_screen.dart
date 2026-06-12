@@ -449,7 +449,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         final theme = Theme.of(ctx);
         final isDark = theme.brightness == Brightness.dark;
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
           child: Container(
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1A1A1A) : Colors.white,

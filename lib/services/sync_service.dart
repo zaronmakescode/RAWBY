@@ -33,6 +33,10 @@ class SyncService {
   }
 
   Future<void> _doSync(UserSession session) async {
+    // Anonymous sessions have nothing to sync — skipping also avoids a
+    // request (plus transient-error retries) on every local change while
+    // logged out.
+    if (session.userId.isEmpty || !_api.hasAuthToken) return;
     try {
       final rank = session.currentRank;
       await _api.syncScores({

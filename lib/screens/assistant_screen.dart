@@ -557,33 +557,37 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       child: Row(
         children: [
-          AnimatedBuilder(
-            animation: orb,
-            builder: (_, __) {
-              return Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withValues(alpha: 
-                          listening ? 0.6 : (thinking ? 0.5 : 0.35)),
-                      blurRadius: 28,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: CustomPaint(
-                  painter: _OrbPainter(
-                    progress: orb.value,
-                    primary: theme.colorScheme.primary,
-                    secondary: theme.colorScheme.secondary,
-                    pulse: listening || thinking,
+          // RepaintBoundary keeps the orb's continuous animation from
+          // repainting the rest of the header every frame.
+          RepaintBoundary(
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha:
+                        listening ? 0.6 : (thinking ? 0.5 : 0.35)),
+                    blurRadius: 28,
+                    spreadRadius: 2,
                   ),
-                ),
-              );
-            },
+                ],
+              ),
+              child: AnimatedBuilder(
+                animation: orb,
+                builder: (_, __) {
+                  return CustomPaint(
+                    painter: _OrbPainter(
+                      progress: orb.value,
+                      primary: theme.colorScheme.primary,
+                      secondary: theme.colorScheme.secondary,
+                      pulse: listening || thinking,
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -740,7 +744,7 @@ class _Composer extends StatelessWidget {
         16,
         12,
         16,
-        MediaQuery.of(context).viewInsets.bottom + 16,
+        MediaQuery.viewInsetsOf(context).bottom + 16,
       ),
       child: Row(
         children: [

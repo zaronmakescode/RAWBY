@@ -24,13 +24,15 @@ class RawbyBottomNav extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
+    return Padding(
       padding: EdgeInsets.fromLTRB(
         14,
         10,
         14,
-        MediaQuery.of(context).padding.bottom + 8,
+        MediaQuery.paddingOf(context).bottom + 8,
       ),
+      // The nav bar is the one backdrop blur kept in the app — content
+      // actually scrolls underneath it (extendBody), so the frost is visible.
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(

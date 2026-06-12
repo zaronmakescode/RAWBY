@@ -20,23 +20,25 @@ class ShellScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final width = MediaQuery.of(context).size.width;
+    final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= AppConstants.mobileBreakpoint;
-    final session = ref.watch(userSessionProvider);
+    // Only isAdmin affects this shell — don't rebuild it on every session change.
+    final isAdmin =
+        ref.watch(userSessionProvider.select((s) => s.isAdmin));
     final location = GoRouterState.of(context).matchedLocation;
-    final currentIndex = _locationToIndex(location, session.isAdmin);
+    final currentIndex = _locationToIndex(location, isAdmin);
 
     if (isDesktop) {
       return _DesktopLayout(
         currentIndex: currentIndex,
-        isAdmin: session.isAdmin,
+        isAdmin: isAdmin,
         child: child,
       );
     }
 
     return _MobileLayout(
       currentIndex: currentIndex,
-      isAdmin: session.isAdmin,
+      isAdmin: isAdmin,
       child: child,
     );
   }
@@ -51,8 +53,12 @@ class ShellScaffold extends ConsumerWidget {
         return 2;
       case Routes.gear:
         return 3;
+      case Routes.admin:
+        return isAdmin ? 4 : -1;
       default:
-        return 0;
+        // Non-tab routes (assistant, settings, profile…) highlight nothing
+        // instead of falsely lighting up Home.
+        return -1;
     }
   }
 }

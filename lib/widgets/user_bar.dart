@@ -23,7 +23,7 @@ class UserBar extends ConsumerWidget {
 
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
+        top: MediaQuery.paddingOf(context).top + 10,
         left: 24,
         right: 24,
         bottom: 12,

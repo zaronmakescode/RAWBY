@@ -59,7 +59,7 @@ class _ProjectSummaryModalState extends ConsumerState<ProjectSummaryModal> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: SafeArea(
         child: SingleChildScrollView(

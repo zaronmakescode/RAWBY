@@ -419,34 +419,33 @@ class _LoadingShimmerState extends State<_LoadingShimmer>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (ctx, _) {
-        final shimmerColor = widget.theme.colorScheme.surfaceContainerHighest
-            .withValues(alpha: 0.5 + _animation.value * 0.5);
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          children: [
-            // Podium placeholder
-            Container(
-              height: 160,
-              decoration: BoxDecoration(
-                color: shimmerColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
+    final shimmerColor = widget.theme.colorScheme.surfaceContainerHighest;
+    // Pulse the whole static list's opacity instead of rebuilding every
+    // placeholder each animation frame.
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.5, end: 1.0).animate(_animation),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        children: [
+          // Podium placeholder
+          Container(
+            height: 160,
+            decoration: BoxDecoration(
+              color: shimmerColor,
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 16),
-            ...List.generate(8, (i) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              height: 64,
-              decoration: BoxDecoration(
-                color: shimmerColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            )),
-          ],
-        );
-      },
+          ),
+          const SizedBox(height: 16),
+          ...List.generate(8, (i) => Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            height: 64,
+            decoration: BoxDecoration(
+              color: shimmerColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          )),
+        ],
+      ),
     );
   }
 }

@@ -5,11 +5,10 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz_package;
 
@@ -17,7 +16,6 @@ import 'providers/router_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/storage_service.dart';
 import 'services/notification_service.dart';
-import 'screens/splash_screen.dart';
 
 // ── Background message handler (must be top-level) ──────────
 @pragma('vm:entry-point')
@@ -31,24 +29,18 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Lock to portrait on mobile (optional — remove for tablet support)
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
+  // Fonts are bundled in assets/google_fonts — never fetch over the network.
+  GoogleFonts.config.allowRuntimeFetching = false;
 
-  // 2. Initialize timezone data (Europe/Budapest for deadline anchoring)
+  // 1. Initialize timezone data (Europe/Budapest for deadline anchoring)
   tz.initializeTimeZones();
   tz_package.setLocalLocation(tz_package.getLocation('Europe/Budapest')); // Set local timezone
 
-  // 3. Initialize Hive
-  await Hive.initFlutter();
+  // 2. Initialize Hive-backed storage
   final storage = StorageService();
   await storage.init();
 
-  // 4. Initialize Firebase (mobile only — Windows/Linux have no FCM support)
+  // 3. Initialize Firebase (mobile only — Windows/Linux have no FCM support)
   bool firebaseReady = false;
   final isMobilePlatform = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
   if (isMobilePlatform) {
@@ -61,7 +53,7 @@ Future<void> main() async {
     }
   }
 
-  // 5. Run app with Riverpod
+  // 4. Run app with Riverpod
   runApp(
     ProviderScope(
       overrides: [
@@ -85,18 +77,12 @@ class RawbyApp extends ConsumerStatefulWidget {
 }
 
 class _RawbyAppState extends ConsumerState<RawbyApp> {
-  bool _ready = false;
-
   @override
   void initState() {
     super.initState();
     if (widget.firebaseReady) {
       ref.read(notificationServiceProvider);
     }
-    // Brief splash delay for smooth startup feel
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) setState(() => _ready = true);
-    });
   }
 
   @override
@@ -110,9 +96,6 @@ class _RawbyAppState extends ConsumerState<RawbyApp> {
       theme: theme,
       routerConfig: router,
       builder: (context, child) {
-        if (!_ready) {
-          return const SplashScreen();
-        }
         final t = Theme.of(context).textTheme;
         return DefaultTextStyle(
           style: t.bodyMedium ?? const TextStyle(color: Color(0xFFF1F1F0)),
@@ -132,14 +115,19 @@ class _AppWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    // sizeOf only rebuilds on size changes (not keyboard/inset changes,
+    // which MediaQuery.of would also subscribe to).
+    final width = MediaQuery.sizeOf(context).width;
 
     // On very wide screens (>1200px), center the content
     if (width > 1200) {
-      return Center(
-        child: SizedBox(
-          width: 1200,
-          child: child,
+      return ColoredBox(
+        color: Theme.of(context).colorScheme.surface,
+        child: Center(
+          child: SizedBox(
+            width: 1200,
+            child: child,
+          ),
         ),
       );
     }

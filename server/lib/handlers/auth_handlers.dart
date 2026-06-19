@@ -48,6 +48,7 @@ final _json = {'content-type': 'application/json'};
 
 Future<Response> handleLogin(Request request) async {
   try {
+    await Store.instance.ensureConnected();
     final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
     final username = (body['username'] as String?)?.trim() ?? '';
     final password = (body['password'] as String?)?.trim() ?? '';
@@ -105,6 +106,7 @@ Future<Response> handleLogin(Request request) async {
 }
 
 Future<Response> handleRegister(Request request) async {
+  await Store.instance.ensureConnected();
   final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
   final username = (body['username'] as String?)?.trim() ?? '';
   final displayName = (body['displayName'] as String?)?.trim() ?? '';

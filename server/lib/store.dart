@@ -26,15 +26,7 @@ class Store {
 
     _db = await Db.create(mongoUri);
     await _db.open();
-
-    _users = _db.collection('users');
-    _snapshots = _db.collection('snapshots');
-    _feedback = _db.collection('feedback');
-    _updates = _db.collection('updates');
-    _fcmTokens = _db.collection('fcm_tokens');
-    _suggestions = _db.collection('suggestions');
-    _communityPrompts = _db.collection('community_prompts');
-    _generatedPrompts = _db.collection('generated_prompts');
+    _bindCollections();
 
     // Ensure indexes
     await _users.createIndex(keys: {'username': 1}, unique: true);
@@ -43,6 +35,45 @@ class Store {
     await _suggestions.createIndex(keys: {'userId': 1});
 
     print('  MongoDB connected to: ${_db.databaseName}');
+  }
+
+  void _bindCollections() {
+    _users = _db.collection('users');
+    _snapshots = _db.collection('snapshots');
+    _feedback = _db.collection('feedback');
+    _updates = _db.collection('updates');
+    _fcmTokens = _db.collection('fcm_tokens');
+    _suggestions = _db.collection('suggestions');
+    _communityPrompts = _db.collection('community_prompts');
+    _generatedPrompts = _db.collection('generated_prompts');
+  }
+
+  /// Atlas free-tier closes idle sockets and Render's keep-alive only pinged
+  /// /api/health (which never touched Mongo), so the connection silently died
+  /// and every query threw a 500. Re-open the connection if it has dropped.
+  /// Cheap no-op when already connected.
+  Future<void> ensureConnected() async {
+    if (_db.isConnected) return;
+    try {
+      await _db.close();
+    } catch (_) {
+      // ignore — we're about to re-open
+    }
+    await _db.open();
+    _bindCollections();
+    print('  MongoDB reconnected to: ${_db.databaseName}');
+  }
+
+  /// Reconnect if needed, then confirm the link is live with a light command.
+  /// Returns true when the database is reachable.
+  Future<bool> pingDb() async {
+    try {
+      await ensureConnected();
+      await _db.serverStatus();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ── Users ──────────────────────────────────────────────────────

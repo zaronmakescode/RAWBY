@@ -54,6 +54,8 @@ String _buildContextNote(Map<String, dynamic> ctx) {
   if (ctx['rank'] != null) parts.add('rank: ${ctx['rank']}');
   if (ctx['totalScore'] != null) parts.add('total score: ${ctx['totalScore']} pts');
   if (ctx['streak'] != null) parts.add('streak: ${ctx['streak']} weeks');
+  if (ctx['completedWeeks'] != null) parts.add('weeks completed: ${ctx['completedWeeks']}');
+  if (ctx['avgLikes'] != null) parts.add('avg likes: ${ctx['avgLikes']}');
   if (ctx['regensLeft'] != null) parts.add('regens left this week: ${ctx['regensLeft']}');
   if (ctx['daysLeft'] != null) parts.add('days until deadline: ${ctx['daysLeft']}');
   if (ctx['promptLevel'] != null) parts.add('current prompt level: ${ctx['promptLevel']}');
@@ -191,6 +193,7 @@ Future<Response> handleSkillFeedback(Request request) async {
     final focusArea = body['focusArea'] as String? ?? 'general filmmaking';
     final notes = body['notes'] as String? ?? '';
     final stats = body['stats'] as Map<String, dynamic>? ?? {};
+    final provider = (body['provider'] as String? ?? 'groq').toLowerCase();
 
     final userMessage = [
       'Focus area: $focusArea',
@@ -200,11 +203,17 @@ Future<Response> handleSkillFeedback(Request request) async {
           '${stats['projectsCompleted'] ?? 0} projects completed.',
     ].join('\n');
 
-    final reply = await _callGroq(
-      systemPrompt: _skillSystemPrompt,
-      messages: [{'role': 'user', 'content': userMessage}],
-      maxTokens: 500,
-    );
+    final reply = provider == 'claude'
+        ? await _callClaude(
+            systemPrompt: _skillSystemPrompt,
+            messages: [{'role': 'user', 'content': userMessage}],
+            maxTokens: 500,
+          )
+        : await _callGroq(
+            systemPrompt: _skillSystemPrompt,
+            messages: [{'role': 'user', 'content': userMessage}],
+            maxTokens: 500,
+          );
 
     return Response.ok(jsonEncode({'feedback': reply}), headers: _json);
   } catch (e, st) {

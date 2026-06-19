@@ -17,9 +17,17 @@ Handler buildRouter() {
   final router = Router();
 
   // ── Health check ───────────────────────────────────────────────
-  router.get('/api/health', (Request request) {
+  // Pings Mongo too, so Render's 10-min keep-alive on this endpoint keeps the
+  // DB connection warm and auto-reconnects it if Atlas dropped the socket.
+  router.get('/api/health', (Request request) async {
+    final dbOk = await Store.instance.pingDb();
     return Response.ok(
-      jsonEncode({'status': 'ok', 'service': 'rawby-server', 'timestamp': DateTime.now().toIso8601String()}),
+      jsonEncode({
+        'status': dbOk ? 'ok' : 'degraded',
+        'service': 'rawby-server',
+        'db': dbOk ? 'connected' : 'disconnected',
+        'timestamp': DateTime.now().toIso8601String(),
+      }),
       headers: {'content-type': 'application/json'},
     );
   });
@@ -31,12 +39,25 @@ Handler buildRouter() {
 
   // ── Protected routes (wrapped with auth check) ─────────────────
 
+  // Re-open Mongo if Atlas dropped the idle socket, before the handler runs —
+  // turns an opaque 500 into a healthy response that self-heals the connection.
+  Middleware _ensureDb() => (Handler inner) => (Request r) async {
+        await Store.instance.ensureConnected();
+        return inner(r);
+      };
+
   Handler protect(Future<Response> Function(Request) handler) {
-    return const Pipeline().addMiddleware(authMiddleware()).addHandler(handler);
+    return Pipeline()
+        .addMiddleware(_ensureDb())
+        .addMiddleware(authMiddleware())
+        .addHandler(handler);
   }
 
   Handler protectWithParam(Future<Response> Function(Request, String) handler) {
-    return const Pipeline().addMiddleware(authMiddleware()).addHandler(
+    return Pipeline()
+        .addMiddleware(_ensureDb())
+        .addMiddleware(authMiddleware())
+        .addHandler(
       (Request r) {
         final segments = r.requestedUri.pathSegments;
         final param = segments.last;

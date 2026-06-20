@@ -11,6 +11,7 @@ import type {
   ChatContext,
   AIProvider,
   Suggestion,
+  GeneratedPrompt,
 } from "../types";
 
 export const auth = {
@@ -60,8 +61,10 @@ export const ai = {
     stats?: unknown;
   }) => api.post<{ feedback: string }>("/api/skill-feedback", body).then((r) => r.data.feedback),
 
-  generatePrompts: (body: Record<string, unknown>) =>
-    api.post("/api/generate-prompts", body).then((r) => r.data),
+  generatePrompts: (provider: AIProvider) =>
+    api
+      .post<{ prompts: GeneratedPrompt[] }>("/api/generate-prompts", { provider })
+      .then((r) => r.data.prompts ?? []),
 };
 
 export const community = {

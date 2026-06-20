@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ToastViewport } from "./components/ui/ToastViewport";
 import { Shell } from "./components/layout/Shell";
 import { RequireAuth } from "./components/layout/RequireAuth";
 import Login from "./pages/Login";
@@ -14,8 +16,10 @@ import Settings from "./pages/Settings";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <ToastViewport />
+        <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
@@ -37,7 +41,8 @@ export default function App() {
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

@@ -5,6 +5,7 @@
 // ============================================================
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { session } from "../lib/endpoints";
+import { toast } from "../store/toast";
 import { LEVELS, LATE_MULTIPLIERS } from "../lib/constants";
 import type { MeResponse, ProjectHistoryItem, Snapshot } from "../types";
 
@@ -65,5 +66,6 @@ export function useSubmitFilm() {
       qc.invalidateQueries({ queryKey: ["me"] });
       qc.invalidateQueries({ queryKey: ["leaderboard"] });
     },
+    onError: () => toast.error("Couldn't submit your film — the server may be waking."),
   });
 }

@@ -9,6 +9,7 @@ import { Icon } from "../components/ui/Icon";
 import { Skeleton } from "../components/ui/Skeleton";
 import { stagger, item } from "../lib/motion";
 import { community } from "../lib/endpoints";
+import { toast } from "../store/toast";
 import { useSuggestions } from "../hooks/queries";
 
 const SEED = [
@@ -28,7 +29,9 @@ export default function IdeaBank() {
     onSuccess: () => {
       setText("");
       qc.invalidateQueries({ queryKey: ["suggestions"] });
+      toast.success("Idea added. Thanks for the spark.");
     },
+    onError: () => toast.error("Couldn't post that idea. Try again."),
   });
 
   const ideas = (data?.length ? data.map((s) => s.text) : SEED).slice(0, 24);

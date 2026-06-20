@@ -34,6 +34,26 @@ export interface PromptItem {
   points?: number;
 }
 
+export interface Song {
+  title: string;
+  artist: string;
+  tier?: string;
+  why?: string;
+}
+
+/** A prompt object as returned by /api/generate-prompts. */
+export interface GeneratedPrompt {
+  text: string;
+  level: string;
+  points?: number;
+  category?: string;
+  emotion?: string;
+  outcome?: string;
+  purpose?: string;
+  shots?: string[];
+  songs?: Song[];
+}
+
 /** Live weekly snapshot returned by /api/me */
 export interface Snapshot {
   rank?: number;

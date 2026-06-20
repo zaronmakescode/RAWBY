@@ -7,6 +7,7 @@ import { FilmTag } from "../components/ui/FilmTag";
 import { Icon } from "../components/ui/Icon";
 import { PageHeader } from "../components/ui/Bits";
 import { SubmitFilmModal } from "../components/SubmitFilmModal";
+import { GeneratePromptsModal } from "../components/GeneratePromptsModal";
 import { useMe } from "../hooks/queries";
 import { LEVELS, LATE_MULTIPLIERS } from "../lib/constants";
 
@@ -18,10 +19,13 @@ export default function Prompts() {
     snap?.promptText ??
     "Tell a story of someone leaving a place they love — in 60 seconds.";
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [genOpen, setGenOpen] = useState(false);
+  const regensLeft = snap?.regensLeft ?? 3;
 
   return (
     <PageTransition>
       <SubmitFilmModal open={submitOpen} onClose={() => setSubmitOpen(false)} defaultLevel={level} />
+      <GeneratePromptsModal open={genOpen} onClose={() => setGenOpen(false)} />
       <PageHeader
         eyebrow="This week"
         title="Prompt"
@@ -43,9 +47,14 @@ export default function Prompts() {
             <GradientButton onClick={() => setSubmitOpen(true)}>
               <Icon name="film" size={16} /> Submit film
             </GradientButton>
-            <GradientButton variant="ghost">
+            <GradientButton
+              variant="ghost"
+              onClick={() => setGenOpen(true)}
+              disabled={regensLeft <= 0}
+              title={regensLeft <= 0 ? "No regenerations left this week" : undefined}
+            >
               <Icon name="refresh" size={16} />
-              Regenerate {snap?.regensLeft != null ? `(${snap.regensLeft} left)` : ""}
+              Regenerate ({regensLeft} left)
             </GradientButton>
           </div>
         </div>

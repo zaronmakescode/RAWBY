@@ -5,8 +5,9 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { REDUCED } from "../reduced";
 
-const BODY = "#17191c";
+const BODY = "#2c3138";
 const BRASS = "#E8B647";
 const BRASS_D = "#C9942C";
 const GLASS = "#0b0d10";
@@ -18,7 +19,8 @@ function Mat({ color, e = 0.25, metal = 0.6, rough = 0.4 }: { color: string; e?:
 export function VintageCamera() {
   const crank = useRef<THREE.Group>(null);
   useFrame((_, dt) => {
-    if (crank.current) crank.current.rotation.z -= dt * 3; // hand crank spins
+    if (REDUCED || !crank.current) return;
+    crank.current.rotation.z -= dt * 3; // hand crank spins
   });
 
   return (

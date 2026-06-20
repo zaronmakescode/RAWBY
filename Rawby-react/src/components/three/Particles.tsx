@@ -4,6 +4,7 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { REDUCED } from "./reduced";
 
 export function Particles({ count = 400 }: { count?: number }) {
   const ref = useRef<THREE.Points>(null);
@@ -19,7 +20,7 @@ export function Particles({ count = 400 }: { count?: number }) {
   }, [count]);
 
   useFrame((state) => {
-    if (!ref.current) return;
+    if (REDUCED || !ref.current) return;
     const t = state.clock.elapsedTime;
     ref.current.rotation.y = t * 0.02;
     ref.current.position.y = Math.sin(t * 0.15) * 0.3;

@@ -5,8 +5,9 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { REDUCED } from "../reduced";
 
-const BODY = "#1b1d20";
+const BODY = "#2d3138";
 const BRASS = "#E8B647";
 const PAPER = "#ECE7D8";
 
@@ -29,6 +30,7 @@ export function Typewriter() {
   }, []);
 
   useFrame((state) => {
+    if (REDUCED) return;
     const t = state.clock.elapsedTime;
     if (carriage.current) {
       // Carriage drifts left as you "type", returns with a ding.

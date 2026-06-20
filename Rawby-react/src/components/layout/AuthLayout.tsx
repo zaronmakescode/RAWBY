@@ -12,10 +12,6 @@ const AuraScene = lazy(() =>
 );
 const AuthHero = lazy(() => import("../three/AuthHero"));
 
-const reduced =
-  typeof window !== "undefined" &&
-  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
 export function AuthLayout({
   title,
   tagline,
@@ -39,12 +35,16 @@ export function AuthLayout({
         <div className="relative hidden flex-col justify-between p-12 lg:flex">
           <Logo size="md" />
 
+          {/* Backlight halo so the dark 3D object reads against black */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+            style={{ background: "radial-gradient(circle, rgb(var(--glow) / 0.22), transparent 70%)" }}
+          />
+
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            {!reduced && (
-              <Suspense fallback={null}>
-                <AuthHero onChange={setHero} />
-              </Suspense>
-            )}
+            <Suspense fallback={null}>
+              <AuthHero onChange={setHero} />
+            </Suspense>
           </div>
 
           <div className="relative max-w-sm">

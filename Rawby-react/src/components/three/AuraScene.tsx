@@ -9,13 +9,15 @@ import { Suspense, useRef } from "react";
 import * as THREE from "three";
 import { CyclingHero } from "./CyclingHero";
 import { Particles } from "./Particles";
+import { PaintOnce } from "./PaintOnce";
+import { REDUCED } from "./reduced";
 
 function Rig({ children }: { children: React.ReactNode }) {
   const group = useRef<THREE.Group>(null);
   const { pointer } = useThree();
 
   useFrame(() => {
-    if (!group.current) return;
+    if (REDUCED || !group.current) return;
     // Subtle parallax toward the cursor.
     group.current.rotation.y = THREE.MathUtils.lerp(
       group.current.rotation.y,
@@ -32,10 +34,6 @@ function Rig({ children }: { children: React.ReactNode }) {
   return <group ref={group}>{children}</group>;
 }
 
-const reduced =
-  typeof window !== "undefined" &&
-  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
 export function AuraScene() {
   return (
     <div className="fixed inset-0 -z-10">
@@ -48,16 +46,17 @@ export function AuraScene() {
         }}
       />
 
-      {!reduced && (
+      {(
         <Canvas
           camera={{ position: [0, 0, 6], fov: 45 }}
           dpr={[1, 1.6]}
           gl={{ antialias: true, alpha: true }}
           style={{ position: "absolute", inset: 0 }}
         >
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 5, 5]} intensity={1.1} color="#F6DC9C" />
-          <pointLight position={[-4, -2, 3]} intensity={0.6} color="#6FA373" />
+          <ambientLight intensity={0.9} />
+          <directionalLight position={[5, 5, 5]} intensity={1.8} color="#F6DC9C" />
+          <pointLight position={[-4, -2, 3]} intensity={1} color="#6FA373" />
+          <pointLight position={[0, 1, -4]} intensity={2.2} color="#E8B647" />
           <Suspense fallback={null}>
             <Rig>
               {/* Cycling cinematic prop, parked off to the side, low-key */}
@@ -65,6 +64,7 @@ export function AuraScene() {
                 <CyclingHero scale={0.6} interval={7000} />
               </group>
               <Particles count={420} />
+              <PaintOnce />
             </Rig>
           </Suspense>
           <fog attach="fog" args={["#0A0B0D", 6, 14]} />

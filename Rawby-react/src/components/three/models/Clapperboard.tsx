@@ -5,8 +5,9 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { REDUCED } from "../reduced";
 
-const SLATE = "#17191c";
+const SLATE = "#2c3138";
 const WHITE = "#ECECE6";
 const BRASS = "#E8B647";
 
@@ -35,7 +36,7 @@ export function Clapperboard() {
   const clapper = useRef<THREE.Group>(null);
 
   useFrame((state) => {
-    if (!clapper.current) return;
+    if (REDUCED || !clapper.current) return;
     // Snap: mostly closed, quick open then clap every ~3s.
     const t = state.clock.elapsedTime % 3;
     const open = t < 0.5 ? t * 0.9 : Math.max(0, 0.45 - (t - 0.5) * 4);

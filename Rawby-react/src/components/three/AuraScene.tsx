@@ -7,7 +7,6 @@
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Suspense, useRef } from "react";
 import * as THREE from "three";
-import { CyclingHero } from "./CyclingHero";
 import { Particles } from "./Particles";
 import { PaintOnce } from "./PaintOnce";
 import { Env } from "./Env";
@@ -61,10 +60,6 @@ export function AuraScene() {
           <pointLight position={[0, 1, -4]} intensity={2.2} color="#E8B647" />
           <Suspense fallback={null}>
             <Rig>
-              {/* Cycling cinematic prop, parked off to the side, low-key */}
-              <group position={[3.4, 0.2, -0.5]}>
-                <CyclingHero scale={0.72} interval={7000} />
-              </group>
               <Particles count={420} />
               <PaintOnce />
             </Rig>

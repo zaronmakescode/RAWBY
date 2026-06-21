@@ -82,7 +82,7 @@ export function VintageCamera() {
 
   useFrame((_, dt) => {
     if (REDUCED || !crank.current) return;
-    crank.current.rotation.z -= dt * 3;
+    crank.current.rotation.x -= dt * 3; // spins about the side axle
   });
 
   return (
@@ -143,18 +143,23 @@ export function VintageCamera() {
         <Metal color={BRASS} metalness={0.95} roughness={0.2} />
       </mesh>
 
-      {/* Hand crank */}
-      <group ref={crank} position={[-1.0, 0, 0.2]}>
+      {/* Static crank axle, mounted into the body's side */}
+      <mesh position={[-1.02, 0, 0.2]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.055, 0.055, 0.22, 20]} />
+        <Metal color={BRASS} metalness={0.95} roughness={0.22} />
+      </mesh>
+      {/* Rotating crank — hub + radial arm + grip, spins about the axle */}
+      <group ref={crank} position={[-1.16, 0, 0.2]}>
         <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.06, 0.06, 0.22, 20]} />
+          <cylinderGeometry args={[0.1, 0.1, 0.05, 24]} />
           <Metal color={BRASS} metalness={0.95} roughness={0.18} />
         </mesh>
-        <mesh position={[0, 0.3, 0]}>
-          <boxGeometry args={[0.07, 0.6, 0.07]} />
+        <mesh position={[0, 0.28, 0]}>
+          <boxGeometry args={[0.06, 0.56, 0.06]} />
           <Metal color={BRASS_D} metalness={0.9} roughness={0.3} />
         </mesh>
-        <mesh position={[0, 0.56, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.08, 0.08, 0.2, 20]} />
+        <mesh position={[-0.07, 0.54, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.07, 0.07, 0.2, 20]} />
           <Metal color={BRASS} metalness={0.95} roughness={0.2} />
         </mesh>
       </group>

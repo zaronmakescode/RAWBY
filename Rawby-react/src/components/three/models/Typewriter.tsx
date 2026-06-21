@@ -1,94 +1,136 @@
 // ============================================================
-// Procedural vintage typewriter. Body wedge, platen roller,
-// paper sheet, key grid. Carriage nudges + a key taps.
+// Vintage typewriter, hand-built procedurally. Black crinkle body,
+// platen roller carriage with paper, tiered rows of round keys, a
+// fan of type-bars, return lever + brass accents. PBR + scene env.
 // ============================================================
-import { useRef, useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { RoundedGeo } from "../RoundedGeo";
 import { REDUCED } from "../reduced";
 
-const BODY = "#2d3138";
-const BRASS = "#E8B647";
-const PAPER = "#ECE7D8";
+const BODY = "#17191c";
+const BRASS = "#caa14a";
+const KEY = "#e9e4d6";
+const PAPER = "#f1ede1";
 
-function Mat({ color, e = 0.06, metal = 0.5, rough = 0.5 }: { color: string; e?: number; metal?: number; rough?: number }) {
-  return <meshStandardMaterial color={color} emissive={color} emissiveIntensity={e} metalness={metal} roughness={rough} />;
+function Body({ metalness = 0.45, roughness = 0.5, color = BODY }: { metalness?: number; roughness?: number; color?: string }) {
+  return <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} envMapIntensity={1.0} />;
 }
 
 export function Typewriter() {
   const carriage = useRef<THREE.Group>(null);
-  const paper = useRef<THREE.Mesh>(null);
 
-  // 3 rows of keys.
+  // 3 tiered rows of keys.
   const keys = useMemo(() => {
-    const arr: [number, number][] = [];
-    const cols = 9;
-    for (let r = 0; r < 3; r++)
-      for (let c = 0; c < cols; c++)
-        arr.push([(-cols / 2 + c + 0.5) * 0.2 + r * 0.06, -r * 0.16]);
+    const arr: [number, number, number][] = [];
+    const rows = [11, 10, 9];
+    rows.forEach((cols, r) => {
+      for (let c = 0; c < cols; c++) {
+        const x = (c - (cols - 1) / 2) * 0.21 + r * 0.05;
+        const z = 0.62 - r * 0.26;
+        const y = -0.16 + r * 0.13;
+        arr.push([x, y, z]);
+      }
+    });
     return arr;
   }, []);
 
+  // Fan of type-bars rising toward the platen.
+  const bars = useMemo(
+    () => Array.from({ length: 13 }, (_, i) => (i / 12 - 0.5) * 1.5),
+    []
+  );
+
   useFrame((state) => {
-    if (REDUCED) return;
-    const t = state.clock.elapsedTime;
-    if (carriage.current) {
-      // Carriage drifts left as you "type", returns with a ding.
-      const phase = (t * 0.5) % 2;
-      carriage.current.position.x = phase < 1.8 ? -phase * 0.25 : -(2 - phase) * 2.25;
-    }
-    if (paper.current) paper.current.rotation.x = -0.25 + Math.sin(t * 0.6) * 0.02;
+    if (REDUCED || !carriage.current) return;
+    const phase = (state.clock.elapsedTime * 0.55) % 2;
+    // Carriage steps left while "typing", then snaps back with a ding.
+    carriage.current.position.x = phase < 1.8 ? -phase * 0.22 : -(2 - phase) * 1.98;
   });
 
   return (
-    <group rotation={[0.35, -0.5, 0]} position={[0, -0.1, 0]} scale={1.15}>
-      {/* Base body (wedge) */}
-      <mesh position={[0, -0.35, 0]}>
-        <boxGeometry args={[2.2, 0.5, 1.5]} />
-        <Mat color={BODY} />
+    <group rotation={[0.28, -0.5, 0]} position={[0, -0.15, 0]} scale={0.92}>
+      {/* Main body */}
+      <mesh>
+        <RoundedGeo args={[2.5, 0.7, 1.7]} radius={0.14} />
+        <Body />
       </mesh>
-      <mesh position={[0, -0.05, 0.35]} rotation={[-0.45, 0, 0]}>
-        <boxGeometry args={[2.2, 0.7, 0.9]} />
-        <Mat color={BODY} />
+      {/* Raised back housing for the type mechanism */}
+      <mesh position={[0, 0.5, -0.45]}>
+        <RoundedGeo args={[2.1, 0.7, 0.7]} radius={0.12} />
+        <Body />
       </mesh>
-
-      {/* Brand plate */}
-      <mesh position={[0, -0.18, 0.95]}>
-        <boxGeometry args={[0.7, 0.16, 0.03]} />
-        <Mat color={BRASS} e={0.4} metal={0.85} rough={0.2} />
-      </mesh>
-
-      {/* Carriage + platen roller + paper */}
-      <group ref={carriage} position={[0, 0.35, -0.2]}>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.22, 0.22, 2.0, 28]} />
-          <Mat color={"#26292d"} metal={0.4} rough={0.6} />
-        </mesh>
-        {[-1.05, 1.05].map((x) => (
-          <mesh key={x} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.16, 0.16, 0.12, 20]} />
-            <Mat color={BRASS} e={0.35} metal={0.9} rough={0.2} />
-          </mesh>
-        ))}
-        <mesh ref={paper} position={[0, 0.35, -0.05]} rotation={[-0.25, 0, 0]}>
-          <planeGeometry args={[1.5, 1.1]} />
-          <meshStandardMaterial color={PAPER} emissive={PAPER} emissiveIntensity={0.25} roughness={0.9} side={THREE.DoubleSide} />
-        </mesh>
-      </group>
-
-      {/* Type-bar fan hint */}
-      <mesh position={[0, 0.05, 0.15]} rotation={[-0.6, 0, 0]}>
-        <cylinderGeometry args={[0.5, 0.55, 0.1, 28, 1, true]} />
-        <Mat color={"#26292d"} metal={0.6} rough={0.5} />
+      {/* Front keyboard apron (sloped) */}
+      <mesh position={[0, 0.05, 0.66]} rotation={[-0.5, 0, 0]}>
+        <RoundedGeo args={[2.4, 0.6, 0.5]} radius={0.08} />
+        <Body color="#1d1f23" />
       </mesh>
 
-      {/* Keys */}
-      {keys.map(([x, z], i) => (
-        <mesh key={i} position={[x, 0.02 + z * 0.25, 0.7 + z]}>
-          <cylinderGeometry args={[0.075, 0.075, 0.06, 16]} />
-          <meshStandardMaterial color={"#0f1113"} emissive={BRASS} emissiveIntensity={0.06} metalness={0.7} roughness={0.3} />
+      {/* Brass brand plate */}
+      <mesh position={[0, 0.16, 0.96]} rotation={[-0.5, 0, 0]}>
+        <boxGeometry args={[0.8, 0.16, 0.02]} />
+        <meshStandardMaterial color={BRASS} metalness={0.95} roughness={0.22} envMapIntensity={1.3} />
+      </mesh>
+
+      {/* Type-bar fan */}
+      {bars.map((x, i) => (
+        <mesh key={i} position={[x, 0.34, 0.05]} rotation={[-0.9, 0, x * 0.25]}>
+          <boxGeometry args={[0.025, 0.6, 0.02]} />
+          <Body color="#2a2c30" metalness={0.7} roughness={0.4} />
         </mesh>
       ))}
+
+      {/* Keys */}
+      {keys.map(([x, y, z], i) => (
+        <group key={i} position={[x, y, z]} rotation={[-0.5, 0, 0]}>
+          <mesh>
+            <cylinderGeometry args={[0.085, 0.085, 0.05, 20]} />
+            <Body color="#101215" metalness={0.5} roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.03, 0]}>
+            <cylinderGeometry args={[0.07, 0.07, 0.02, 20]} />
+            <meshStandardMaterial color={KEY} metalness={0.05} roughness={0.45} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Carriage (platen + paper + knobs + return lever) — drifts as it types */}
+      <group ref={carriage} position={[0, 0.62, -0.3]}>
+        {/* side frames */}
+        {[-1.05, 1.05].map((x) => (
+          <mesh key={x} position={[x, 0, 0]}>
+            <boxGeometry args={[0.08, 0.4, 0.5]} />
+            <Body color="#202327" metalness={0.6} roughness={0.4} />
+          </mesh>
+        ))}
+        {/* platen roller */}
+        <mesh rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.24, 0.24, 2.0, 36]} />
+          <Body color="#2c2e32" metalness={0.2} roughness={0.7} />
+        </mesh>
+        {/* end knobs */}
+        {[-1.08, 1.08].map((x) => (
+          <mesh key={x} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.17, 0.17, 0.12, 28]} />
+            <meshStandardMaterial color={BRASS} metalness={0.95} roughness={0.25} envMapIntensity={1.2} />
+          </mesh>
+        ))}
+        {/* paper rising behind the platen */}
+        <mesh position={[0, 0.45, -0.12]} rotation={[-0.18, 0, 0]}>
+          <planeGeometry args={[1.5, 1.0]} />
+          <meshStandardMaterial color={PAPER} roughness={0.85} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+        {/* carriage return lever */}
+        <mesh position={[-1.3, 0.12, 0]} rotation={[0, 0, 0.5]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.5, 12]} />
+          <Body color="#202327" metalness={0.6} roughness={0.4} />
+        </mesh>
+        <mesh position={[-1.45, 0.32, 0]}>
+          <sphereGeometry args={[0.07, 16, 16]} />
+          <meshStandardMaterial color={BRASS} metalness={0.9} roughness={0.3} envMapIntensity={1.2} />
+        </mesh>
+      </group>
     </group>
   );
 }

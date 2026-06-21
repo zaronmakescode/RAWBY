@@ -62,8 +62,8 @@ Future<Response> handleLogin(Request request) async {
     // credentials live in the server environment (ADMIN_USERNAME /
     // ADMIN_PASSWORD), never in source. On first matching login the admin
     // user is created (isAdmin + verified); thereafter the record exists.
-    final adminUser = Platform.environment['ADMIN_USERNAME'];
-    final adminPass = Platform.environment['ADMIN_PASSWORD'];
+    final adminUser = Platform.environment['ADMIN_USERNAME']?.trim();
+    final adminPass = Platform.environment['ADMIN_PASSWORD']?.trim();
     if (adminUser != null &&
         adminPass != null &&
         adminUser.isNotEmpty &&

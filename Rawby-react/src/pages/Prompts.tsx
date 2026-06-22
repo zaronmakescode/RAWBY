@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { PageTransition } from "../components/layout/PageTransition";
 import { GlassCard } from "../components/ui/GlassCard";
 import { GradientButton } from "../components/ui/GradientButton";
@@ -14,7 +13,6 @@ import { useGeneratePrompts } from "../hooks/usePrompts";
 import { useBigProject } from "../hooks/useBigProject";
 import { useDraft } from "../hooks/usePersonal";
 import { useSettings } from "../store/settings";
-import { stagger, item } from "../lib/motion";
 import { LEVELS, LATE_MULTIPLIERS } from "../lib/constants";
 import type { GeneratedPrompt } from "../types";
 
@@ -29,7 +27,7 @@ function PromptCard({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <motion.div variants={item}>
+    <div>
       <GlassCard className="h-full">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <FilmTag level={p.level} />
@@ -89,7 +87,7 @@ function PromptCard({
           </GradientButton>
         </div>
       </GlassCard>
-    </motion.div>
+    </div>
   );
 }
 
@@ -238,16 +236,11 @@ export default function Prompts() {
       {gen.isPending ? (
         <Spinner label="Writing your weekly prompts…" />
       ) : prompts.length ? (
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="grid gap-4 lg:grid-cols-3"
-        >
+        <div className="grid gap-4 lg:grid-cols-3">
           {prompts.map((p, i) => (
             <PromptCard key={i} p={p} onFilm={film} onDetail={openDetail} />
           ))}
-        </motion.div>
+        </div>
       ) : (
         <GlassCard className="text-center">
           <p className="text-sm text-text-dim">
@@ -260,14 +253,9 @@ export default function Prompts() {
 
       {/* Levels & scoring */}
       <h3 className="h-display mb-3 mt-8 text-lg font-bold text-text-hi">Levels & scoring</h3>
-      <motion.div
-        variants={stagger}
-        initial="hidden"
-        animate="show"
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-      >
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {LEVELS.map((l) => (
-          <motion.div key={l.name} variants={item}>
+          <div key={l.name}>
             <GlassCard interactive className="h-full">
               <div className="mb-3 h-1.5 w-12 rounded-full" style={{ background: l.glow }} />
               <div className="text-sm font-semibold text-text-hi">{l.name}</div>
@@ -276,9 +264,9 @@ export default function Prompts() {
               </div>
               <div className="text-xs text-text-dim">points</div>
             </GlassCard>
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
 
       {/* Late penalty */}
       <h3 className="h-display mb-3 mt-8 text-lg font-bold text-text-hi">Late penalty</h3>

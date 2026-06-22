@@ -12,7 +12,6 @@ import { useProgress } from "../hooks/useProgress";
 import { useAuth } from "../store/auth";
 import { useSettings } from "../store/settings";
 import { WEEKLY_CYCLE } from "../lib/constants";
-import { stagger } from "../lib/motion";
 import type { Snapshot } from "../types";
 
 const FALLBACK: Snapshot = {
@@ -137,17 +136,12 @@ export default function Home() {
       </GlassCard>
 
       {/* Bento stat tiles */}
-      <motion.div
-        variants={stagger}
-        initial="hidden"
-        animate="show"
-        className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4"
-      >
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile icon="medal" value={`#${snap.rank || "—"}`} label="Rank" accent="#E8B647" />
         <StatTile icon="star" value={nf.format(snap.totalScore ?? 0)} label="Total score" accent="#6FA373" />
         <StatTile icon="flame" value={snap.streak ?? 0} label="Streak" accent="#E85D75" />
         <StatTile icon="refresh" value={snap.regensLeft ?? 0} label="Regens left" accent="#3B82F6" />
-      </motion.div>
+      </div>
 
       {/* Kit & tuning */}
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">

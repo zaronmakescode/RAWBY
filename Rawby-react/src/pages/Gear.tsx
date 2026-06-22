@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { PageTransition } from "../components/layout/PageTransition";
 import { GlassCard } from "../components/ui/GlassCard";
 import { GradientButton } from "../components/ui/GradientButton";
 import { PageHeader, EmptyState } from "../components/ui/Bits";
 import { Icon, type IconName } from "../components/ui/Icon";
-import { stagger, item } from "../lib/motion";
 import { GEAR_CATEGORIES } from "../lib/constants";
 import { useGear, useGearAutoManage } from "../hooks/useGear";
 import { useMe } from "../hooks/queries";
@@ -74,9 +72,9 @@ export default function Gear() {
                 {group.cat}
                 <span className="text-xs font-normal text-text-dim">({group.items.length})</span>
               </div>
-              <motion.div variants={stagger} initial="hidden" animate="show" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {group.items.map((g) => (
-                  <motion.div key={g.id} variants={item}>
+                  <div key={g.id}>
                     <GlassCard className="flex items-center justify-between gap-2 py-3">
                       <div className="min-w-0">
                         <div className="truncate text-sm text-text-hi">
@@ -95,9 +93,9 @@ export default function Gear() {
                         </button>
                       </div>
                     </GlassCard>
-                  </motion.div>
+                  </div>
                 ))}
-              </motion.div>
+              </div>
             </div>
           ))}
 

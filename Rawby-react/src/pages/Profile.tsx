@@ -1,11 +1,9 @@
-import { motion } from "framer-motion";
 import { PageTransition } from "../components/layout/PageTransition";
 import { GlassCard } from "../components/ui/GlassCard";
 import { StatTile } from "../components/ui/StatTile";
 import { FilmTag } from "../components/ui/FilmTag";
 import { PageHeader, EmptyState } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
-import { stagger } from "../lib/motion";
 import { useMe } from "../hooks/queries";
 import { useFetchLikes } from "../hooks/useFetchLikes";
 import { useVisibility } from "../hooks/usePersonal";
@@ -61,12 +59,12 @@ export default function Profile() {
         </div>
       </GlassCard>
 
-      <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile icon="medal" value={`#${snap?.rank ?? "—"}`} label="Rank" />
         <StatTile icon="star" value={nf.format(snap?.totalScore ?? 0)} label="Total score" accent="#6FA373" />
         <StatTile icon="flame" value={snap?.streak ?? 0} label="Streak" accent="#E85D75" />
         <StatTile icon="film" value={history.length} label="Films" accent="#3B82F6" />
-      </motion.div>
+      </div>
 
       {/* Privacy — what others see */}
       <h3 className="h-display mb-3 mt-8 text-lg font-bold text-text-hi">Privacy</h3>

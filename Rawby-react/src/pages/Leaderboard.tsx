@@ -1,10 +1,8 @@
-import { motion } from "framer-motion";
 import { PageTransition } from "../components/layout/PageTransition";
 import { GlassCard } from "../components/ui/GlassCard";
 import { PageHeader } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
 import { SkeletonRow } from "../components/ui/Skeleton";
-import { stagger, item } from "../lib/motion";
 import { useLeaderboard } from "../hooks/queries";
 import { useAuth } from "../store/auth";
 import type { LeaderboardEntry } from "../types";
@@ -40,11 +38,11 @@ export default function Leaderboard() {
           ))}
         </div>
       ) : (
-        <motion.ul variants={stagger} initial="hidden" animate="show" className="space-y-2">
+        <ul className="space-y-2">
           {rows.map((r, i) => {
             const isMe = me?.username === r.username;
             return (
-              <motion.li key={r.username} variants={item}>
+              <li key={r.username}>
                 <GlassCard
                   interactive
                   className={`flex items-center gap-4 py-3 ${
@@ -80,10 +78,10 @@ export default function Leaderboard() {
                     {nf.format(r.totalScore)}
                   </div>
                 </GlassCard>
-              </motion.li>
+              </li>
             );
           })}
-        </motion.ul>
+        </ul>
       )}
     </PageTransition>
   );

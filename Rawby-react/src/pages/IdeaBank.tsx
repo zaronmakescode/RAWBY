@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageTransition } from "../components/layout/PageTransition";
 import { GlassCard } from "../components/ui/GlassCard";
@@ -7,7 +6,6 @@ import { GradientButton } from "../components/ui/GradientButton";
 import { PageHeader, EmptyState } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
 import { Skeleton } from "../components/ui/Skeleton";
-import { stagger, item } from "../lib/motion";
 import { community } from "../lib/endpoints";
 import { toast } from "../store/toast";
 import { useSuggestions } from "../hooks/queries";
@@ -73,23 +71,16 @@ export default function IdeaBank() {
       ) : ideas.length === 0 ? (
         <EmptyState icon="bulb" title="No ideas yet" sub="Be the first to drop a spark." />
       ) : (
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="columns-1 gap-4 sm:columns-2 lg:columns-3"
-        >
-          <AnimatePresence>
-            {ideas.map((idea, i) => (
-              <motion.div key={idea + i} variants={item} className="mb-4 break-inside-avoid">
-                <GlassCard interactive>
-                  <Icon name="quote" size={18} className="mb-2 text-cinema-500" />
-                  <p className="text-sm leading-relaxed text-text-hi">{idea}</p>
-                </GlassCard>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+          {ideas.map((idea, i) => (
+            <div key={idea + i} className="mb-4 break-inside-avoid">
+              <GlassCard interactive>
+                <Icon name="quote" size={18} className="mb-2 text-cinema-500" />
+                <p className="text-sm leading-relaxed text-text-hi">{idea}</p>
+              </GlassCard>
+            </div>
+          ))}
+        </div>
       )}
     </PageTransition>
   );

@@ -7,8 +7,10 @@ import { FilmTag } from "../components/ui/FilmTag";
 import { Icon } from "../components/ui/Icon";
 import { PageHeader, Spinner } from "../components/ui/Bits";
 import { SubmitFilmModal } from "../components/SubmitFilmModal";
+import { StartBigProjectModal } from "../components/StartBigProjectModal";
 import { useMe } from "../hooks/queries";
 import { useGeneratePrompts } from "../hooks/usePrompts";
+import { useBigProject } from "../hooks/useBigProject";
 import { useSettings } from "../store/settings";
 import { stagger, item } from "../lib/motion";
 import { LEVELS, LATE_MULTIPLIERS } from "../lib/constants";
@@ -83,18 +85,28 @@ export default function Prompts() {
   const seasonalPrompts = useSettings((s) => s.seasonalPrompts);
   const gen = useGeneratePrompts();
   const prompts = gen.data ?? [];
+  const big = useBigProject();
 
   const [submitOpen, setSubmitOpen] = useState(false);
   const [submitLevel, setSubmitLevel] = useState("Short Story");
+  const [submitDeadline, setSubmitDeadline] = useState<string | undefined>(undefined);
+  const [bigOpen, setBigOpen] = useState(false);
 
-  function film(level: string) {
+  function film(level: string, deadline?: string) {
     setSubmitLevel(level);
+    setSubmitDeadline(deadline);
     setSubmitOpen(true);
   }
 
   return (
     <PageTransition>
-      <SubmitFilmModal open={submitOpen} onClose={() => setSubmitOpen(false)} defaultLevel={submitLevel} />
+      <SubmitFilmModal
+        open={submitOpen}
+        onClose={() => setSubmitOpen(false)}
+        defaultLevel={submitLevel}
+        deadline={submitDeadline}
+      />
+      <StartBigProjectModal open={bigOpen} onClose={() => setBigOpen(false)} />
 
       <PageHeader
         eyebrow="This week"
@@ -132,12 +144,41 @@ export default function Prompts() {
             <GradientButton onClick={() => gen.mutate()} loading={gen.isPending}>
               <Icon name="sparkles" size={16} /> {prompts.length ? "Regenerate" : "Generate"}
             </GradientButton>
-            <GradientButton variant="story" onClick={() => film("Big Project")}>
-              <Icon name="film" size={16} /> Start Big Project
+            <GradientButton variant="ghost" onClick={() => film("Short Story")}>
+              <Icon name="plus" size={16} /> Write my own
             </GradientButton>
+            {!big.project && (
+              <GradientButton variant="story" onClick={() => setBigOpen(true)}>
+                <Icon name="film" size={16} /> Start Big Project
+              </GradientButton>
+            )}
           </div>
         </div>
       </GlassCard>
+
+      {/* Active Big Project */}
+      {big.project && (
+        <GlassCard className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="mb-2">
+              <FilmTag level="Big Project" />
+            </div>
+            <h3 className="h-display text-lg font-bold text-text-hi">{big.project.title}</h3>
+            <p className="text-sm text-text-dim">
+              Your deadline · {new Date(big.project.deadline).toLocaleDateString()} (
+              {Math.max(0, Math.ceil((new Date(big.project.deadline).getTime() - Date.now()) / 86_400_000))} days left)
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <GradientButton variant="story" onClick={() => film("Big Project", big.project!.deadline)}>
+              <Icon name="film" size={15} /> Submit project
+            </GradientButton>
+            <GradientButton variant="ghost" onClick={() => big.cancel.mutate()}>
+              Drop
+            </GradientButton>
+          </div>
+        </GlassCard>
+      )}
 
       {/* Generated prompts (no forced choice) */}
       {gen.isPending ? (

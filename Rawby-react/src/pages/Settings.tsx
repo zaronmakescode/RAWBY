@@ -23,8 +23,6 @@ function Row({ label, sub, children }: { label: string; sub?: string; children: 
 
 export default function Settings() {
   const nav = useNavigate();
-  const provider = useAuth((s) => s.aiProvider);
-  const setProvider = useAuth((s) => s.setProvider);
   const logout = useAuth((s) => s.logout);
   const user = useAuth((s) => s.user);
   const region = useSettings((s) => s.region);
@@ -43,17 +41,19 @@ export default function Settings() {
       <GlassCard className="mb-4 space-y-5">
         <div>
           <div className="text-sm font-semibold text-text-hi">Prompt tuning</div>
-          <div className="text-xs text-text-dim">Country + season shape your generated prompts.</div>
+          <div className="text-xs text-text-dim">Where you are + the season shape your prompts.</div>
         </div>
-        <div className="flex items-center justify-between gap-4">
-          <label htmlFor="set-region" className="text-sm text-text-hi">Country / region</label>
+        <div>
+          <label htmlFor="set-region" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-text-dim">
+            Country / region
+          </label>
           <input
             id="set-region"
             list="country-list"
             value={region}
             onChange={(e) => setRegion(e.target.value)}
-            placeholder="Type your country"
-            className="w-44 rounded-xl border border-hairline bg-field px-3 py-2 text-sm text-text-hi outline-none focus:border-cinema-500/70"
+            placeholder="e.g. Hungary"
+            className="w-full rounded-xl border border-hairline bg-field px-4 py-3 text-sm text-text-hi outline-none focus:border-cinema-500/70"
           />
           <datalist id="country-list">
             {COUNTRIES.map((r) => (
@@ -61,18 +61,20 @@ export default function Settings() {
             ))}
           </datalist>
         </div>
-        <div className="flex items-center justify-between gap-4">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={seasonal}
+          onClick={() => setSeasonal(!seasonal)}
+          className="flex w-full items-center justify-between gap-4 rounded-xl border border-hairline bg-chip px-4 py-3 text-left transition-colors hover:border-hairline-strong"
+        >
           <div>
-            <div className="text-sm text-text-hi">Seasonal prompts</div>
+            <div className="text-sm font-medium text-text-hi">Seasonal prompts</div>
             <div className="text-xs text-text-dim">Tune ideas to the time of year.</div>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={seasonal}
-            onClick={() => setSeasonal(!seasonal)}
+          <span
             className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-              seasonal ? "bg-cinema-500" : "border border-hairline bg-chip"
+              seasonal ? "bg-cinema-500" : "bg-hairline-strong"
             }`}
           >
             <span
@@ -80,27 +82,11 @@ export default function Settings() {
                 seasonal ? "translate-x-5" : "translate-x-0.5"
               }`}
             />
-          </button>
-        </div>
+          </span>
+        </button>
       </GlassCard>
 
       <GlassCard className="divide-y divide-divide">
-        <Row label="AI provider" sub="Aurora's engine. Groq is free.">
-          <div className="flex items-center gap-1 rounded-xl border border-hairline bg-field p-1 text-xs font-semibold">
-            {(["groq", "claude"] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => setProvider(p)}
-                className={`rounded-lg px-3 py-1.5 transition-colors ${
-                  provider === p ? "bg-cinema-500 text-[#1A1100]" : "text-text-dim hover:text-text-hi"
-                }`}
-              >
-                {p === "groq" ? "Groq" : "Claude"}
-              </button>
-            ))}
-          </div>
-        </Row>
-
         <Row label="Account" sub={user ? `@${user.username} · ${user.email ?? "no email"}` : "—"}>
           <span className="text-xs text-text-dim">{user?.displayName}</span>
         </Row>

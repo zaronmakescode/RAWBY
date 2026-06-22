@@ -8,13 +8,13 @@ import { Icon, type IconName } from "../components/ui/Icon";
 import { stagger, item } from "../lib/motion";
 import { GEAR_CATEGORIES } from "../lib/constants";
 import { useGear } from "../hooks/useGear";
+import { useMe } from "../hooks/queries";
+import type { ProjectHistoryItem } from "../types";
 
 const CAT_ICON: Record<string, IconName> = {
-  Camera: "camera",
-  Audio: "mic",
-  Lighting: "sun",
-  Support: "aperture",
-  Other: "film",
+  Filming: "camera",
+  Editing: "scissors",
+  Digital: "aperture",
 };
 
 const fieldCls =
@@ -22,6 +22,9 @@ const fieldCls =
 
 export default function Gear() {
   const { gear, add, remove } = useGear();
+  const { data } = useMe();
+  const history: ProjectHistoryItem[] = data?.snapshot?.history ?? data?.history ?? [];
+  const usage = (id: string) => history.filter((h) => h.gear?.includes(id)).length;
   const [brand, setBrand] = useState("");
   const [type, setType] = useState("");
   const [category, setCategory] = useState<string>(GEAR_CATEGORIES[0]);
@@ -95,12 +98,17 @@ export default function Gear() {
               >
                 {group.items.map((g) => (
                   <motion.div key={g.id} variants={item}>
-                    <GlassCard className="flex items-center justify-between py-3">
-                      <span className="min-w-0 text-sm text-text-hi">
-                        {g.brand && <span className="font-semibold">{g.brand}</span>}
-                        {g.brand && g.type ? " " : ""}
-                        <span className="text-text-dim">{g.type}</span>
-                      </span>
+                    <GlassCard className="flex items-center justify-between gap-2 py-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm text-text-hi">
+                          {g.brand && <span className="font-semibold">{g.brand}</span>}
+                          {g.brand && g.type ? " " : ""}
+                          <span className="text-text-dim">{g.type}</span>
+                        </div>
+                        <div className="text-[11px] text-text-dim">
+                          used {usage(g.id)}× in projects
+                        </div>
+                      </div>
                       <button
                         onClick={() => remove.mutate(g.id)}
                         aria-label="Remove gear"

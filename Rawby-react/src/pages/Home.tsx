@@ -28,6 +28,16 @@ const FALLBACK: Snapshot = {
 
 const nf = new Intl.NumberFormat("en-US");
 
+// Which weekdays each cycle phase covers (0 Sun … 6 Sat).
+const DAY_SET: Record<string, number[]> = {
+  Friday: [5],
+  "Sat–Sun": [6, 0],
+  "Mon–Tue": [1, 2],
+  "Tue–Wed": [2, 3],
+  "Wed–Thu": [3, 4],
+};
+const isToday = (dayLabel: string) => (DAY_SET[dayLabel] ?? []).includes(new Date().getDay());
+
 export default function Home() {
   const { data, isLoading } = useMe();
   const user = useAuth((s) => s.user);
@@ -54,10 +64,6 @@ export default function Home() {
     );
   }
 
-  const activePhaseIdx = Math.max(
-    0,
-    WEEKLY_CYCLE.findIndex((p) => p.phase === snap.phase)
-  );
   const progress = Math.min(1, Math.max(0, (7 - (snap.daysLeft ?? 0)) / 7));
 
   return (
@@ -177,7 +183,7 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           {WEEKLY_CYCLE.map((p, i) => {
             const done = prog.done.includes(p.phase);
-            const active = i === activePhaseIdx;
+            const today = isToday(p.day);
             return (
               <motion.button
                 key={p.phase + i}
@@ -189,18 +195,22 @@ export default function Home() {
                 className={`rounded-xl border p-3 text-left transition-colors ${
                   done
                     ? "border-green-500/40 bg-green-500/[0.08]"
-                    : active
-                      ? "border-cinema-500/60 bg-cinema-500/10"
+                    : today
+                      ? "border-cinema-500/70 bg-cinema-500/15 shadow-glow-sm"
                       : "border-hairline bg-chip hover:border-hairline-strong"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-text-dim">
-                    {p.day}
+                  <span
+                    className={`text-[10px] font-semibold uppercase tracking-wider ${
+                      today && !done ? "text-cinema-400" : "text-text-dim"
+                    }`}
+                  >
+                    {today ? "Today" : p.day}
                   </span>
                   {done && <Icon name="check" size={13} className="text-green-400" />}
                 </div>
-                <div className={`mt-1 text-sm font-semibold ${active && !done ? "text-cinema-400" : "text-text-hi"}`}>
+                <div className={`mt-1 text-sm font-semibold ${today && !done ? "text-cinema-300" : "text-text-hi"}`}>
                   {p.phase}
                 </div>
                 <div className="mt-0.5 text-[11px] leading-tight text-text-dim">{p.desc}</div>
@@ -208,6 +218,13 @@ export default function Home() {
             );
           })}
         </div>
+        {WEEKLY_CYCLE.every((p) => prog.done.includes(p.phase)) && (
+          <Link to="/prompts" className="mt-4 block">
+            <GradientButton className="w-full">
+              <Icon name="check" size={16} /> All phases done — submit your film
+            </GradientButton>
+          </Link>
+        )}
       </GlassCard>
 
       {/* History + Aurora */}

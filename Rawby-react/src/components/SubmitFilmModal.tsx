@@ -11,20 +11,30 @@ interface Props {
   open: boolean;
   onClose: () => void;
   defaultLevel?: string;
+  /** Custom deadline (Big Project) — drives the late penalty if set. */
+  deadline?: string;
 }
 
 const fieldCls =
   "w-full rounded-xl border border-hairline bg-field px-4 py-3 text-sm text-text-hi outline-none transition-colors placeholder:text-text-dim/60 focus:border-cinema-500/70";
 
-// Auto late-penalty from the submit time. Deadline = Friday; Mon–Fri is the
-// filming window (on time), weekend after slips the multiplier.
-function computeAutoLate() {
-  const day = new Date().getDay(); // 0 Sun … 6 Sat
-  const idx = day === 6 ? 1 : day === 0 ? 2 : 0;
+// Auto late-penalty from the submit time. With a custom deadline (Big
+// Project) it counts days past that date; otherwise the weekly rule —
+// Mon–Fri is the filming window (on time), the weekend after slips it.
+function computeAutoLate(deadline?: string) {
+  let idx: number;
+  if (deadline) {
+    const due = new Date(deadline + "T23:59:59").getTime();
+    const days = Math.max(0, Math.floor((Date.now() - due) / 86_400_000));
+    idx = days <= 0 ? 0 : days >= 3 ? 3 : days;
+  } else {
+    const day = new Date().getDay(); // 0 Sun … 6 Sat
+    idx = day === 6 ? 1 : day === 0 ? 2 : 0;
+  }
   return { idx, ...LATE_MULTIPLIERS[idx] };
 }
 
-export function SubmitFilmModal({ open, onClose, defaultLevel = "Short Story" }: Props) {
+export function SubmitFilmModal({ open, onClose, defaultLevel = "Short Story", deadline }: Props) {
   const [title, setTitle] = useState("");
   const [link, setLink] = useState("");
   const [level, setLevel] = useState(defaultLevel);
@@ -39,7 +49,7 @@ export function SubmitFilmModal({ open, onClose, defaultLevel = "Short Story" }:
       setTitle("");
       setLink("");
       setLevel(defaultLevel);
-      setLateIdx(computeAutoLate().idx);
+      setLateIdx(computeAutoLate(deadline).idx);
       setUsedGear([]);
       submit.reset();
     }

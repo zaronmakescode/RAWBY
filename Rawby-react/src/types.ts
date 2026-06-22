@@ -68,6 +68,15 @@ export interface Snapshot {
   history?: ProjectHistoryItem[];
   gear?: GearItem[]; // owned gear inventory
   phaseDone?: string[]; // completed phases for the current project
+  bigProject?: BigProject; // active personal Big Project
+  note?: string; // quick note Aurora can see
+}
+
+export interface BigProject {
+  id: string;
+  title: string;
+  deadline: string; // ISO date the user sets as their own time limit
+  startedAt: string; // ISO
 }
 
 export interface MeResponse {

@@ -18,8 +18,6 @@ const GREETING: ChatMessage = {
 
 export default function Assistant() {
   const { data } = useMe();
-  const provider = useAuth((s) => s.aiProvider);
-  const setProvider = useAuth((s) => s.setProvider);
   const user = useAuth((s) => s.user);
 
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
@@ -38,7 +36,7 @@ export default function Assistant() {
   };
 
   const m = useMutation({
-    mutationFn: (history: ChatMessage[]) => ai.chat(history, context, provider),
+    mutationFn: (history: ChatMessage[]) => ai.chat(history, context, "groq"),
     onSuccess: (reply) =>
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]),
     onError: () =>
@@ -71,23 +69,6 @@ export default function Assistant() {
         eyebrow="AI Co-pilot"
         title="Aurora"
         sub="Cinematic guidance for this week's film. Plain talk, no fluff."
-        right={
-          <div className="flex items-center gap-1 rounded-xl border border-hairline bg-field p-1 text-xs font-semibold">
-            {(["groq", "claude"] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => setProvider(p)}
-                className={`rounded-lg px-3 py-1.5 transition-colors ${
-                  provider === p
-                    ? "bg-cinema-500 text-[#1A1100]"
-                    : "text-text-dim hover:text-text-hi"
-                }`}
-              >
-                {p === "groq" ? "Groq · free" : "Claude"}
-              </button>
-            ))}
-          </div>
-        }
       />
 
       <GlassCard className="flex h-[62vh] flex-col p-0">

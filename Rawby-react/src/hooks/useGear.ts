@@ -11,10 +11,13 @@ export function useGear() {
   const gear: GearItem[] = data?.snapshot?.gear ?? [];
 
   const add = useMutation({
-    mutationFn: (g: { name: string; category: string }) =>
+    mutationFn: (g: { brand: string; type: string; category: string }) =>
       patchSnapshot(qc, (s) => ({
         ...s,
-        gear: [...(s.gear ?? []), { id: newId(), name: g.name.trim(), category: g.category }],
+        gear: [
+          ...(s.gear ?? []),
+          { id: newId(), brand: g.brand.trim(), type: g.type.trim(), category: g.category },
+        ],
       })),
     onSuccess: () => toast.success("Gear added"),
     onError: () => toast.error("Couldn't save gear"),

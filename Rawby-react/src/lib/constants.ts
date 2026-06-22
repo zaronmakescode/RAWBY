@@ -25,15 +25,7 @@ export function likesBonus(level: string, likes: number, lateMult: number): numb
   return Math.round(likes * (LEVEL_WEIGHT[level] ?? 1) * lateMult);
 }
 
-export const GEAR_CATEGORIES = [
-  "Camera",
-  "Lens",
-  "Audio",
-  "Lighting",
-  "Support",
-  "Accessory",
-  "Other",
-] as const;
+export const GEAR_CATEGORIES = ["Camera", "Audio", "Lighting", "Support", "Other"] as const;
 
 // Late penalty multipliers (days past deadline).
 export const LATE_MULTIPLIERS = [

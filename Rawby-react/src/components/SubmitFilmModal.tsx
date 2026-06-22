@@ -155,7 +155,7 @@ export function SubmitFilmModal({ open, onClose, defaultLevel = "Short Story" }:
                           : "border-hairline bg-chip text-text-dim hover:text-text-hi"
                       }`}
                     >
-                      {g.name}
+                      {[g.brand, g.type].filter(Boolean).join(" ")}
                     </button>
                   );
                 })}

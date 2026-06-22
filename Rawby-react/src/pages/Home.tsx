@@ -10,6 +10,7 @@ import { SkeletonCard } from "../components/ui/Skeleton";
 import { useMe } from "../hooks/queries";
 import { useProgress } from "../hooks/useProgress";
 import { useAuth } from "../store/auth";
+import { useSettings } from "../store/settings";
 import { WEEKLY_CYCLE } from "../lib/constants";
 import { stagger } from "../lib/motion";
 import type { Snapshot } from "../types";
@@ -34,6 +35,9 @@ export default function Home() {
 
   const snap: Snapshot = { ...FALLBACK, ...(data?.snapshot ?? {}) };
   const history = data?.snapshot?.history ?? data?.history ?? [];
+  const gearCount = data?.snapshot?.gear?.length ?? 0;
+  const region = useSettings((s) => s.region);
+  const seasonal = useSettings((s) => s.seasonalPrompts);
 
   if (isLoading) {
     return (
@@ -138,6 +142,29 @@ export default function Home() {
         <StatTile icon="flame" value={snap.streak ?? 0} label="Streak" accent="#E85D75" />
         <StatTile icon="refresh" value={snap.regensLeft ?? 0} label="Regens left" accent="#3B82F6" />
       </motion.div>
+
+      {/* Kit & tuning */}
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        <Link
+          to="/gear"
+          className="inline-flex items-center gap-1.5 rounded-full bg-chip px-3 py-1.5 text-text-dim transition-colors hover:text-text-hi"
+        >
+          <Icon name="aperture" size={13} /> {gearCount} {gearCount === 1 ? "gear item" : "gear items"}
+        </Link>
+        <Link
+          to="/settings"
+          className="inline-flex items-center gap-1.5 rounded-full bg-chip px-3 py-1.5 text-text-dim transition-colors hover:text-text-hi"
+        >
+          <Icon name="aperture" size={13} /> {region}
+          {seasonal ? " · seasonal" : ""}
+        </Link>
+        <Link
+          to="/prompts"
+          className="inline-flex items-center gap-1.5 rounded-full bg-cinema-500/15 px-3 py-1.5 font-semibold text-cinema-300 transition-colors hover:bg-cinema-500/25"
+        >
+          <Icon name="sparkles" size={13} /> Generate prompts
+        </Link>
+      </div>
 
       {/* Weekly cycle — tap to track your progress */}
       <GlassCard className="mt-6">

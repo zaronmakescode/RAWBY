@@ -93,7 +93,8 @@ export interface ProjectHistoryItem {
 
 export interface GearItem {
   id: string;
-  name: string;
+  brand: string; // e.g. Sony, Rode, DJI
+  type: string; // e.g. Camera body, Shotgun mic, Tripod
   category: string;
 }
 

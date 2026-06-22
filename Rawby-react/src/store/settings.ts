@@ -5,29 +5,20 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export const REGIONS = [
+// Suggestions for the region picker — it's a free-text input, so any
+// country works even if it's not listed here.
+export const COUNTRIES = [
   "Global",
-  "United States",
-  "United Kingdom",
-  "Canada",
-  "Australia",
-  "Ireland",
-  "Germany",
-  "France",
-  "Spain",
-  "Italy",
-  "Netherlands",
-  "Sweden",
-  "Norway",
-  "Poland",
-  "India",
-  "Japan",
-  "South Korea",
-  "Brazil",
-  "Mexico",
-  "South Africa",
-  "Nigeria",
-  "United Arab Emirates",
+  "Argentina", "Australia", "Austria", "Belgium", "Brazil", "Bulgaria",
+  "Canada", "Chile", "China", "Colombia", "Croatia", "Czechia", "Denmark",
+  "Egypt", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary",
+  "Iceland", "India", "Indonesia", "Ireland", "Israel", "Italy", "Japan",
+  "Kenya", "Latvia", "Lithuania", "Malaysia", "Mexico", "Morocco",
+  "Netherlands", "New Zealand", "Nigeria", "Norway", "Pakistan", "Peru",
+  "Philippines", "Poland", "Portugal", "Romania", "Saudi Arabia", "Serbia",
+  "Singapore", "Slovakia", "Slovenia", "South Africa", "South Korea", "Spain",
+  "Sweden", "Switzerland", "Thailand", "Turkey", "Ukraine",
+  "United Arab Emirates", "United Kingdom", "United States", "Vietnam",
 ] as const;
 
 interface SettingsState {

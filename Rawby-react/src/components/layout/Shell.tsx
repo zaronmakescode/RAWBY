@@ -10,6 +10,7 @@ import { FilmGrain } from "../ui/FilmGrain";
 import { Icon } from "../ui/Icon";
 import { Logo } from "../ui/Logo";
 import { ModeToggle } from "../ui/ThemeControls";
+import { Onboarding } from "../Onboarding";
 import { NAV_ITEMS, SECONDARY_ITEMS, ADMIN_ITEM, type NavItem } from "./nav";
 import { useAuth } from "../../store/auth";
 
@@ -64,6 +65,7 @@ export function Shell() {
         <AuraScene />
       </Suspense>
       <FilmGrain />
+      <Onboarding />
 
       <div className="relative z-base flex min-h-screen">
         {/* Desktop side-nav */}

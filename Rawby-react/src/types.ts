@@ -70,6 +70,26 @@ export interface Snapshot {
   phaseDone?: string[]; // completed phases for the current project
   bigProject?: BigProject; // active personal Big Project
   note?: string; // quick note Aurora can see
+  profile?: UserProfile; // onboarding answers — personalises prompts
+  activeDraft?: PromptWorkspace; // the prompt currently being worked out
+}
+
+export interface UserProfile {
+  location?: string; // where exactly they live / shoot
+  style?: string; // visual style / vibe
+  experience?: string; // beginner / intermediate / pro
+  focus?: string; // what they want from filmmaking
+  completed?: boolean;
+}
+
+export interface PromptWorkspace {
+  promptText: string;
+  level: string;
+  storyline: string;
+  shots: string[];
+  music: string[];
+  notes: string;
+  gear: string[]; // gear item ids
 }
 
 export interface BigProject {
@@ -130,6 +150,10 @@ export interface ChatContext {
   daysLeft?: number;
   promptLevel?: string;
   promptText?: string;
+  note?: string; // quick note
+  location?: string;
+  style?: string;
+  gear?: string[]; // owned gear, brand+type strings
 }
 
 export type AIProvider = "groq" | "claude";

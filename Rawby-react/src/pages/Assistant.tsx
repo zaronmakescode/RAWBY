@@ -7,6 +7,8 @@ import { PageHeader } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
 import { ai } from "../lib/endpoints";
 import { useMe } from "../hooks/queries";
+import { useNote } from "../hooks/usePersonal";
+import { gearLabels } from "../lib/personalize";
 import { useAuth } from "../store/auth";
 import type { ChatMessage, ChatContext } from "../types";
 
@@ -20,19 +22,26 @@ export default function Assistant() {
   const { data } = useMe();
   const user = useAuth((s) => s.user);
 
+  const { note, save: saveNote } = useNote();
+  const [noteDraft, setNoteDraft] = useState(note);
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const snap = data?.snapshot;
   const context: ChatContext = {
     displayName: user?.displayName,
-    rank: data?.snapshot?.rank,
-    totalScore: data?.snapshot?.totalScore,
-    streak: data?.snapshot?.streak,
-    regensLeft: data?.snapshot?.regensLeft,
-    daysLeft: data?.snapshot?.daysLeft,
-    promptLevel: data?.snapshot?.promptLevel,
-    promptText: data?.snapshot?.promptText,
+    rank: snap?.rank,
+    totalScore: snap?.totalScore,
+    streak: snap?.streak,
+    regensLeft: snap?.regensLeft,
+    daysLeft: snap?.daysLeft,
+    promptLevel: snap?.promptLevel,
+    promptText: snap?.promptText,
+    note: noteDraft || note,
+    location: snap?.profile?.location,
+    style: snap?.profile?.style,
+    gear: gearLabels(snap?.gear ?? []),
   };
 
   const m = useMutation({
@@ -70,6 +79,20 @@ export default function Assistant() {
         title="Aurora"
         sub="Cinematic guidance for this week's film. Plain talk, no fluff."
       />
+
+      <GlassCard className="mb-4 p-4">
+        <label htmlFor="quick-note" className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-text-dim">
+          <Icon name="bulb" size={13} /> Quick note — Aurora sees this
+        </label>
+        <input
+          id="quick-note"
+          value={noteDraft}
+          onChange={(e) => setNoteDraft(e.target.value)}
+          onBlur={() => noteDraft !== note && saveNote.mutate(noteDraft)}
+          placeholder="e.g. shooting a rainy market this week, no tripod"
+          className="w-full rounded-xl border border-hairline bg-field px-4 py-2.5 text-sm text-text-hi outline-none placeholder:text-text-dim/60 focus:border-cinema-500/70"
+        />
+      </GlassCard>
 
       <GlassCard className="flex h-[62vh] flex-col p-0">
         <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-5">

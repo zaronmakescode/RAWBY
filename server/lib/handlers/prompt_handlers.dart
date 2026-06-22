@@ -376,6 +376,8 @@ Future<Response> handleGeneratePrompts(Request request) async {
         .toList();
     final region = data['region'] as String? ?? '';
     final seasonalPrompts = data['seasonalPrompts'] as bool? ?? false;
+    final personalization = (data['personalization'] as String? ?? '').trim();
+    final idea = (data['idea'] as String? ?? '').trim();
 
     // Build a pool of FAMOUS songs to ground the picks. Spotify first (real,
     // popularity-filtered) over rotating popular genres; plus a rotating sample
@@ -425,11 +427,24 @@ Future<Response> handleGeneratePrompts(Request request) async {
       avoidPrompts: avoidPrompts,
     );
 
+    // Fold in the filmmaker's profile + owned gear + a one-off idea so the
+    // prompts are personal and achievable with what they actually have.
+    final fullPrompt = StringBuffer(userPromptText);
+    if (personalization.isNotEmpty) {
+      fullPrompt.write(
+          '\n\nFILMMAKER PROFILE (personalise strongly to this): $personalization');
+    }
+    if (idea.isNotEmpty) {
+      fullPrompt.write(
+          '\n\nThe filmmaker described this idea/trip — build at least one of the prompts directly around it: "$idea"');
+    }
+    final promptText = fullPrompt.toString();
+
     final rawText = provider == 'openai'
-        ? await _callOpenAi(model: model, userPrompt: userPromptText)
+        ? await _callOpenAi(model: model, userPrompt: promptText)
         : provider == 'claude'
-            ? await _callClaudePrompts(model: model, userPrompt: userPromptText)
-            : await _callGroq(model: model, userPrompt: userPromptText);
+            ? await _callClaudePrompts(model: model, userPrompt: promptText)
+            : await _callGroq(model: model, userPrompt: promptText);
 
     final prompts = _parsePrompts(rawText);
 

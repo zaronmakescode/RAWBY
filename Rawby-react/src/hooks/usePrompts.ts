@@ -8,13 +8,19 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ai, session } from "../lib/endpoints";
 import { useSettings } from "../store/settings";
 import { toast } from "../store/toast";
+import { useMe } from "./queries";
+import { personalizationText } from "../lib/personalize";
 import type { GeneratedPrompt, MeResponse, Snapshot } from "../types";
 
 export function useGeneratePrompts() {
   const region = useSettings((s) => s.region);
   const seasonalPrompts = useSettings((s) => s.seasonalPrompts);
+  const { data } = useMe();
+  const personalization = personalizationText(data?.snapshot?.profile, data?.snapshot?.gear ?? []);
   return useMutation({
-    mutationFn: () => ai.generatePrompts("groq", { region, seasonalPrompts }),
+    // Pass an optional idea/description for a trip → personalised prompt.
+    mutationFn: (idea?: string) =>
+      ai.generatePrompts("groq", { region, seasonalPrompts, personalization, idea }),
     onError: () => toast.error("Couldn't generate prompts — the server may be waking."),
   });
 }

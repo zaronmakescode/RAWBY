@@ -63,13 +63,15 @@ export const ai = {
 
   generatePrompts: (
     provider: AIProvider,
-    opts?: { region?: string; seasonalPrompts?: boolean }
+    opts?: { region?: string; seasonalPrompts?: boolean; personalization?: string; idea?: string }
   ) =>
     api
       .post<{ prompts: GeneratedPrompt[] }>("/api/generate-prompts", {
         provider,
         region: opts?.region && opts.region !== "Global" ? opts.region : "",
         seasonalPrompts: opts?.seasonalPrompts ?? false,
+        personalization: opts?.personalization ?? "",
+        idea: opts?.idea ?? "",
       })
       .then((r) => r.data.prompts ?? []),
 };

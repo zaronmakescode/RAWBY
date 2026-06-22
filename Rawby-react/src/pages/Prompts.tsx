@@ -8,15 +8,25 @@ import { Icon } from "../components/ui/Icon";
 import { PageHeader, Spinner } from "../components/ui/Bits";
 import { SubmitFilmModal } from "../components/SubmitFilmModal";
 import { StartBigProjectModal } from "../components/StartBigProjectModal";
+import { PromptDetailModal } from "../components/PromptDetailModal";
 import { useMe } from "../hooks/queries";
 import { useGeneratePrompts } from "../hooks/usePrompts";
 import { useBigProject } from "../hooks/useBigProject";
+import { useDraft } from "../hooks/usePersonal";
 import { useSettings } from "../store/settings";
 import { stagger, item } from "../lib/motion";
 import { LEVELS, LATE_MULTIPLIERS } from "../lib/constants";
 import type { GeneratedPrompt } from "../types";
 
-function PromptCard({ p, onFilm }: { p: GeneratedPrompt; onFilm: (level: string) => void }) {
+function PromptCard({
+  p,
+  onFilm,
+  onDetail,
+}: {
+  p: GeneratedPrompt;
+  onFilm: (level: string) => void;
+  onDetail: (p: GeneratedPrompt) => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <motion.div variants={item}>
@@ -70,9 +80,14 @@ function PromptCard({ p, onFilm }: { p: GeneratedPrompt; onFilm: (level: string)
           </div>
         )}
 
-        <GradientButton onClick={() => onFilm(p.level)} className="mt-4 w-full">
-          <Icon name="film" size={15} /> Film this
-        </GradientButton>
+        <div className="mt-4 flex gap-2">
+          <GradientButton onClick={() => onFilm(p.level)} className="flex-1">
+            <Icon name="film" size={15} /> Film this
+          </GradientButton>
+          <GradientButton variant="ghost" onClick={() => onDetail(p)} title="Open in detail">
+            <Icon name="arrowRight" size={15} className="-rotate-45" />
+          </GradientButton>
+        </div>
       </GlassCard>
     </motion.div>
   );
@@ -86,16 +101,34 @@ export default function Prompts() {
   const gen = useGeneratePrompts();
   const prompts = gen.data ?? [];
   const big = useBigProject();
+  const draft = useDraft();
 
   const [submitOpen, setSubmitOpen] = useState(false);
   const [submitLevel, setSubmitLevel] = useState("Short Story");
   const [submitDeadline, setSubmitDeadline] = useState<string | undefined>(undefined);
   const [bigOpen, setBigOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [idea, setIdea] = useState("");
 
   function film(level: string, deadline?: string) {
     setSubmitLevel(level);
     setSubmitDeadline(deadline);
     setSubmitOpen(true);
+  }
+
+  function openDetail(p: GeneratedPrompt) {
+    draft.open.mutate(
+      {
+        promptText: p.text,
+        level: p.level,
+        storyline: "",
+        shots: p.shots ?? [],
+        music: (p.songs ?? []).map((s) => `${s.title} · ${s.artist}`),
+        notes: "",
+        gear: [],
+      },
+      { onSuccess: () => setDetailOpen(true) }
+    );
   }
 
   return (
@@ -107,6 +140,7 @@ export default function Prompts() {
         deadline={submitDeadline}
       />
       <StartBigProjectModal open={bigOpen} onClose={() => setBigOpen(false)} />
+      <PromptDetailModal open={detailOpen} onClose={() => setDetailOpen(false)} onFilm={film} />
 
       <PageHeader
         eyebrow="This week"
@@ -141,7 +175,7 @@ export default function Prompts() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <GradientButton onClick={() => gen.mutate()} loading={gen.isPending}>
+            <GradientButton onClick={() => gen.mutate(undefined)} loading={gen.isPending}>
               <Icon name="sparkles" size={16} /> {prompts.length ? "Regenerate" : "Generate"}
             </GradientButton>
             <GradientButton variant="ghost" onClick={() => film("Short Story")}>
@@ -153,6 +187,26 @@ export default function Prompts() {
               </GradientButton>
             )}
           </div>
+        </div>
+      </GlassCard>
+
+      {/* Describe an idea / trip → a personalised prompt */}
+      <GlassCard className="mb-6">
+        <label htmlFor="idea" className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-text-dim">
+          <Icon name="sparkles" size={13} /> Describe a trip or idea
+        </label>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            id="idea"
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && idea.trim() && gen.mutate(idea)}
+            placeholder="e.g. foggy weekend at Lake Balaton, just me + a 35mm"
+            className="flex-1 rounded-xl border border-hairline bg-field px-4 py-3 text-sm text-text-hi outline-none placeholder:text-text-dim/60 focus:border-cinema-500/70"
+          />
+          <GradientButton onClick={() => idea.trim() && gen.mutate(idea)} loading={gen.isPending} disabled={!idea.trim()}>
+            <Icon name="arrowRight" size={16} /> Make prompt
+          </GradientButton>
         </div>
       </GlassCard>
 
@@ -191,7 +245,7 @@ export default function Prompts() {
           className="grid gap-4 lg:grid-cols-3"
         >
           {prompts.map((p, i) => (
-            <PromptCard key={i} p={p} onFilm={film} />
+            <PromptCard key={i} p={p} onFilm={film} onDetail={openDetail} />
           ))}
         </motion.div>
       ) : (

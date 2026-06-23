@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PageTransition } from "../components/layout/PageTransition";
@@ -8,8 +9,10 @@ import { FilmTag } from "../components/ui/FilmTag";
 import { Icon } from "../components/ui/Icon";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { CategoryBox } from "../components/CategoryBox";
+import { PlanTripModal } from "../components/PlanTripModal";
 import { useMe } from "../hooks/queries";
 import { useProgress } from "../hooks/useProgress";
+import { useTrips, useTripAutoActivate, daysUntil } from "../hooks/useTrips";
 import { useAuth } from "../store/auth";
 import { useSettings } from "../store/settings";
 import { WEEKLY_CYCLE } from "../lib/constants";
@@ -42,6 +45,9 @@ export default function Home() {
   const { data, isLoading } = useMe();
   const user = useAuth((s) => s.user);
   const prog = useProgress();
+  const { trips, remove: removeTrip } = useTrips();
+  useTripAutoActivate(); // any trip due today becomes the active prompt
+  const [planOpen, setPlanOpen] = useState(false);
 
   const snap: Snapshot = { ...FALLBACK, ...(data?.snapshot ?? {}) };
   const history = data?.snapshot?.history ?? data?.history ?? [];
@@ -49,6 +55,8 @@ export default function Home() {
   const region = useSettings((s) => s.region);
   const seasonal = useSettings((s) => s.seasonalPrompts);
   const showCategories = useSettings((s) => s.showCategories);
+  const upcomingTrips = trips.filter((t) => t.status === "planned");
+  const activeTrip = trips.find((t) => t.status === "active");
 
   if (isLoading) {
     return (
@@ -67,7 +75,16 @@ export default function Home() {
 
   const realPrompt = data?.snapshot?.promptText;
   const hasPrompt = !!realPrompt;
-  const progress = Math.min(1, Math.max(0, (7 - (snap.daysLeft ?? 0)) / 7));
+
+  // Holiday mode: an active trip drives the countdown off its filming deadline
+  // (a custom window) instead of the weekly 7-day cycle.
+  const holiday = !!(activeTrip && snap.filmingDeadline);
+  const holidayDaysLeft = snap.filmingDeadline
+    ? Math.max(0, Math.ceil((new Date(snap.filmingDeadline).getTime() - Date.now()) / 86_400_000))
+    : 0;
+  const daysLeft = holiday ? holidayDaysLeft : snap.daysLeft ?? 0;
+  const totalWindow = holiday ? Math.max(1, activeTrip!.days) : 7;
+  const progress = Math.min(1, Math.max(0, (totalWindow - daysLeft) / totalWindow));
 
   return (
     <PageTransition>
@@ -92,10 +109,16 @@ export default function Home() {
             <div className="max-w-xl">
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <FilmTag level={snap.promptLevel} />
-                {snap.phase && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-chip px-3 py-1 text-xs font-medium text-text-dim">
-                    <Icon name="film" size={13} /> {snap.phase}
+                {holiday ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-cinema-500/15 px-3 py-1 text-xs font-semibold text-cinema-300">
+                    <Icon name="sun" size={13} /> Holiday · {activeTrip!.title}
                   </span>
+                ) : (
+                  snap.phase && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-chip px-3 py-1 text-xs font-medium text-text-dim">
+                      <Icon name="film" size={13} /> {snap.phase}
+                    </span>
+                  )
                 )}
               </div>
               <h2 className="h-display text-2xl font-bold leading-snug text-text-hi md:text-[1.75rem]">
@@ -131,7 +154,7 @@ export default function Home() {
                 </svg>
                 <div className="absolute flex flex-col items-center">
                   <span className="h-display text-3xl font-bold text-text-hi tabular-nums">
-                    {snap.daysLeft}
+                    {daysLeft}
                   </span>
                   <span className="text-[10px] uppercase tracking-wider text-text-dim">days left</span>
                 </div>
@@ -152,11 +175,9 @@ export default function Home() {
                   <Icon name="sparkles" size={16} /> Generate a prompt
                 </GradientButton>
               </Link>
-              <Link to="/assistant">
-                <GradientButton variant="ghost">
-                  <Icon name="sparkles" size={16} /> Plan with Aurora
-                </GradientButton>
-              </Link>
+              <GradientButton variant="ghost" onClick={() => setPlanOpen(true)}>
+                <Icon name="sun" size={16} /> Plan a trip
+              </GradientButton>
             </div>
           </div>
         )}
@@ -192,6 +213,60 @@ export default function Home() {
           <Icon name="sparkles" size={13} /> Generate prompts
         </Link>
       </div>
+
+      {/* Holiday mode — trips planned ahead with Aurora */}
+      <GlassCard className="mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Icon name="sun" size={18} className="text-cinema-400" />
+            <h3 className="h-display text-lg font-bold text-text-hi">Holiday mode</h3>
+          </div>
+          <button
+            onClick={() => setPlanOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-cinema-500/15 px-3 py-1.5 text-xs font-semibold text-cinema-300 transition-colors hover:bg-cinema-500/25"
+          >
+            <Icon name="plus" size={13} /> Plan a trip
+          </button>
+        </div>
+        {upcomingTrips.length === 0 ? (
+          <p className="py-2 text-sm text-text-dim">
+            Going somewhere? Tell Aurora about a trip — she'll line up the prompt and a custom
+            filming window for the day you leave. No Friday lock-in needed.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {upcomingTrips.map((t) => {
+              const d = daysUntil(t.startDate);
+              return (
+                <li
+                  key={t.id}
+                  className="flex items-center justify-between rounded-xl border border-hairline bg-chip px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-text-hi">{t.title}</div>
+                    <div className="text-xs text-text-dim">
+                      {t.startDate} · {t.days} day{t.days === 1 ? "" : "s"}
+                      {t.promptText ? " · prompt ready" : " · no prompt yet"}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="rounded-full bg-cinema-500/15 px-2.5 py-1 text-xs font-semibold text-cinema-300">
+                      {d <= 0 ? "today" : `in ${d}d`}
+                    </span>
+                    <button
+                      onClick={() => removeTrip.mutate(t.id)}
+                      aria-label={`Remove ${t.title}`}
+                      className="text-text-dim transition-colors hover:text-danger"
+                    >
+                      <Icon name="plus" size={16} className="rotate-45" />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </GlassCard>
 
       {/* Videography box */}
       {showCategories && (
@@ -312,6 +387,8 @@ export default function Home() {
           </Link>
         </GlassCard>
       </div>
+
+      <PlanTripModal open={planOpen} onClose={() => setPlanOpen(false)} />
     </PageTransition>
   );
 }

@@ -73,6 +73,32 @@ export interface Snapshot {
   profile?: UserProfile; // onboarding answers — personalises prompts
   activeDraft?: PromptWorkspace; // the prompt currently being worked out
   visibility?: Visibility; // what others see on your profile
+  trips?: Trip[]; // holiday-mode trips planned with Aurora
+  filmingDeadline?: string; // ISO — holiday/trip filming window end; overrides weekly countdown
+  aurora?: AuroraMemory; // long-term memory: durable facts + persisted chat thread
+}
+
+/**
+ * Holiday mode: a trip planned ahead with Aurora. When startDate arrives the
+ * trip auto-activates — its prompt becomes the active prompt and `days` sets a
+ * custom filming window (no Friday lock-in required).
+ */
+export interface Trip {
+  id: string;
+  title: string;
+  startDate: string; // ISO date the trip / filming begins
+  days: number; // filming window length in days
+  promptText?: string; // the prompt worked out with Aurora
+  promptLevel?: string;
+  notes?: string;
+  status: "planned" | "active" | "done";
+  activatedAt?: string; // ISO, set when auto-activated
+}
+
+/** What Aurora remembers between sessions. */
+export interface AuroraMemory {
+  facts?: string[]; // durable facts (where they live, gear quirks, taste)
+  messages?: ChatMessage[]; // persisted chat thread (capped)
 }
 
 export interface UserProfile {
@@ -169,6 +195,9 @@ export interface ChatContext {
   location?: string;
   style?: string;
   gear?: string[]; // owned gear, brand+type strings
+  films?: string[]; // recent film summaries (title · level · likes)
+  memory?: string[]; // durable facts Aurora has learned
+  trips?: string[]; // upcoming trips (title · date · days)
 }
 
 export type AIProvider = "groq" | "claude";

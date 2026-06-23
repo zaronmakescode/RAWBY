@@ -44,12 +44,12 @@ export function Modal({ open, onClose, title, children }: Props) {
             aria-modal="true"
             aria-label={title}
             tabIndex={-1}
-            className="glass relative z-10 w-full max-w-md p-6 outline-none"
+            className="glass relative z-10 flex max-h-[90vh] w-full max-w-md flex-col p-6 outline-none"
             initial={{ opacity: 0, y: 24, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1, transition: { ease: EASE_OUT, duration: 0.32 } }}
             exit={{ opacity: 0, y: 12, scale: 0.98, transition: { ease: EASE_IN, duration: 0.2 } }}
           >
-            <div className="mb-5 flex items-center justify-between">
+            <div className="mb-5 flex shrink-0 items-center justify-between">
               <h2 className="h-display text-xl font-bold text-text-hi">{title}</h2>
               <button
                 onClick={onClose}
@@ -59,7 +59,9 @@ export function Modal({ open, onClose, title, children }: Props) {
                 <Icon name="plus" size={20} className="rotate-45" />
               </button>
             </div>
-            {children}
+            {/* Body scrolls when content exceeds the viewport (negative margin
+                keeps the scrollbar off the rounded corner). */}
+            <div className="-mr-3 min-h-0 flex-1 overflow-y-auto pr-3">{children}</div>
           </motion.div>
         </div>
       )}

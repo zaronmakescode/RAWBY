@@ -3,12 +3,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { PageTransition } from "../components/layout/PageTransition";
 import { GlassCard } from "../components/ui/GlassCard";
+import { GradientButton } from "../components/ui/GradientButton";
 import { PageHeader } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
+import { PlanTripModal } from "../components/PlanTripModal";
 import { ai } from "../lib/endpoints";
 import { useMe } from "../hooks/queries";
-import { useNote } from "../hooks/usePersonal";
-import { gearLabels } from "../lib/personalize";
+import { useNote, useAurora } from "../hooks/usePersonal";
+import { useTrips } from "../hooks/useTrips";
+import { gearLabels, filmSummaries, tripSummaries } from "../lib/personalize";
 import { useAuth } from "../store/auth";
 import type { ChatMessage, ChatContext } from "../types";
 
@@ -23,10 +26,22 @@ export default function Assistant() {
   const user = useAuth((s) => s.user);
 
   const { note, save: saveNote } = useNote();
+  const { thread, saveThread } = useAurora();
+  const { trips } = useTrips();
   const [noteDraft, setNoteDraft] = useState(note);
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
+  const [planOpen, setPlanOpen] = useState(false);
+  const hydrated = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Aurora remembers: hydrate the thread from the snapshot once on load.
+  useEffect(() => {
+    if (hydrated.current || !data?.snapshot) return;
+    hydrated.current = true;
+    if (thread.length) setMessages(thread);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.snapshot]);
 
   const snap = data?.snapshot;
   const context: ChatContext = {
@@ -42,12 +57,19 @@ export default function Assistant() {
     location: snap?.profile?.location,
     style: snap?.profile?.style,
     gear: gearLabels(snap?.gear ?? []),
+    films: filmSummaries(snap?.history ?? []),
+    memory: snap?.aurora?.facts ?? [],
+    trips: tripSummaries(trips),
   };
 
   const m = useMutation({
     mutationFn: (history: ChatMessage[]) => ai.chat(history, context, "groq"),
     onSuccess: (reply) =>
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]),
+      setMessages((prev) => {
+        const next = [...prev, { role: "assistant" as const, content: reply }];
+        saveThread.mutate(next); // persist so Aurora remembers next session
+        return next;
+      }),
     onError: () =>
       setMessages((prev) => [
         ...prev,
@@ -79,6 +101,15 @@ export default function Assistant() {
         title="Aurora"
         sub="Cinematic guidance for this week's film. Plain talk, no fluff."
       />
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <GradientButton variant="ghost" onClick={() => setPlanOpen(true)}>
+          <Icon name="sun" size={15} /> Plan a trip
+        </GradientButton>
+        <span className="text-xs text-text-dim">
+          Talk through a trip, then save it — Aurora drops the prompt in on the day.
+        </span>
+      </div>
 
       <GlassCard className="mb-4 p-4">
         <label htmlFor="quick-note" className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-text-dim">
@@ -155,6 +186,8 @@ export default function Assistant() {
           </button>
         </div>
       </GlassCard>
+
+      <PlanTripModal open={planOpen} onClose={() => setPlanOpen(false)} />
     </PageTransition>
   );
 }

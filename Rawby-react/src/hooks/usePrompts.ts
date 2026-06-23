@@ -16,7 +16,12 @@ export function useGeneratePrompts() {
   const region = useSettings((s) => s.region);
   const seasonalPrompts = useSettings((s) => s.seasonalPrompts);
   const { data } = useMe();
-  const personalization = personalizationText(data?.snapshot?.profile, data?.snapshot?.gear ?? []);
+  const personalization = personalizationText(
+    data?.snapshot?.profile,
+    data?.snapshot?.gear ?? [],
+    data?.snapshot?.history ?? [],
+    data?.snapshot?.aurora?.facts ?? []
+  );
   return useMutation({
     // Pass an optional idea/description for a trip → personalised prompt.
     mutationFn: (idea?: string) =>

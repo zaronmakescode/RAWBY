@@ -28,6 +28,9 @@ You help with:
   Wed-Thu: colour grading
   Friday: polish and publish
 - App navigation (home, prompts, gear, leaderboard, settings, idea bank)
+- Holiday mode: the user can plan a trip ahead. Help them shape a prompt for it. When they like one, tell them to hit "Plan a trip" to save it with a date and a filming window — the app drops that prompt in automatically on the day, so they can film a multi-day trip without the Friday cycle.
+
+You remember the user across sessions. The Context line carries what you know — their recent films, gear, location, durable notes, and upcoming trips. Use it: avoid suggesting ideas close to films they've already made, and tailor to their kit and where they shoot.
 
 Scoring: Sequence = 10 pts, Short Story = 30 pts, Story + Character = 50 pts.
 Late penalty multipliers: 0.9x day 1, 0.75x day 2, 0.5x day 3 or more.
@@ -66,6 +69,31 @@ String _buildContextNote(Map<String, dynamic> ctx) {
       parts.add('active prompt: "$preview"');
     }
   }
+  if (ctx['note'] != null && (ctx['note'] as String).trim().isNotEmpty) {
+    parts.add('quick note: "${(ctx['note'] as String).trim()}"');
+  }
+  if (ctx['location'] != null && (ctx['location'] as String).trim().isNotEmpty) {
+    parts.add('shoots around: ${ctx['location']}');
+  }
+  if (ctx['style'] != null && (ctx['style'] as String).trim().isNotEmpty) {
+    parts.add('style: ${ctx['style']}');
+  }
+
+  String joinList(dynamic v, {int max = 6}) {
+    if (v is! List) return '';
+    final items = v.map((e) => e.toString()).where((s) => s.trim().isNotEmpty).take(max).toList();
+    return items.join('; ');
+  }
+
+  final gear = joinList(ctx['gear']);
+  if (gear.isNotEmpty) parts.add('owns gear: $gear');
+  final films = joinList(ctx['films']);
+  if (films.isNotEmpty) parts.add('recent films: $films');
+  final memory = joinList(ctx['memory']);
+  if (memory.isNotEmpty) parts.add('remember: $memory');
+  final trips = joinList(ctx['trips']);
+  if (trips.isNotEmpty) parts.add('upcoming trips: $trips');
+
   if (parts.isEmpty) return '';
   return '[Context: ${parts.join(' | ')}]';
 }

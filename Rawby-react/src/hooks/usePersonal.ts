@@ -4,7 +4,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { patchSnapshot } from "../lib/snapshotPatch";
 import { toast } from "../store/toast";
 import { useMe } from "./queries";
-import type { PromptWorkspace, UserProfile, Visibility } from "../types";
+import type { AuroraMemory, ChatMessage, PromptWorkspace, UserProfile, Visibility } from "../types";
+
+const MAX_THREAD = 40; // cap persisted chat turns so the snapshot stays small
 
 export const DEFAULT_VISIBILITY: Visibility = {
   publicProfile: true,
@@ -49,6 +51,35 @@ export function useNote() {
     mutationFn: (text: string) => patchSnapshot(qc, (s) => ({ ...s, note: text })),
   });
   return { note, save };
+}
+
+/**
+ * Aurora's long-term memory. `messages` is the persisted chat thread (so Aurora
+ * remembers past conversations); `facts` are durable things she's learned.
+ */
+export function useAurora() {
+  const qc = useQueryClient();
+  const { data } = useMe();
+  const memory: AuroraMemory = data?.snapshot?.aurora ?? {};
+
+  const saveThread = useMutation({
+    mutationFn: (messages: ChatMessage[]) =>
+      patchSnapshot(qc, (s) => ({
+        ...s,
+        aurora: { ...(s.aurora ?? {}), messages: messages.slice(-MAX_THREAD) },
+      })),
+  });
+
+  const addFact = useMutation({
+    mutationFn: (fact: string) =>
+      patchSnapshot(qc, (s) => {
+        const facts = s.aurora?.facts ?? [];
+        if (facts.includes(fact)) return s;
+        return { ...s, aurora: { ...(s.aurora ?? {}), facts: [...facts, fact] } };
+      }),
+  });
+
+  return { memory, facts: memory.facts ?? [], thread: memory.messages ?? [], saveThread, addFact };
 }
 
 export function useDraft() {

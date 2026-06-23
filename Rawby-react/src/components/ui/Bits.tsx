@@ -14,20 +14,25 @@ export function PageHeader({
   right?: ReactNode;
 }) {
   return (
-    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="mb-8 flex flex-wrap items-end justify-between gap-4"
+    >
       <div>
         {eyebrow && (
-          <div className="mb-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-cinema-500">
+          <div className="mb-2 text-eyebrow font-semibold uppercase text-cinema-500">
             {eyebrow}
           </div>
         )}
-        <h1 className="h-display text-[2rem] font-bold leading-tight text-text-hi md:text-[2.5rem]">
+        <h1 className="h-display text-display-lg font-semibold text-text-hi md:text-display-xl">
           {title}
         </h1>
-        {sub && <p className="measure mt-2 text-sm leading-relaxed text-text-dim">{sub}</p>}
+        {sub && <p className="measure mt-2.5 text-sm leading-relaxed text-text-dim">{sub}</p>}
       </div>
       {right}
-    </div>
+    </motion.div>
   );
 }
 

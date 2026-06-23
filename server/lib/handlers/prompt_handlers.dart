@@ -330,7 +330,8 @@ String _buildLocationHint({required String region, required bool seasonal}) {
   final buf = StringBuffer('\n\nREGIONAL CONTEXT:');
   if (region.isNotEmpty) {
     buf.write(
-        '\n- Setting: $region. At least TWO of the 3 prompts must be UNMISTAKABLY set in $region: name real, specific places — actual cities, neighbourhoods, landscapes, landmarks, rivers, transit — plus plants, weather, architecture, food and cultural texture a local would instantly recognise. A native of $region should read it and think "this is here". Do NOT write generic locations that could be anywhere. The third prompt may be neutral but must never contradict $region.');
+        '\n- Setting: $region. Mix freely — some prompts can be specific to $region (real places, streets, landmarks, local texture a native would recognise), others can be neutral and universal. You do NOT have to mention $region in every prompt.'
+        '\n- HARD GEOGRAPHY RULE: never use a location, terrain or climate that does not plausibly exist in or near $region. The filmmaker has to be able to actually go there. For a landlocked, temperate country, that means NO rocky ocean beaches, no fjords, no high snowy alpine peaks, no deserts, no jungles, no tropical coast. Match the real geography, accessible nature, climate and architecture of $region.');
   }
   if (seasonal) {
     final now = DateTime.now().toUtc();

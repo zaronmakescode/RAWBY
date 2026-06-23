@@ -43,8 +43,19 @@ export default {
         info: "#3B82F6",
       },
       fontFamily: {
-        display: ['"Playfair Display"', "serif"],
+        display: ['"Fraunces"', "Georgia", "serif"],
         body: ["Inter", "system-ui", "sans-serif"],
+      },
+      // Intentional, consistent type scale. Display sizes carry their own
+      // line-height + tracking so headings stay coherent everywhere.
+      fontSize: {
+        "2xs": ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.02em" }],
+        eyebrow: ["0.7rem", { lineHeight: "1rem", letterSpacing: "0.22em" }],
+        "display-sm": ["1.375rem", { lineHeight: "1.2", letterSpacing: "-0.012em" }],
+        "display-md": ["1.75rem", { lineHeight: "1.15", letterSpacing: "-0.016em" }],
+        "display-lg": ["2.25rem", { lineHeight: "1.08", letterSpacing: "-0.02em" }],
+        "display-xl": ["3rem", { lineHeight: "1.02", letterSpacing: "-0.024em" }],
+        "display-2xl": ["clamp(2.75rem,6vw,4.25rem)", { lineHeight: "0.98", letterSpacing: "-0.028em" }],
       },
       borderRadius: { glass: "18px" },
       zIndex: { bg: "-10", base: "10", nav: "30", grain: "40", modal: "50", toast: "60" },
@@ -84,12 +95,29 @@ export default {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        // Slow drifting aurora glow behind heroes.
+        "aurora-drift": {
+          "0%,100%": { transform: "translate3d(0,0,0) scale(1)", opacity: "0.7" },
+          "33%": { transform: "translate3d(6%,-4%,0) scale(1.12)", opacity: "0.9" },
+          "66%": { transform: "translate3d(-5%,5%,0) scale(0.95)", opacity: "0.6" },
+        },
+        // Light sweep across buttons / chips on hover.
+        sheen: {
+          "0%": { transform: "translateX(-120%) skewX(-12deg)" },
+          "100%": { transform: "translateX(220%) skewX(-12deg)" },
+        },
+        float: {
+          "0%,100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
       },
       animation: {
         grain: "grain-shift 0.8s steps(4) infinite",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
         shimmer: "shimmer 1.6s ease-in-out infinite",
         "fade-in": "fade-in 0.4s ease-out both",
+        "aurora-drift": "aurora-drift 14s ease-in-out infinite",
+        float: "float 6s ease-in-out infinite",
       },
     },
   },

@@ -169,15 +169,92 @@ body {
     @apply cursor-pointer transition-[transform,border-color,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:border-hairline-strong hover:shadow-glow-sm;
   }
 
-  /* Display heading helper */
+  /* Display heading helper — Fraunces with optical sizing for cinematic feel */
   .h-display {
-    @apply font-display tracking-tight;
+    @apply font-display;
+    font-optical-sizing: auto;
+    font-feature-settings: "ss01", "lnum";
   }
 
   /* Constrain reading measure for long-form text */
   .measure {
     @apply max-w-prose;
   }
+
+  /* Gradient-shine text — for hero display headings */
+  .text-shine {
+    background: linear-gradient(
+      96deg,
+      rgb(var(--text-hi)) 0%,
+      rgb(var(--c-300)) 42%,
+      rgb(var(--text-hi)) 72%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shine-pan 7s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .text-shine { animation: none; }
+  }
+
+  /* Cursor-follow spotlight — set --mx/--my (%) on pointer move */
+  .spotlight {
+    position: relative;
+  }
+  .spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      260px circle at var(--mx, 50%) var(--my, 0%),
+      rgb(var(--glow) / 0.16),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+  .spotlight > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Sheen sweep — wrap a button; the ::after streaks across on hover */
+  .sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .sheen::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 40%;
+    background: linear-gradient(
+      100deg,
+      transparent,
+      rgb(255 255 255 / 0.28),
+      transparent
+    );
+    transform: translateX(-120%) skewX(-12deg);
+    pointer-events: none;
+  }
+  .sheen:hover::after {
+    animation: sheen 0.8s ease-out;
+  }
+}
+
+@keyframes shine-pan {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 /* Faint film-grain overlay (used by <FilmGrain/>) */

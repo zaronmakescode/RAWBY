@@ -30,7 +30,7 @@ export function GradientButton({
       transition={{ type: "spring", stiffness: 400, damping: 22 }}
       disabled={disabled || loading}
       aria-busy={loading}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold tracking-wide transition-[filter,background-color] duration-200 ease-out hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100 ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold tracking-wide transition-[filter,background-color] duration-200 ease-out hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100 ${variant !== "ghost" ? "sheen" : ""} ${VARIANTS[variant]} ${className}`}
       {...rest}
     >
       {loading && (

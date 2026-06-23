@@ -5,6 +5,7 @@ import { PageTransition } from "../components/layout/PageTransition";
 import { GlassCard } from "../components/ui/GlassCard";
 import { GradientButton } from "../components/ui/GradientButton";
 import { StatTile } from "../components/ui/StatTile";
+import { CountUp } from "../components/ui/CountUp";
 import { FilmTag } from "../components/ui/FilmTag";
 import { Icon } from "../components/ui/Icon";
 import { SkeletonCard } from "../components/ui/Skeleton";
@@ -101,20 +102,30 @@ export default function Home() {
   return (
     <PageTransition>
       {/* Greeting */}
-      <div className="mb-6">
-        <div className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-cinema-500">
+      <motion.div
+        className="mb-7"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="mb-2 text-eyebrow font-semibold uppercase text-cinema-500">
           {snap.weekNumber ? `Week ${snap.weekNumber}` : "This week"}
         </div>
-        <h1 className="h-display text-[2rem] font-bold leading-tight text-text-hi md:text-[2.5rem]">
-          Welcome back, {user?.displayName?.split(" ")[0] ?? "filmmaker"}.
+        <h1 className="h-display text-display-xl font-semibold leading-[1.02] md:text-display-2xl">
+          <span className="text-text-hi">Welcome back, </span>
+          <span className="text-shine">{user?.displayName?.split(" ")[0] ?? "filmmaker"}.</span>
         </h1>
-      </div>
+      </motion.div>
 
       {/* Next-step hero */}
-      <GlassCard className="relative overflow-hidden p-6 md:p-8">
+      <GlassCard spotlight className="relative overflow-hidden p-6 md:p-8">
         <div
-          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl"
+          className="animate-aurora-drift pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl"
           style={{ background: "radial-gradient(circle, rgb(var(--glow) / 0.22), transparent 70%)" }}
+        />
+        <div
+          className="animate-aurora-drift pointer-events-none absolute -bottom-20 -left-10 h-52 w-52 rounded-full blur-3xl"
+          style={{ background: "radial-gradient(circle, rgb(var(--c-500) / 0.14), transparent 70%)", animationDelay: "-5s" }}
         />
         {hasPrompt ? (
           <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -175,7 +186,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="relative">
-            <h2 className="h-display text-2xl font-bold text-text-hi md:text-[1.75rem]">
+            <h2 className="h-display text-display-md font-semibold text-text-hi">
               No prompt locked in yet.
             </h2>
             <p className="mt-1 text-sm text-text-dim">
@@ -197,10 +208,20 @@ export default function Home() {
 
       {/* Bento stat tiles */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon="medal" value={`#${snap.rank || "—"}`} label="Rank" accent="#E8B647" />
-        <StatTile icon="star" value={nf.format(snap.totalScore ?? 0)} label="Total score" accent="#6FA373" />
-        <StatTile icon="flame" value={snap.streak ?? 0} label="Streak" accent="#E85D75" />
-        <StatTile icon="refresh" value={snap.regensLeft ?? 0} label="Regens left" accent="#3B82F6" />
+        <StatTile
+          icon="medal"
+          value={snap.rank ? <CountUp value={snap.rank} prefix="#" /> : "—"}
+          label="Rank"
+          accent="#E8B647"
+        />
+        <StatTile
+          icon="star"
+          value={<CountUp value={snap.totalScore ?? 0} format={(n) => nf.format(n)} />}
+          label="Total score"
+          accent="#6FA373"
+        />
+        <StatTile icon="flame" value={<CountUp value={snap.streak ?? 0} />} label="Streak" accent="#E85D75" />
+        <StatTile icon="refresh" value={<CountUp value={snap.regensLeft ?? 0} />} label="Regens left" accent="#3B82F6" />
       </div>
 
       {/* Kit & tuning */}

@@ -80,7 +80,8 @@ export function useTripAutoActivate() {
     ran.current = true;
 
     const trip = due[due.length - 1]; // newest due trip wins
-    const deadline = new Date(`${trip.startDate}T00:00:00`);
+    const start = new Date(`${trip.startDate}T00:00:00`);
+    const deadline = new Date(start);
     deadline.setDate(deadline.getDate() + Math.max(1, trip.days));
 
     patchSnapshot(qc, (s) => ({
@@ -88,6 +89,8 @@ export function useTripAutoActivate() {
       promptText: trip.promptText || s.promptText,
       promptLevel: trip.promptLevel || s.promptLevel,
       phase: "Filming",
+      phaseDone: [],
+      filmingStartedAt: start.toISOString(),
       filmingDeadline: deadline.toISOString(),
       trips: (s.trips ?? []).map((t) =>
         t.id === trip.id ? { ...t, status: "active" as const, activatedAt: new Date().toISOString() } : t

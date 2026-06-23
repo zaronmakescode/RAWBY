@@ -76,15 +76,21 @@ export default function Home() {
   const realPrompt = data?.snapshot?.promptText;
   const hasPrompt = !!realPrompt;
 
-  // Holiday mode: an active trip drives the countdown off its filming deadline
-  // (a custom window) instead of the weekly 7-day cycle.
-  const holiday = !!(activeTrip && snap.filmingDeadline);
-  const holidayDaysLeft = snap.filmingDeadline
-    ? Math.max(0, Math.ceil((new Date(snap.filmingDeadline).getTime() - Date.now()) / 86_400_000))
-    : 0;
-  const daysLeft = holiday ? holidayDaysLeft : snap.daysLeft ?? 0;
-  const totalWindow = holiday ? Math.max(1, activeTrip!.days) : 7;
+  // Holiday mode: the countdown runs off a custom filming window (start →
+  // deadline) instead of the weekly 7-day cycle. Set when you lock a prompt
+  // with holiday mode on, or when a planned trip auto-activates.
+  const DAY = 86_400_000;
+  const holiday = !!(snap.filmingStartedAt && snap.filmingDeadline);
+  const startMs = holiday ? new Date(snap.filmingStartedAt!).getTime() : 0;
+  const deadlineMs = holiday ? new Date(snap.filmingDeadline!).getTime() : 0;
+  const daysLeft = holiday ? Math.max(0, Math.ceil((deadlineMs - Date.now()) / DAY)) : snap.daysLeft ?? 0;
+  const totalWindow = holiday ? Math.max(1, Math.round((deadlineMs - startMs) / DAY)) : 7;
   const progress = Math.min(1, Math.max(0, (totalWindow - daysLeft) / totalWindow));
+  // Which phase is "today" in holiday mode — mapped by elapsed day, not weekday.
+  const elapsed = holiday ? Math.min(totalWindow, Math.max(0, Math.round((Date.now() - startMs) / DAY))) : 0;
+  const holidayPhaseIdx = holiday
+    ? Math.min(WEEKLY_CYCLE.length - 1, Math.floor((elapsed / totalWindow) * WEEKLY_CYCLE.length))
+    : -1;
 
   return (
     <PageTransition>
@@ -111,7 +117,7 @@ export default function Home() {
                 <FilmTag level={snap.promptLevel} />
                 {holiday ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-cinema-500/15 px-3 py-1 text-xs font-semibold text-cinema-300">
-                    <Icon name="sun" size={13} /> Holiday · {activeTrip!.title}
+                    <Icon name="sun" size={13} /> {activeTrip ? `Holiday · ${activeTrip.title}` : "Holiday mode"}
                   </span>
                 ) : (
                   snap.phase && (
@@ -293,7 +299,10 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           {WEEKLY_CYCLE.map((p, i) => {
             const done = prog.done.includes(p.phase);
-            const today = isToday(p.day);
+            const today = holiday ? i === holidayPhaseIdx : isToday(p.day);
+            const dayLabel = holiday
+              ? `Day ${Math.floor((i * totalWindow) / WEEKLY_CYCLE.length) + 1}`
+              : p.day;
             return (
               <motion.button
                 key={p.phase + i}
@@ -316,7 +325,7 @@ export default function Home() {
                       today && !done ? "text-cinema-400" : "text-text-dim"
                     }`}
                   >
-                    {today ? "Today" : p.day}
+                    {today ? "Today" : dayLabel}
                   </span>
                   {done && <Icon name="check" size={13} className="text-green-400" />}
                 </div>

@@ -32,15 +32,27 @@ export function useGeneratePrompts() {
 
 export function useSetActivePrompt() {
   const qc = useQueryClient();
+  const holidayMode = useSettings((s) => s.holidayMode);
+  const holidayDays = useSettings((s) => s.holidayDays);
   return useMutation({
     mutationFn: async (p: GeneratedPrompt) => {
       const me = qc.getQueryData<MeResponse>(["me"]);
       const snap: Snapshot = me?.snapshot ?? {};
+      // Holiday mode: the filming clock starts now and runs `holidayDays`,
+      // decoupled from the weekly Friday cycle. Otherwise clear any window so
+      // the normal weekly countdown applies.
+      const now = new Date();
+      const deadline = new Date(now);
+      deadline.setDate(deadline.getDate() + Math.max(1, holidayDays));
       const next: Snapshot = {
         ...snap,
         promptText: p.text,
         promptLevel: p.level,
+        phase: "Filming",
+        phaseDone: [],
         regensLeft: Math.max(0, (snap.regensLeft ?? 3) - 1),
+        filmingStartedAt: holidayMode ? now.toISOString() : undefined,
+        filmingDeadline: holidayMode ? deadline.toISOString() : undefined,
       };
       await session.sync(next as Record<string, unknown>);
       return next;
@@ -50,7 +62,11 @@ export function useSetActivePrompt() {
         old ? { ...old, snapshot: next } : old
       );
       qc.invalidateQueries({ queryKey: ["me"] });
-      toast.success("Prompt locked in for this week.");
+      toast.success(
+        holidayMode
+          ? `Project started — ${holidayDays} days on the clock.`
+          : "Prompt locked in for this week."
+      );
     },
     onError: () => toast.error("Couldn't set the prompt. Try again."),
   });

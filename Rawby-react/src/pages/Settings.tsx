@@ -31,6 +31,10 @@ export default function Settings() {
   const setSeasonal = useSettings((s) => s.setSeasonal);
   const showCategories = useSettings((s) => s.showCategories);
   const setShowCategories = useSettings((s) => s.setShowCategories);
+  const holidayMode = useSettings((s) => s.holidayMode);
+  const setHolidayMode = useSettings((s) => s.setHolidayMode);
+  const holidayDays = useSettings((s) => s.holidayDays);
+  const setHolidayDays = useSettings((s) => s.setHolidayDays);
 
   return (
     <PageTransition>
@@ -109,6 +113,70 @@ export default function Settings() {
             />
           </span>
         </button>
+      </GlassCard>
+
+      {/* Holiday mode */}
+      <GlassCard className="mb-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <Icon name="sun" size={18} className="text-cinema-400" />
+          <div>
+            <div className="text-sm font-semibold text-text-hi">Holiday mode</div>
+            <div className="text-xs text-text-dim">
+              Summer schedule's off? Skip the Friday cycle — your filming clock starts when you
+              lock in a prompt and runs a fixed window.
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={holidayMode}
+          onClick={() => setHolidayMode(!holidayMode)}
+          className="flex w-full items-center justify-between gap-4 rounded-xl border border-hairline bg-chip px-4 py-3 text-left transition-colors hover:border-hairline-strong"
+        >
+          <div>
+            <div className="text-sm font-medium text-text-hi">Start the clock on lock-in</div>
+            <div className="text-xs text-text-dim">Countdown begins when you start, not on Friday.</div>
+          </div>
+          <span
+            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+              holidayMode ? "bg-cinema-500" : "bg-hairline-strong"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                holidayMode ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </span>
+        </button>
+        {holidayMode && (
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-hairline bg-chip px-4 py-3">
+            <div>
+              <div className="text-sm font-medium text-text-hi">Filming window</div>
+              <div className="text-xs text-text-dim">Days you get once a project starts.</div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setHolidayDays(holidayDays - 1)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline text-text-hi transition-colors hover:border-cinema-500/70"
+                aria-label="Fewer days"
+              >
+                <Icon name="plus" size={14} className="rotate-45" />
+              </button>
+              <span className="h-display w-10 text-center text-lg font-bold tabular-nums text-text-hi">
+                {holidayDays}
+              </span>
+              <button
+                onClick={() => setHolidayDays(holidayDays + 1)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline text-text-hi transition-colors hover:border-cinema-500/70"
+                aria-label="More days"
+              >
+                <Icon name="plus" size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </GlassCard>
 
       <GlassCard className="divide-y divide-divide">

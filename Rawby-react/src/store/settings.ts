@@ -25,9 +25,13 @@ interface SettingsState {
   region: string;
   seasonalPrompts: boolean;
   showCategories: boolean; // the videography box on Home
+  holidayMode: boolean; // break the weekly Friday cycle — the clock starts when you start a project
+  holidayDays: number; // length of the filming window in holiday mode
   setRegion: (r: string) => void;
   setSeasonal: (s: boolean) => void;
   setShowCategories: (s: boolean) => void;
+  setHolidayMode: (s: boolean) => void;
+  setHolidayDays: (n: number) => void;
 }
 
 export const useSettings = create<SettingsState>()(
@@ -36,9 +40,13 @@ export const useSettings = create<SettingsState>()(
       region: "Global",
       seasonalPrompts: true,
       showCategories: true,
+      holidayMode: false,
+      holidayDays: 7,
       setRegion: (region) => set({ region }),
       setSeasonal: (seasonalPrompts) => set({ seasonalPrompts }),
       setShowCategories: (showCategories) => set({ showCategories }),
+      setHolidayMode: (holidayMode) => set({ holidayMode }),
+      setHolidayDays: (holidayDays) => set({ holidayDays: Math.max(1, Math.min(60, holidayDays)) }),
     }),
     { name: "rawby-settings" }
   )

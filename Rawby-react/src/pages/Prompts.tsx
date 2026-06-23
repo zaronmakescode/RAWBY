@@ -9,7 +9,7 @@ import { SubmitFilmModal } from "../components/SubmitFilmModal";
 import { StartBigProjectModal } from "../components/StartBigProjectModal";
 import { PromptDetailModal } from "../components/PromptDetailModal";
 import { useMe } from "../hooks/queries";
-import { useGeneratePrompts } from "../hooks/usePrompts";
+import { useGeneratePrompts, useSetActivePrompt } from "../hooks/usePrompts";
 import { useBigProject } from "../hooks/useBigProject";
 import { useDraft } from "../hooks/usePersonal";
 import { useSettings } from "../store/settings";
@@ -19,11 +19,15 @@ import type { GeneratedPrompt } from "../types";
 function PromptCard({
   p,
   onFilm,
+  onLock,
   onDetail,
+  locking,
 }: {
   p: GeneratedPrompt;
   onFilm: (level: string) => void;
+  onLock: (p: GeneratedPrompt) => void;
   onDetail: (p: GeneratedPrompt) => void;
+  locking?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -79,8 +83,11 @@ function PromptCard({
         )}
 
         <div className="mt-4 flex gap-2">
-          <GradientButton onClick={() => onFilm(p.level)} className="flex-1">
-            <Icon name="film" size={15} /> Film this
+          <GradientButton onClick={() => onLock(p)} loading={locking} className="flex-1" title="Start the project — begins your filming window">
+            <Icon name="check" size={15} /> Lock in
+          </GradientButton>
+          <GradientButton variant="ghost" onClick={() => onFilm(p.level)} title="Already filmed — submit now">
+            <Icon name="film" size={15} />
           </GradientButton>
           <GradientButton variant="ghost" onClick={() => onDetail(p)} title="Open in detail">
             <Icon name="arrowRight" size={15} className="-rotate-45" />
@@ -100,6 +107,7 @@ export default function Prompts() {
   const prompts = gen.data ?? [];
   const big = useBigProject();
   const draft = useDraft();
+  const setActive = useSetActivePrompt();
 
   const [submitOpen, setSubmitOpen] = useState(false);
   const [submitLevel, setSubmitLevel] = useState("Short Story");
@@ -108,9 +116,12 @@ export default function Prompts() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [idea, setIdea] = useState("");
 
+  // In holiday mode the late penalty counts against your own filming window.
+  const holiday = !!(snap?.filmingStartedAt && snap?.filmingDeadline);
+
   function film(level: string, deadline?: string) {
     setSubmitLevel(level);
-    setSubmitDeadline(deadline);
+    setSubmitDeadline(deadline ?? (holiday ? snap?.filmingDeadline : undefined));
     setSubmitOpen(true);
   }
 
@@ -238,7 +249,14 @@ export default function Prompts() {
       ) : prompts.length ? (
         <div className="grid gap-4 lg:grid-cols-3">
           {prompts.map((p, i) => (
-            <PromptCard key={i} p={p} onFilm={film} onDetail={openDetail} />
+            <PromptCard
+              key={i}
+              p={p}
+              onFilm={film}
+              onLock={(pp) => setActive.mutate(pp)}
+              onDetail={openDetail}
+              locking={setActive.isPending}
+            />
           ))}
         </div>
       ) : (

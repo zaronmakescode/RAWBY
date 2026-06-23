@@ -57,6 +57,15 @@ export function useSubmitFilm() {
         history,
         totalScore: recalcTotal(history),
         streak: (snap.streak ?? 0) + 1,
+        // Project is done — clear the active prompt, progress and any holiday
+        // filming window, and retire a trip that was active.
+        promptText: undefined,
+        promptLevel: undefined,
+        phase: undefined,
+        phaseDone: [],
+        filmingStartedAt: undefined,
+        filmingDeadline: undefined,
+        trips: snap.trips?.map((t) => (t.status === "active" ? { ...t, status: "done" as const } : t)),
       };
 
       await session.sync(nextSnapshot as Record<string, unknown>);

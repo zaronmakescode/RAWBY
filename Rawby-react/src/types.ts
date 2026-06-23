@@ -74,6 +74,7 @@ export interface Snapshot {
   activeDraft?: PromptWorkspace; // the prompt currently being worked out
   visibility?: Visibility; // what others see on your profile
   trips?: Trip[]; // holiday-mode trips planned with Aurora
+  filmingStartedAt?: string; // ISO — when the holiday/trip filming window began
   filmingDeadline?: string; // ISO — holiday/trip filming window end; overrides weekly countdown
   aurora?: AuroraMemory; // long-term memory: durable facts + persisted chat thread
 }

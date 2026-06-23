@@ -8,7 +8,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { to: "/", label: "Home", icon: "home" },
+  { to: "/home", label: "Home", icon: "home" },
   { to: "/prompts", label: "Prompts", icon: "clapper" },
   { to: "/leaderboard", label: "Ranks", icon: "trophy" },
   { to: "/gear", label: "Gear", icon: "aperture" },

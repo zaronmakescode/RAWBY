@@ -24,7 +24,7 @@ function SideLink({ item }: { item: NavItem }) {
   return (
     <NavLink
       to={item.to}
-      end={item.to === "/"}
+      end={item.to === "/home"}
       className={({ isActive }) =>
         `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200 ${
           isActive
@@ -126,7 +126,7 @@ export function Shell() {
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.to === "/"}
+            end={item.to === "/home"}
             className={({ isActive }) =>
               `flex min-w-[44px] flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[10px] font-medium transition-colors duration-200 ${
                 isActive ? "text-cinema-400" : "text-text-dim"

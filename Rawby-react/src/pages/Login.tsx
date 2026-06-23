@@ -19,7 +19,7 @@ export default function Login() {
     mutationFn: () => auth.login(username.trim(), password),
     onSuccess: (data) => {
       setAuth(data.token, data.user);
-      nav(loc.state?.from ?? "/", { replace: true });
+      nav(loc.state?.from ?? "/home", { replace: true });
     },
   });
 

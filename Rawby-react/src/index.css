@@ -61,20 +61,22 @@
 /* ── Light / dark surfaces — semantic tokens. ── */
 :root,
 [data-theme="dark"] {
-  --bg: 10 11 13;
-  --surface: 22 23 25;
-  --card: 30 32 35;
-  --text-hi: 241 241 240;
-  --text-dim: 156 163 175;
-  --hairline: 255 255 255 / 0.08;
-  --hairline-strong: 255 255 255 / 0.16;
-  --glass: 255 255 255 / 0.045;
-  --glass-hover: 255 255 255 / 0.08;
-  --field: 0 0 0 / 0.3;
-  --chip: 255 255 255 / 0.05;
-  --divide: 255 255 255 / 0.06;
-  --grain-opacity: 0.06;
-  --scene-veil: 10 11 13 / 0.55;
+  /* Warm espresso dark — tungsten-lit, analog. Reads more human than a
+     cold blue-black, and lets the gold sit in the same temperature. */
+  --bg: 21 17 14;
+  --surface: 31 26 22;
+  --card: 39 33 28;
+  --text-hi: 245 240 232;
+  --text-dim: 171 161 148;
+  --hairline: 255 246 235 / 0.09;
+  --hairline-strong: 255 246 235 / 0.17;
+  --glass: 255 247 236 / 0.04;
+  --glass-hover: 255 247 236 / 0.07;
+  --field: 0 0 0 / 0.26;
+  --chip: 255 247 236 / 0.05;
+  --divide: 255 247 236 / 0.06;
+  --grain-opacity: 0.085;
+  --scene-veil: 21 17 14 / 0.55;
 }
 [data-theme="light"] {
   color-scheme: light;
@@ -186,6 +188,25 @@ body {
   /* Pill eyebrow chip — small rounded label above headings (Framer signature) */
   .eyebrow-pill {
     @apply inline-flex items-center gap-1.5 rounded-full border border-hairline bg-chip px-3 py-1 text-eyebrow font-semibold uppercase text-cinema-300;
+  }
+
+  /* Cinematic vignette — darkens the edges so the page reads like a frame. */
+  .cine-vignette {
+    position: fixed;
+    inset: 0;
+    z-index: -9;
+    pointer-events: none;
+    background: radial-gradient(125% 105% at 50% 22%, transparent 52%, rgb(var(--bg) / 0.85) 100%);
+  }
+
+  /* Hairline rule with an editorial label sitting on it. */
+  .rule {
+    @apply border-t border-hairline;
+  }
+
+  /* Handwritten marker accent. */
+  .hand {
+    @apply font-hand;
   }
 
   /* Interactive card hover — transform/opacity only (no layout shift) */

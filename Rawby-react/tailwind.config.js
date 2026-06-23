@@ -44,6 +44,7 @@ export default {
       },
       fontFamily: {
         display: ['"Fraunces"', "Georgia", "serif"],
+        hand: ['"Caveat"', "cursive"],
         body: ["Inter", "system-ui", "sans-serif"],
       },
       // Intentional, consistent type scale. Display sizes carry their own

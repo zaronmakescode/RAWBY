@@ -32,7 +32,7 @@ export default function Register() {
       if ("token" in data) {
         // Instant login (e.g. admin / verification disabled).
         setAuth(data.token, data.user);
-        nav("/", { replace: true });
+        nav("/home", { replace: true });
       } else {
         // Email verification required — bounce to login with a note.
         nav("/login", {

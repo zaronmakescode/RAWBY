@@ -3,6 +3,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ToastViewport } from "./components/ui/ToastViewport";
 import { Shell } from "./components/layout/Shell";
 import { RequireAuth } from "./components/layout/RequireAuth";
+import { useAuth } from "./store/auth";
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
@@ -15,12 +17,19 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 
+// Root: visitors see the landing page; signed-in users go straight to the app.
+function RootGate() {
+  const token = useAuth((s) => s.token);
+  return token ? <Navigate to="/home" replace /> : <Landing />;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <ToastViewport />
         <Routes>
+        <Route path="/" element={<RootGate />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
@@ -31,7 +40,7 @@ export default function App() {
             </RequireAuth>
           }
         >
-          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/prompts" element={<Prompts />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/gear" element={<Gear />} />

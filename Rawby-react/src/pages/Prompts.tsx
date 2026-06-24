@@ -13,7 +13,7 @@ import { useGeneratePrompts, useSetActivePrompt } from "../hooks/usePrompts";
 import { useBigProject } from "../hooks/useBigProject";
 import { useDraft } from "../hooks/usePersonal";
 import { useSettings } from "../store/settings";
-import { LEVELS, LATE_MULTIPLIERS } from "../lib/constants";
+import { LEVELS, LATE_MULTIPLIERS, levelStyle } from "../lib/constants";
 import type { GeneratedPrompt } from "../types";
 
 function PromptCard({
@@ -30,16 +30,26 @@ function PromptCard({
   locking?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const lv = levelStyle(p.level);
   return (
     <div>
-      <GlassCard className="h-full">
+      <GlassCard className="group relative flex h-full flex-col overflow-hidden transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-glow-sm">
+        <span
+          className="pointer-events-none absolute inset-x-0 top-0 h-0.5 opacity-70"
+          style={{ background: `linear-gradient(90deg, transparent, ${lv.glow}, transparent)` }}
+        />
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <FilmTag level={p.level} />
-          {p.emotion && (
-            <span className="text-[11px] uppercase tracking-wider text-text-dim">{p.emotion}</span>
-          )}
+          <span className="rounded-full border border-hairline bg-chip px-2 py-0.5 text-[11px] font-semibold tabular-nums text-text-dim">
+            {lv.points} pts
+          </span>
         </div>
         <p className="text-sm leading-relaxed text-text-hi">{p.text}</p>
+        {p.emotion && (
+          <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-chip px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-text-dim">
+            {p.emotion}
+          </span>
+        )}
 
         {(p.shots?.length || p.songs?.length) && (
           <button
@@ -82,7 +92,7 @@ function PromptCard({
           </div>
         )}
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-auto flex gap-2 pt-4">
           <GradientButton onClick={() => onLock(p)} loading={locking} className="flex-1" title="Start the project — begins your filming window">
             <Icon name="check" size={15} /> Lock in
           </GradientButton>
@@ -270,24 +280,26 @@ export default function Prompts() {
       )}
 
       {/* Levels & scoring */}
-      <h3 className="h-display mb-3 mt-8 text-lg font-bold text-text-hi">Levels & scoring</h3>
+      <h3 className="h-display mb-3 mt-10 text-xl font-semibold text-text-hi">Levels &amp; scoring</h3>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {LEVELS.map((l) => (
-          <div key={l.name}>
-            <GlassCard interactive className="h-full">
-              <div className="mb-3 h-1.5 w-12 rounded-full" style={{ background: l.glow }} />
-              <div className="text-sm font-semibold text-text-hi">{l.name}</div>
-              <div className="h-display mt-1 text-3xl font-bold" style={{ color: l.glow }}>
-                {l.points}
-              </div>
-              <div className="text-xs text-text-dim">points</div>
-            </GlassCard>
-          </div>
+          <GlassCard key={l.name} interactive className="group relative h-full overflow-hidden">
+            <span
+              className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-30 blur-2xl transition-opacity duration-300 group-hover:opacity-70"
+              style={{ background: `radial-gradient(circle, ${l.glow}, transparent 70%)` }}
+            />
+            <div className="mb-3 h-1.5 w-12 rounded-full" style={{ background: l.glow }} />
+            <div className="text-sm font-semibold text-text-hi">{l.name}</div>
+            <div className="h-display mt-1 text-display-sm font-bold tabular-nums" style={{ color: l.glow }}>
+              {l.points}
+            </div>
+            <div className="text-[11px] font-medium uppercase tracking-wider text-text-dim">points</div>
+          </GlassCard>
         ))}
       </div>
 
       {/* Late penalty */}
-      <h3 className="h-display mb-3 mt-8 text-lg font-bold text-text-hi">Late penalty</h3>
+      <h3 className="h-display mb-3 mt-10 text-xl font-semibold text-text-hi">Late penalty</h3>
       <GlassCard>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {LATE_MULTIPLIERS.map((p) => (

@@ -11,7 +11,7 @@ type Props = Omit<HTMLMotionProps<"div">, "children"> & {
 
 export const GlassCard = forwardRef<HTMLDivElement, Props>(
   ({ className = "", interactive = false, spotlight, children, onMouseMove, ...rest }, ref) => {
-    const useSpot = spotlight ?? interactive;
+    const useSpot = spotlight ?? true;
     const handleMove = (e: MouseEvent<HTMLDivElement>) => {
       if (useSpot) {
         const el = e.currentTarget;

@@ -13,6 +13,7 @@ import { Eyebrow, Reveal } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { CategoryBox } from "../components/CategoryBox";
+import { BorderBeam } from "../components/ui/BorderBeam";
 import { PlanTripModal } from "../components/PlanTripModal";
 import { useMe } from "../hooks/queries";
 import { useProgress } from "../hooks/useProgress";
@@ -199,24 +200,57 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="relative">
-            <h2 className="h-display text-display-md font-semibold text-text-hi">
-              No prompt locked in yet.
-            </h2>
-            <p className="mt-1 text-sm text-text-dim">
-              Generate this week's set or write your own — then it shows up here with your countdown.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/prompts">
-                <GradientButton>
-                  <Icon name="sparkles" size={16} /> Generate a prompt
-                </GradientButton>
-              </Link>
-              <GradientButton variant="ghost" onClick={() => setPlanOpen(true)}>
-                <Icon name="sun" size={16} /> Plan a trip
-              </GradientButton>
+          <>
+            <BorderBeam duration={11} lightWidth={260} />
+            <div className="relative grid items-center gap-6 md:grid-cols-[1.12fr_0.88fr]">
+              <div>
+                <div className="mb-3">
+                  <Eyebrow icon="clapper">This week is a blank reel</Eyebrow>
+                </div>
+                <h2 className="h-display text-display-md font-semibold leading-tight text-text-hi [text-wrap:balance]">
+                  Your next film starts with a prompt.
+                </h2>
+                <p className="measure mt-2.5 text-sm leading-relaxed text-text-dim">
+                  Generate this week's set — tuned to {region} and the season — or plan a trip and
+                  Aurora lines one up for the day you leave.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link to="/prompts">
+                    <GradientButton>
+                      <Icon name="sparkles" size={16} /> Generate a prompt
+                    </GradientButton>
+                  </Link>
+                  <GradientButton variant="ghost" onClick={() => setPlanOpen(true)}>
+                    <Icon name="sun" size={16} /> Plan a trip
+                  </GradientButton>
+                </div>
+              </div>
+
+              {/* Viewfinder motif — a quiet "ready to roll" frame */}
+              <div className="relative hidden aspect-[4/3] md:block">
+                <div className="absolute inset-0 rounded-2xl border border-dashed border-hairline-strong" />
+                {/* corner ticks */}
+                {["left-3 top-3 border-l-2 border-t-2", "right-3 top-3 border-r-2 border-t-2", "left-3 bottom-3 border-l-2 border-b-2", "right-3 bottom-3 border-r-2 border-b-2"].map((c) => (
+                  <span key={c} className={`absolute h-5 w-5 rounded-[3px] border-cinema-500/70 ${c}`} />
+                ))}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <motion.span
+                    className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cinema-500/12 text-cinema-400 ring-1 ring-cinema-500/25"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <Icon name="clapper" size={26} />
+                  </motion.span>
+                  <span className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-text-dim">
+                    Ready to roll
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[0.62rem] font-medium text-cinema-400/80">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-danger" /> REC
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </GlassCard>
       </TiltCard>

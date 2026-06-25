@@ -10,7 +10,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
       initial="hidden"
       animate="show"
       exit="exit"
-      className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 md:px-8 md:pb-12 md:pt-8"
+      className="mx-auto w-full max-w-6xl px-4 pb-32 pt-6 md:px-8 md:pb-32 md:pt-8"
     >
       {children}
     </motion.main>

@@ -343,6 +343,18 @@ body {
   to { background-position: 350% 50%, 350% 50%; }
 }
 
+/* Hide scrollbar but keep scrolling (dock overflow on small screens) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Liquid-glass dock — bright inset top highlight + deep soft shadow (Tahoe). */
+.dock {
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+    inset 0 0 0 1px rgb(255 255 255 / 0.03),
+    0 26px 70px -24px rgba(0, 0, 0, 0.85);
+}
+
 /* Faint film-grain overlay (used by <FilmGrain/>) */
 .film-grain {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");

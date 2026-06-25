@@ -14,6 +14,7 @@ import { Icon } from "../components/ui/Icon";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { CategoryBox } from "../components/CategoryBox";
 import { BorderBeam } from "../components/ui/BorderBeam";
+import { FilmDoodle } from "../components/ui/FilmDoodle";
 import { PlanTripModal } from "../components/PlanTripModal";
 import { useMe } from "../hooks/queries";
 import { useProgress } from "../hooks/useProgress";
@@ -438,9 +439,10 @@ export default function Home() {
             </Link>
           </div>
           {history.length === 0 ? (
-            <p className="py-8 text-center text-sm text-text-dim">
-              No films yet — your first submission shows up here.
-            </p>
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <FilmDoodle name="reel" size={76} className="text-text-dim/30" />
+              <p className="text-sm text-text-dim">No films yet — your first submission shows up here.</p>
+            </div>
           ) : (
             <ul className="divide-y divide-divide">
               {history.slice(0, 5).map((h, i) => (

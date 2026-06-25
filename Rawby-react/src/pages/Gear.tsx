@@ -62,7 +62,7 @@ export default function Gear() {
       </GlassCard>
 
       {gear.length === 0 ? (
-        <EmptyState icon="aperture" title="No gear yet" sub="Add your kit above — then tag it on each film." />
+        <EmptyState doodle="lens" title="No gear yet" sub="Add your kit above — then tag it on each film." />
       ) : (
         <div className="space-y-6">
           {byCat.map((group) => (

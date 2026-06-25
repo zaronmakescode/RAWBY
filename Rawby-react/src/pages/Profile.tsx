@@ -88,7 +88,7 @@ export default function Profile() {
 
       <h3 className="h-display mb-3 mt-8 text-lg font-bold text-text-hi">Film history</h3>
       {history.length === 0 ? (
-        <EmptyState icon="film" title="No films yet" sub="Submit your first weekly film to start your reel." />
+        <EmptyState doodle="reel" title="No films yet" sub="Submit your first weekly film to start your reel." />
       ) : (
         <div className="space-y-2">
           {history.map((h, i) => (

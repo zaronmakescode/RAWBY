@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "./Icon";
+import { FilmDoodle, type DoodleName } from "./FilmDoodle";
 
 /** Small rounded eyebrow chip — the Framer-style label above a heading. */
 export function Eyebrow({ icon, children }: { icon?: IconName; children: ReactNode }) {
@@ -94,10 +95,12 @@ export function ColdStartNote() {
 
 export function EmptyState({
   icon,
+  doodle,
   title,
   sub,
 }: {
   icon?: IconName;
+  doodle?: DoodleName;
   title: string;
   sub?: string;
 }) {
@@ -107,10 +110,14 @@ export function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       className="glass flex flex-col items-center gap-3 py-16 text-center"
     >
-      {icon && (
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-chip text-text-dim">
-          <Icon name={icon} size={24} />
-        </div>
+      {doodle ? (
+        <FilmDoodle name={doodle} size={84} className="text-text-dim/35" />
+      ) : (
+        icon && (
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-chip text-text-dim">
+            <Icon name={icon} size={24} />
+          </div>
+        )
       )}
       <div className="font-semibold text-text-hi">{title}</div>
       {sub && <div className="measure text-sm text-text-dim">{sub}</div>}

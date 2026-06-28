@@ -43,20 +43,22 @@ export function Shell() {
       <FilmGrain />
       <Onboarding />
 
-      {/* Slim top bar */}
-      <header className="sticky top-0 z-nav flex items-center justify-between border-b border-hairline/60 bg-[rgb(var(--bg)/0.55)] px-4 py-3 backdrop-blur-xl md:px-8">
-        <Logo size="md" />
-        <div className="flex items-center gap-1.5">
-          <ModeToggle />
-          <TopIcon to="/settings" icon="settings" label="Settings" />
-          {user?.isAdmin && <TopIcon to="/admin" icon="shield" label="Admin" />}
-          {user && (
-            <NavLink to="/profile" aria-label="Profile" title={user.displayName} className="ml-1">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cinema-300 to-cinema-600 text-sm font-bold text-[#16161a] ring-1 ring-cinema-300/30">
-                {initial}
-              </span>
-            </NavLink>
-          )}
+      {/* Wide top dock — glass bar matching the bottom dock */}
+      <header className="sticky top-0 z-nav px-3 pt-3 md:px-5 md:pt-4">
+        <div className="dock mx-auto flex w-full max-w-6xl items-center justify-between rounded-[22px] border border-white/[0.07] bg-[rgb(var(--dock))] px-3 py-2 md:px-4">
+          <Logo size="md" />
+          <div className="flex items-center gap-1.5">
+            <ModeToggle />
+            <TopIcon to="/settings" icon="settings" label="Settings" />
+            {user?.isAdmin && <TopIcon to="/admin" icon="shield" label="Admin" />}
+            {user && (
+              <NavLink to="/profile" aria-label="Profile" title={user.displayName} className="ml-1">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cinema-300 to-cinema-600 text-sm font-bold text-[#16161a] ring-1 ring-cinema-300/30">
+                  {initial}
+                </span>
+              </NavLink>
+            )}
+          </div>
         </div>
       </header>
 

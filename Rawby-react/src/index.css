@@ -63,42 +63,44 @@
 /* ── Light / dark surfaces — semantic tokens. ── */
 :root,
 [data-theme="dark"] {
-  /* Rich warm-black — deep, "brownish" near-black with a warm tint so pastel
-     accents glow against it. Harsh/deep but not muddy. */
-  --bg: 18 14 11;
-  --surface: 28 23 18;
-  --card: 36 29 23;
-  --card-fill: 32 26 20 / 0.62;
-  --text-hi: 245 240 232;
-  --text-dim: 169 159 147;
-  --hairline: 255 244 230 / 0.09;
-  --hairline-strong: 255 244 230 / 0.17;
-  --glass: 255 244 230 / 0.045;
-  --glass-hover: 255 244 230 / 0.08;
+  /* Deep near-black with only a faint warm tint (brown pulled back). Pastel
+     accents still glow; the dock stays neutral via --dock. */
+  --bg: 17 15 13;
+  --surface: 26 24 21;
+  --card: 34 31 27;
+  --card-fill: 31 28 25 / 0.62;
+  --text-hi: 245 242 236;
+  --text-dim: 166 160 150;
+  --hairline: 255 250 244 / 0.09;
+  --hairline-strong: 255 250 244 / 0.17;
+  --glass: 255 250 244 / 0.045;
+  --glass-hover: 255 250 244 / 0.08;
   --field: 0 0 0 / 0.26;
-  --chip: 255 244 230 / 0.05;
-  --divide: 255 244 230 / 0.07;
+  --chip: 255 250 244 / 0.05;
+  --divide: 255 250 244 / 0.07;
   --grain-opacity: 0.045;
-  --scene-veil: 18 14 11 / 0.55;
+  --scene-veil: 17 15 13 / 0.55;
+  --dock: 22 22 25 / 0.42; /* neutral glass — no brown on the docks */
 }
 [data-theme="light"] {
   color-scheme: light;
-  /* Brownish white — warm cream paper, warm brown ink. */
-  --bg: 236 229 217;
-  --surface: 247 241 231;
-  --card: 251 246 238;
-  --card-fill: 251 246 238 / 0.64;
-  --text-hi: 38 30 23;
-  --text-dim: 102 90 78;
-  --hairline: 38 30 23 / 0.12;
-  --hairline-strong: 38 30 23 / 0.2;
-  --glass: 255 252 246 / 0.72;
-  --glass-hover: 255 252 246 / 0.9;
-  --field: 38 30 23 / 0.05;
-  --chip: 38 30 23 / 0.05;
-  --divide: 38 30 23 / 0.09;
+  /* Warm off-white — cream paper, soft brown ink (brown pulled back a touch). */
+  --bg: 238 233 226;
+  --surface: 248 243 235;
+  --card: 252 248 241;
+  --card-fill: 252 248 241 / 0.66;
+  --text-hi: 36 31 26;
+  --text-dim: 104 94 84;
+  --hairline: 36 31 26 / 0.12;
+  --hairline-strong: 36 31 26 / 0.2;
+  --glass: 255 253 249 / 0.72;
+  --glass-hover: 255 253 249 / 0.9;
+  --field: 36 31 26 / 0.05;
+  --chip: 36 31 26 / 0.05;
+  --divide: 36 31 26 / 0.09;
   --grain-opacity: 0.02;
-  --scene-veil: 236 229 217 / 0.5;
+  --scene-veil: 238 233 226 / 0.5;
+  --dock: 250 250 251 / 0.62; /* neutral glass */
 }
 
 * {
@@ -218,7 +220,7 @@ body {
     background-size: 300% 200%;
     background-position: 50% 50%;
     filter: blur(34px);
-    opacity: 0.14;
+    opacity: 0.2;
     mask-image: radial-gradient(ellipse 90% 65% at 50% -8%, #000 12%, transparent 68%);
     -webkit-mask-image: radial-gradient(ellipse 90% 65% at 50% -8%, #000 12%, transparent 68%);
     will-change: background-position;

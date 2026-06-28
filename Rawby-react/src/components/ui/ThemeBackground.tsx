@@ -27,21 +27,24 @@ export function ThemeBackground() {
           loop
           muted
           playsInline
+          preload="auto"
           onError={() => setFailed((f) => ({ ...f, [accent]: true }))}
           className="animate-fade-in absolute inset-0 h-full w-full object-cover"
+          style={{ filter: "brightness(1.1) saturate(1.15) contrast(1.04)" }}
         />
       ) : (
         <div className="aurora-layer" />
       )}
 
-      {/* Veil — dims the footage to a rich, moody backdrop. */}
-      <div className="absolute inset-0" style={{ background: "rgb(var(--bg) / 0.6)" }} />
+      {/* Veil — dims the footage just enough to keep glass + text readable
+          while the scene still reads clearly. */}
+      <div className="absolute inset-0" style={{ background: "rgb(var(--bg) / 0.44)" }} />
       {/* Soft top accent wash + edge vignette. */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(75% 45% at 50% -12%, rgb(var(--c-500) / 0.1), transparent 60%), radial-gradient(130% 105% at 50% 36%, transparent 38%, rgb(var(--bg) / 0.9) 100%)",
+            "radial-gradient(75% 45% at 50% -12%, rgb(var(--c-500) / 0.12), transparent 60%), radial-gradient(135% 110% at 50% 34%, transparent 42%, rgb(var(--bg) / 0.82) 100%)",
         }}
       />
     </div>

@@ -114,6 +114,17 @@ export default function Assistant() {
         <GradientButton variant="ghost" onClick={() => setPlanOpen(true)}>
           <Icon name="sun" size={15} /> Plan a trip
         </GradientButton>
+        {messages.length > 1 && (
+          <GradientButton
+            variant="ghost"
+            onClick={() => {
+              setMessages([GREETING]);
+              saveThread.mutate([]);
+            }}
+          >
+            <Icon name="refresh" size={15} /> New chat
+          </GradientButton>
+        )}
         <span className="text-xs text-text-dim">
           Talk through a trip, then save it — Aurora drops the prompt in on the day.
         </span>

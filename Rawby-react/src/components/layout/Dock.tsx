@@ -45,7 +45,7 @@ export function Dock({ items }: { items: NavItem[] }) {
         aria-label="Primary"
         onMouseMove={(e) => mouseX.set(e.clientX)}
         onMouseLeave={() => mouseX.set(Infinity)}
-        className="dock no-scrollbar pointer-events-auto flex max-w-full items-end gap-2 overflow-x-auto rounded-[30px] border border-white/12 bg-[rgb(var(--surface)/0.45)] px-3 py-2.5 backdrop-blur-2xl"
+        className="dock no-scrollbar pointer-events-auto flex max-w-full items-end gap-2 overflow-x-auto rounded-[32px] border border-white/[0.07] bg-[rgb(var(--surface)/0.38)] px-3 py-2.5"
       >
         {items.map((it) => (
           <DockItem key={it.to} item={it} mouseX={mouseX} />

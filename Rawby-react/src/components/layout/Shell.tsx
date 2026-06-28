@@ -6,7 +6,7 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { FilmGrain } from "../ui/FilmGrain";
-import { AuroraBackground } from "../ui/AuroraBackground";
+import { ThemeBackground } from "../ui/ThemeBackground";
 import { Icon, type IconName } from "../ui/Icon";
 import { Logo } from "../ui/Logo";
 import { ModeToggle } from "../ui/ThemeControls";
@@ -39,7 +39,7 @@ export function Shell() {
 
   return (
     <div className="relative min-h-screen">
-      <AuroraBackground />
+      <ThemeBackground />
       <FilmGrain />
       <Onboarding />
 

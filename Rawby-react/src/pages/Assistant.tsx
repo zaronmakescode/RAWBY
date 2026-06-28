@@ -18,8 +18,16 @@ import type { ChatMessage, ChatContext } from "../types";
 const GREETING: ChatMessage = {
   role: "assistant",
   content:
-    "Hey — I'm Aurora, your filmmaking co-pilot. Tell me what you're shooting this week and I'll help you frame it, cut it, or grade it.",
+    "Hey — I'm Aurora. I shoot, cut and grade solo too, so ask me anything specific: camera settings for a shot, a shot list for your prompt, how to film yourself with no crew, an edit or colour fix, or a Reel hook that lands. The more detail you give (gear, location, what's not working), the sharper I am.",
 };
+
+// Quick-start questions to seed a useful conversation.
+const STARTERS = [
+  "Give me a 5-shot list for this week's prompt.",
+  "Best camera settings to shoot myself alone, no crew?",
+  "My footage looks flat — how do I grade it?",
+  "Write 3 Reel hooks for this film.",
+];
 
 export default function Assistant() {
   const { data } = useMe();
@@ -85,8 +93,8 @@ export default function Assistant() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, m.isPending]);
 
-  function send() {
-    const text = input.trim();
+  function send(textArg?: string) {
+    const text = (textArg ?? input).trim();
     if (!text || m.isPending) return;
     const next = [...messages, { role: "user" as const, content: text }];
     setMessages(next);
@@ -162,6 +170,21 @@ export default function Assistant() {
               </div>
             </div>
           )}
+
+          {messages.length === 1 && !m.isPending && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {STARTERS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => send(s)}
+                  className="rounded-full border border-hairline bg-chip px-3 py-1.5 text-left text-xs text-text-dim transition-colors hover:border-cinema-500/60 hover:text-text-hi"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 border-t border-hairline p-3">
@@ -177,9 +200,9 @@ export default function Assistant() {
             className="flex-1 rounded-xl border border-hairline bg-field px-4 py-3 text-sm text-text-hi outline-none transition-colors placeholder:text-text-dim/60 focus:border-cinema-500/70"
           />
           <button
-            onClick={send}
+            onClick={() => send()}
             disabled={m.isPending || !input.trim()}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cinema-400 to-cinema-600 text-[#1A1100] transition-[filter] duration-200 hover:brightness-110 disabled:opacity-40"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cinema-400 to-cinema-600 text-[#16161a] transition-[filter] duration-200 hover:brightness-110 disabled:opacity-40"
             aria-label="Send message"
           >
             <Icon name="send" size={18} />

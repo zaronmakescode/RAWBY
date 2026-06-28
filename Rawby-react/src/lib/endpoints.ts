@@ -52,6 +52,12 @@ export const ai = {
       .post<{ reply: string }>("/api/chat", { messages, context, provider })
       .then((r) => r.data.reply),
 
+  /** Pre-post video review — send sampled frames (data URLs) to a vision model. */
+  analyzeReel: (frames: string[], caption?: string) =>
+    api
+      .post<{ feedback: string }>("/api/analyze-reel", { frames, caption: caption ?? "" })
+      .then((r) => r.data.feedback),
+
   skillFeedback: (body: {
     provider: AIProvider;
     model?: string;

@@ -7,6 +7,7 @@ import { GradientButton } from "../components/ui/GradientButton";
 import { PageHeader } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
 import { PlanTripModal } from "../components/PlanTripModal";
+import { PrePostCheckModal } from "../components/PrePostCheckModal";
 import { ai } from "../lib/endpoints";
 import { useMe } from "../hooks/queries";
 import { useNote, useAurora } from "../hooks/usePersonal";
@@ -40,6 +41,7 @@ export default function Assistant() {
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
   const [planOpen, setPlanOpen] = useState(false);
+  const [checkOpen, setCheckOpen] = useState(false);
   const hydrated = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -113,6 +115,9 @@ export default function Assistant() {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <GradientButton variant="ghost" onClick={() => setPlanOpen(true)}>
           <Icon name="sun" size={15} /> Plan a trip
+        </GradientButton>
+        <GradientButton variant="ghost" onClick={() => setCheckOpen(true)}>
+          <Icon name="film" size={15} /> Check my video
         </GradientButton>
         {messages.length > 1 && (
           <GradientButton
@@ -222,6 +227,7 @@ export default function Assistant() {
       </GlassCard>
 
       <PlanTripModal open={planOpen} onClose={() => setPlanOpen(false)} />
+      <PrePostCheckModal open={checkOpen} onClose={() => setCheckOpen(false)} />
     </PageTransition>
   );
 }

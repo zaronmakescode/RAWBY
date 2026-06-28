@@ -34,6 +34,56 @@ You are Aurora, a filmmaking coach inside the RAWBY app. The user is asking for 
 Be specific, actionable, and direct. Give a concrete plan for the next 1-2 weeks targeting their focus area. Reference their actual stats when they are provided. Keep the response under 200 words. No markdown formatting.
 ''';
 
+const _reelReviewPrompt = '''
+You are Aurora doing a final review of a SOLO videographer's near-finished video before they post it as an Instagram Reel (vertical 9:16). You are shown several frames sampled in order from the start to the end of the clip — treat frame 1 as the opening/hook and the last as the ending.
+
+Judge only what you can actually see in the frames. Be concrete and honest — this is their last check before it goes public. Cover, in this order, as short numbered points:
+1. Hook — does frame 1 stop the scroll in the first second? If not, what to change.
+2. Framing & composition — headroom, horizons, thirds, subject placement; anything off.
+3. Exposure & colour — too dark/blown, white balance, flat/needs contrast or grade.
+4. Safe areas — is key subject/text clear of where Instagram puts UI (top status, bottom caption/buttons, right action rail)?
+5. Pacing & ending — from the spread of frames, does it look like it moves, and does the last frame land or just stop?
+6. Caption + first-line hook — give 2 specific options.
+
+Finish with a clear verdict: POST IT or FIX FIRST, plus the single highest-impact change. Plain text only, no markdown symbols. Be tight.
+''';
+
+Future<String> _callGroqVision({
+  required String systemPrompt,
+  required List<String> images,
+  required String userText,
+  int maxTokens = 900,
+}) async {
+  final key = Platform.environment['GROQ_API_KEY'];
+  if (key == null || key.isEmpty) throw StateError('GROQ_API_KEY not set');
+
+  final content = <Map<String, dynamic>>[
+    {'type': 'text', 'text': userText},
+    ...images.map((img) => {
+          'type': 'image_url',
+          'image_url': {'url': img},
+        }),
+  ];
+
+  final res = await http.post(
+    Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+    headers: {'Authorization': 'Bearer $key', 'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'model': 'meta-llama/llama-4-scout-17b-16e-instruct',
+      'temperature': 0.6,
+      'max_tokens': maxTokens,
+      'messages': [
+        {'role': 'system', 'content': systemPrompt},
+        {'role': 'user', 'content': content},
+      ],
+    }),
+  );
+
+  if (res.statusCode >= 400) throw StateError('Groq vision ${res.statusCode}: ${res.body}');
+  final data = jsonDecode(res.body) as Map<String, dynamic>;
+  return (((data['choices'] as List).first as Map)['message']['content'] as String).trim();
+}
+
 String _buildContextNote(Map<String, dynamic> ctx) {
   final parts = <String>[];
   if (ctx['displayName'] != null && (ctx['displayName'] as String).isNotEmpty) {
@@ -197,6 +247,30 @@ Future<Response> handleAiChat(Request request) async {
       body: jsonEncode({'error': e.toString()}),
       headers: _json,
     );
+  }
+}
+
+Future<Response> handleAnalyzeReel(Request request) async {
+  try {
+    final body = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+    final frames = (body['frames'] as List?)?.map((e) => e.toString()).where((s) => s.isNotEmpty).toList() ?? [];
+    final caption = (body['caption'] as String? ?? '').trim();
+    if (frames.isEmpty) {
+      return Response(400, body: jsonEncode({'error': 'frames required'}), headers: _json);
+    }
+    final userText =
+        'Here are ${frames.length} frames sampled in order from the start to the end of my near-final vertical video.'
+        '${caption.isNotEmpty ? ' My planned caption: "$caption".' : ''}'
+        ' Give me your pre-post review.';
+    final reply = await _callGroqVision(
+      systemPrompt: _reelReviewPrompt,
+      images: frames.take(6).toList(),
+      userText: userText,
+    );
+    return Response.ok(jsonEncode({'feedback': reply}), headers: _json);
+  } catch (e, st) {
+    stderr.writeln('[analyze-reel] $e\n$st');
+    return Response.internalServerError(body: jsonEncode({'error': e.toString()}), headers: _json);
   }
 }
 

@@ -4,13 +4,11 @@ import { Suspense, lazy, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { HERO_LABELS } from "../three/heroLabels";
 import { FilmGrain } from "../ui/FilmGrain";
+import { ThemeBackground } from "../ui/ThemeBackground";
 import { Logo } from "../ui/Logo";
 import { Icon } from "../ui/Icon";
 
 // 3D is heavy — defer it so the form paints immediately.
-const AuraScene = lazy(() =>
-  import("../three/AuraScene").then((m) => ({ default: m.AuraScene }))
-);
 const AuthHero = lazy(() => import("../three/AuthHero"));
 
 export function AuthLayout({
@@ -26,9 +24,7 @@ export function AuthLayout({
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <Suspense fallback={null}>
-        <AuraScene />
-      </Suspense>
+      <ThemeBackground />
       <FilmGrain opacity={0.05} />
 
       <div className="relative z-10 grid min-h-screen lg:grid-cols-2">

@@ -103,6 +103,7 @@ Handler buildRouter() {
   // AI
   router.post('/api/chat', protect(handleAiChat));
   router.post('/api/skill-feedback', protect(handleSkillFeedback));
+  router.post('/api/analyze-reel', protect(handleAnalyzeReel));
 
   // Instagram handle stats (placeholder)
   router.get('/api/instagram-handle', protect(handleInstagramHandleStats));

@@ -147,6 +147,7 @@ export interface ProjectHistoryItem {
   gear?: string[]; // gear item ids used on this project
   likes?: number; // fetched reel likes (feeds scoring)
   categories?: string[]; // video taxonomy ids (a film can span several)
+  location?: { lat: number; lng: number; label?: string }; // where it was filmed (Atlas pin)
 }
 
 export type GearStatus = "active" | "rested" | "retired";

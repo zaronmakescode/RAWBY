@@ -18,10 +18,10 @@ export function Dock({ items }: { items: NavItem[] }) {
             end={it.to === "/home"}
             title={it.label}
             className={({ isActive }) =>
-              `group relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] transition-colors duration-200 ${
+              `group relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] transition-[color,background-color,transform] duration-200 ease-out active:scale-90 ${
                 isActive
-                  ? "bg-cinema-500 text-[#16161a] shadow-[0_6px_18px_-6px_rgb(var(--c-500)/0.7)]"
-                  : "text-text-dim hover:bg-glass hover:text-text-hi"
+                  ? "bg-cinema-500 text-[#16161a] shadow-[0_6px_18px_-6px_rgb(var(--c-500)/0.45)]"
+                  : "text-text-dim hover:-translate-y-1 hover:bg-glass hover:text-text-hi"
               }`
             }
           >

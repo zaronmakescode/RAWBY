@@ -16,10 +16,12 @@ export function ModeToggle({ className = "" }: { className?: string }) {
   );
 }
 
-/** Accent swatch picker. */
+/** Accent swatch picker — four presets + a pick-anything custom swatch. */
 export function AccentPicker() {
   const accent = useTheme((s) => s.accent);
   const setAccent = useTheme((s) => s.setAccent);
+  const customColor = useTheme((s) => s.customColor);
+  const setCustomColor = useTheme((s) => s.setCustomColor);
   return (
     <div className="flex items-center gap-2">
       {ACCENTS.map((a) => (
@@ -39,6 +41,30 @@ export function AccentPicker() {
           }}
         />
       ))}
+      {/* Custom — the swatch IS a colour input. Shows the picked colour when
+          active, a colour wheel otherwise. */}
+      <label
+        title="Custom colour"
+        className="relative h-7 w-7 cursor-pointer rounded-full transition-transform duration-200 hover:scale-110"
+        style={{
+          background:
+            accent === "custom"
+              ? customColor
+              : "conic-gradient(#e85d5d, #e8b647, #7ab86a, #4aa8c7, #7b6fd8, #c75da8, #e85d5d)",
+          boxShadow:
+            accent === "custom"
+              ? `0 0 0 2px rgb(var(--bg)), 0 0 0 4px ${customColor}`
+              : "inset 0 0 0 1px rgba(0,0,0,0.25)",
+        }}
+      >
+        <input
+          type="color"
+          value={customColor}
+          onChange={(e) => setCustomColor(e.target.value)}
+          aria-label="Pick a custom accent colour"
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+        />
+      </label>
     </div>
   );
 }
@@ -47,6 +73,7 @@ export function AccentPicker() {
 export function ThemeControls() {
   const mode = useTheme((s) => s.mode);
   const setMode = useTheme((s) => s.setMode);
+  const accent = useTheme((s) => s.accent);
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4">
@@ -73,7 +100,11 @@ export function ThemeControls() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="text-sm font-semibold text-text-hi">Accent</div>
-          <div className="text-xs text-text-dim">Recolours the UI + logo.</div>
+          <div className="text-xs text-text-dim">
+            {accent === "custom"
+              ? "Custom — the whole app repaints from your colour."
+              : "Recolours the UI + logo, or pick any colour with the wheel."}
+          </div>
         </div>
         <AccentPicker />
       </div>

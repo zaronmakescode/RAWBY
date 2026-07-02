@@ -3,7 +3,9 @@ import { motion } from "framer-motion";
 import { Modal } from "./ui/Modal";
 import { GradientButton } from "./ui/GradientButton";
 import { Icon } from "./ui/Icon";
+import { WorldMap } from "./WorldMap";
 import { LEVELS, LATE_MULTIPLIERS, VIDEO_CATEGORIES } from "../lib/constants";
+import { fireConfetti } from "../lib/confetti";
 import { useSubmitFilm, computeScore } from "../hooks/useSubmitFilm";
 import { useGear } from "../hooks/useGear";
 
@@ -41,6 +43,8 @@ export function SubmitFilmModal({ open, onClose, defaultLevel = "Short Story", d
   const [lateIdx, setLateIdx] = useState(0);
   const [usedGear, setUsedGear] = useState<string[]>([]);
   const [cats, setCats] = useState<string[]>([]);
+  const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
+  const [place, setPlace] = useState("");
   const submit = useSubmitFilm();
   const { gear } = useGear();
 
@@ -53,12 +57,19 @@ export function SubmitFilmModal({ open, onClose, defaultLevel = "Short Story", d
       setLateIdx(computeAutoLate(deadline).idx);
       setUsedGear([]);
       setCats([]);
+      setPin(null);
+      setPlace("");
       submit.reset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultLevel]);
 
   const score = computeScore(level, lateIdx);
+
+  // A finished film deserves a shower of gold.
+  useEffect(() => {
+    if (submit.isSuccess) fireConfetti();
+  }, [submit.isSuccess]);
 
   return (
     <Modal open={open} onClose={onClose} title="Submit film">
@@ -85,7 +96,16 @@ export function SubmitFilmModal({ open, onClose, defaultLevel = "Short Story", d
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (title.trim()) submit.mutate({ title, link, level, lateIdx, gear: usedGear, categories: cats });
+            if (title.trim())
+              submit.mutate({
+                title,
+                link,
+                level,
+                lateIdx,
+                gear: usedGear,
+                categories: cats,
+                location: pin ? { ...pin, label: place.trim() || undefined } : undefined,
+              });
           }}
           className="space-y-4"
         >
@@ -200,6 +220,44 @@ export function SubmitFilmModal({ open, onClose, defaultLevel = "Short Story", d
                 );
               })}
             </div>
+          </div>
+
+          {/* Where it was filmed — drops a pin on the Atlas */}
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-text-dim">
+                Where did you film this?{" "}
+                <span className="normal-case text-text-dim/70">(optional — tap the map)</span>
+              </span>
+              {pin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPin(null);
+                    setPlace("");
+                  }}
+                  className="text-[11px] text-text-dim underline-offset-2 hover:text-text-hi hover:underline"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="overflow-hidden rounded-xl border border-hairline bg-field">
+              <WorldMap
+                interactive
+                pins={pin ? [{ ...pin, label: place || undefined }] : []}
+                onPick={(lat, lng) => setPin({ lat, lng })}
+              />
+            </div>
+            {pin && (
+              <input
+                value={place}
+                onChange={(e) => setPlace(e.target.value)}
+                placeholder="Name the place — e.g. Budapest, riverside"
+                className={`${fieldCls} mt-2`}
+                aria-label="Place name"
+              />
+            )}
           </div>
 
           {/* Live score preview */}

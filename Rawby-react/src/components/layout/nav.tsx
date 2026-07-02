@@ -11,6 +11,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/home", label: "Home", icon: "home" },
   { to: "/prompts", label: "Prompts", icon: "clapper" },
   { to: "/leaderboard", label: "Ranks", icon: "trophy" },
+  { to: "/atlas", label: "Atlas", icon: "globe" },
   { to: "/gear", label: "Gear", icon: "aperture" },
   { to: "/idea-bank", label: "Ideas", icon: "bulb" },
   { to: "/assistant", label: "Aurora", icon: "sparkles" },
@@ -43,6 +44,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Progress",
     items: [
       { to: "/leaderboard", label: "Ranks", icon: "trophy" },
+      { to: "/atlas", label: "Atlas", icon: "globe" },
       { to: "/gear", label: "Gear", icon: "aperture" },
     ],
   },

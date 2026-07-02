@@ -128,14 +128,14 @@ body {
 }
 
 ::selection {
-  background: rgba(232, 182, 71, 0.3);
-  color: #fff;
+  background: rgb(var(--c-500) / 0.35);
+  color: rgb(var(--text-hi));
 }
 
 /* Visible focus ring for keyboard users (no mouse-focus noise). */
 :focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px #0a0b0d, 0 0 0 4px rgba(232, 182, 71, 0.7);
+  box-shadow: 0 0 0 2px rgb(var(--bg)), 0 0 0 4px rgb(var(--c-500) / 0.7);
   border-radius: 8px;
 }
 

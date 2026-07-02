@@ -16,9 +16,33 @@ import { Icon, type IconName } from "../components/ui/Icon";
 import { Logo } from "../components/ui/Logo";
 import { FilmGrain } from "../components/ui/FilmGrain";
 import { CategoryBox } from "../components/CategoryBox";
+import { WorldMap } from "../components/WorldMap";
 import { LEVELS, WEEKLY_CYCLE } from "../lib/constants";
+import type { ProjectHistoryItem } from "../types";
 
 const AuthHero = lazy(() => import("../components/three/AuthHero"));
+
+// Demo footage log — keeps the landing sections alive instead of all-zero.
+const DEMO_HISTORY: ProjectHistoryItem[] = [
+  { title: "Leaving the lake house", level: "Short Story", likes: 214, categories: ["emotions", "outdoors"] },
+  { title: "Fog over the pass", level: "Sequence", likes: 96, categories: ["outdoors"] },
+  { title: "How I grade at night", level: "Short Story", likes: 141, categories: ["educational", "mylife"] },
+  { title: "The espresso ad nobody asked for", level: "Sequence", likes: 65, categories: ["commercial"] },
+  { title: "Dad's old projector", level: "Film", likes: 322, categories: ["emotions", "mylife"] },
+  { title: "One street, one hour", level: "Sequence", likes: 88, categories: ["mylife"] },
+  { title: "Why 24fps feels like memory", level: "Short Story", likes: 178, categories: ["educational"] },
+  { title: "Last light on the ridge", level: "Film", likes: 240, categories: ["outdoors", "emotions"] },
+];
+
+// Sample pins for the Atlas showcase.
+const DEMO_PINS = [
+  { lat: 47.5, lng: 19.04, title: "Dad's old projector", label: "Budapest" },
+  { lat: 64.15, lng: -21.94, title: "Fog over the pass", label: "Reykjavík" },
+  { lat: 35.68, lng: 139.69, title: "One street, one hour", label: "Tokyo" },
+  { lat: 34.05, lng: -118.24, title: "The espresso ad", label: "Los Angeles" },
+  { lat: -33.93, lng: 18.42, title: "Last light on the ridge", label: "Cape Town" },
+  { lat: 45.44, lng: 12.33, title: "Leaving the lake house", label: "Venice" },
+];
 
 const STEPS: { n: string; icon: IconName; title: string; body: string }[] = [
   {
@@ -227,6 +251,24 @@ export default function Landing() {
           </Reveal>
         </section>
 
+        {/* ── Atlas ────────────────────────────────────────── */}
+        <section className="mx-auto max-w-6xl px-4 pb-20 md:px-8 md:pb-28">
+          <Reveal className="mb-8 text-center">
+            <div className="mb-3 flex justify-center"><Eyebrow icon="globe">Your Atlas</Eyebrow></div>
+            <h2 className="h-display mx-auto max-w-2xl text-display-lg font-semibold text-text-hi [text-wrap:balance] md:text-display-xl">
+              Pin every film to the place it was born.
+            </h2>
+            <p className="measure mx-auto mt-3 text-text-dim">
+              Drop a pin when you submit — over the weeks your filming world fills in.
+            </p>
+          </Reveal>
+          <Reveal>
+            <GlassCard className="overflow-hidden p-2 md:p-3">
+              <WorldMap pins={DEMO_PINS} />
+            </GlassCard>
+          </Reveal>
+        </section>
+
         {/* ── Videography map ──────────────────────────────── */}
         <section className="mx-auto max-w-6xl px-4 pb-20 md:px-8 md:pb-28">
           <Reveal className="mb-8 text-center">
@@ -236,7 +278,7 @@ export default function Landing() {
             </h2>
           </Reveal>
           <Reveal>
-            <CategoryBox history={[]} />
+            <CategoryBox history={DEMO_HISTORY} />
           </Reveal>
         </section>
 

@@ -7,6 +7,7 @@ import { FilmGrain } from "../ui/FilmGrain";
 import { ThemeBackground } from "../ui/ThemeBackground";
 import { Logo } from "../ui/Logo";
 import { Icon } from "../ui/Icon";
+import { Peepers, usePeepers } from "../auth/Peepers";
 
 // 3D is heavy — defer it so the form paints immediately.
 const AuthHero = lazy(() => import("../three/AuthHero"));
@@ -75,8 +76,10 @@ export function AuthLayout({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.34, 1.32, 0.64, 1] }}
-            className="glass w-full max-w-md p-8"
+            className="glass relative w-full max-w-md p-8"
           >
+            {/* little creatures peeking over the card — they watch the cursor */}
+            <Peepers />
             <h1 className="h-display text-3xl font-bold text-text-hi">{title}</h1>
             <p className="mb-6 mt-1 text-sm text-text-dim">{tagline}</p>
             {children}
@@ -105,12 +108,16 @@ export function Field({
   );
 }
 
-/** Password input with a show/hide toggle. */
+/** Password input with a show/hide toggle. The peepers avert their eyes. */
 export function PasswordField({
   label,
+  onFocus,
+  onBlur,
   ...props
 }: { label: string } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">) {
   const [show, setShow] = useState(false);
+  const setCovering = usePeepers((s) => s.setCovering);
+  const setPeeking = usePeepers((s) => s.setPeeking);
   return (
     <label className="mb-4 block">
       <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-text-dim">
@@ -119,12 +126,25 @@ export function PasswordField({
       <div className="relative">
         <input
           {...props}
+          onFocus={(e) => {
+            setCovering(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setCovering(false);
+            onBlur?.(e);
+          }}
           type={show ? "text" : "password"}
           className="w-full rounded-xl border border-hairline bg-field px-4 py-3 pr-11 text-sm text-text-hi outline-none transition-colors placeholder:text-text-dim/60 focus:border-cinema-500/70 focus:ring-2 focus:ring-cinema-500/20"
         />
         <button
           type="button"
-          onClick={() => setShow((s) => !s)}
+          onClick={() =>
+            setShow((s) => {
+              setPeeking(!s); // visible password → one blob sneaks a peek
+              return !s;
+            })
+          }
           aria-label={show ? "Hide password" : "Show password"}
           aria-pressed={show}
           className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-text-dim transition-colors hover:text-text-hi"

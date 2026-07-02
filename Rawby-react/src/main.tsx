@@ -8,7 +8,7 @@ import "./index.css";
 
 // Apply persisted theme before first paint to avoid a flash.
 const t = useTheme.getState();
-applyTheme(t.mode, t.accent);
+applyTheme(t.mode, t.accent, t.customColor);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

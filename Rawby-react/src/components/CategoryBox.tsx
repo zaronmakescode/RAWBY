@@ -1,7 +1,9 @@
-// The "videography map" — four corner lanes around an emotional core. Shows
-// how many films and avg likes sit in each. A film can belong to several
-// lanes, so counts overlap on purpose.
+// The videography breakdown — one clean glass card ranking the five lanes
+// by how much you've filmed in each. A film can belong to several lanes,
+// so counts overlap on purpose.
+import { motion } from "framer-motion";
 import { Icon, type IconName } from "./ui/Icon";
+import { GlassCard } from "./ui/GlassCard";
 import { VIDEO_CATEGORIES } from "../lib/constants";
 import type { ProjectHistoryItem } from "../types";
 
@@ -14,89 +16,76 @@ function statFor(history: ProjectHistoryItem[], id: string) {
   return { count: items.length, avg };
 }
 
-const CORNER_ALIGN: Record<string, string> = {
-  tl: "items-start text-left",
-  tr: "items-end text-right",
-  bl: "items-start text-left",
-  br: "items-end text-right",
-};
-
 export function CategoryBox({ history }: { history: ProjectHistoryItem[] }) {
-  const corners = VIDEO_CATEGORIES.filter((c) => c.corner !== "center");
-  const heart = VIDEO_CATEGORIES.find((c) => c.corner === "center")!;
-  const order = ["tl", "tr", "bl", "br"];
-  const hs = statFor(history, heart.id);
+  const rows = VIDEO_CATEGORIES.map((c) => ({ ...c, ...statFor(history, c.id) })).sort(
+    (a, b) => b.count - a.count
+  );
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  const total = history.length;
 
   return (
-    <div className="relative">
-      {/* connecting cross — gradient hairlines that fade toward the core */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div
-          className="h-px w-[92%]"
-          style={{ background: "linear-gradient(90deg, transparent, rgb(var(--hairline-strong)) 50%, transparent)" }}
-        />
-      </div>
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div
-          className="h-[92%] w-px"
-          style={{ background: "linear-gradient(180deg, transparent, rgb(var(--hairline-strong)) 50%, transparent)" }}
-        />
+    <GlassCard className="p-5 md:p-6">
+      <div className="mb-4 flex items-baseline justify-between">
+        <p className="text-xs text-text-dim">
+          {total === 0
+            ? "Log films with a category to fill this in."
+            : "Where your films live — a film can span several lanes."}
+        </p>
+        {total > 0 && (
+          <span className="rounded-full border border-hairline bg-chip px-2.5 py-1 text-[11px] font-semibold tabular-nums text-text-dim">
+            {total} {total === 1 ? "film" : "films"}
+          </span>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:gap-5">
-        {order.map((pos) => {
-          const c = corners.find((x) => x.corner === pos)!;
-          const s = statFor(history, c.id);
-          const flip = pos === "tr" || pos === "br";
+      <ul className="space-y-1.5">
+        {rows.map((c, i) => {
+          const empty = c.count === 0;
           return (
-            <div
+            <li
               key={c.id}
-              className={`glass group relative flex min-h-[156px] flex-col justify-between overflow-hidden p-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-glow-sm ${CORNER_ALIGN[pos]}`}
+              className={`group flex items-center gap-3 rounded-xl px-2.5 py-2.5 transition-colors hover:bg-glass ${
+                empty ? "opacity-55" : ""
+              }`}
             >
               <span
-                className="pointer-events-none absolute h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-70"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
                 style={{
-                  background: "radial-gradient(circle, rgb(var(--c-500) / 0.45), transparent 70%)",
-                  [pos.includes("t") ? "top" : "bottom"]: "-1.5rem",
-                  [pos.includes("l") ? "left" : "right"]: "-1.5rem",
+                  color: c.color,
+                  background: `${c.color}1a`,
+                  boxShadow: `inset 0 0 0 1px ${c.color}33`,
                 }}
-              />
-              <div className={`flex w-full items-center gap-2.5 ${flip ? "flex-row-reverse" : ""}`}>
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-chip text-text-dim ring-1 ring-inset ring-hairline transition-colors duration-300 group-hover:text-cinema-400">
-                  <Icon name={c.icon as IconName} size={17} />
-                </span>
-                <span className="text-[0.95rem] font-semibold text-text-hi">{c.label}</span>
-              </div>
-              <div>
-                <div className="text-[11px] leading-snug text-text-dim">{c.blurb}</div>
-                <div className={`mt-2 flex items-baseline gap-1.5 ${flip ? "justify-end" : ""}`}>
-                  <span className="h-display text-xl font-bold tabular-nums text-text-hi">{s.count}</span>
-                  <span className="text-[11px] text-text-dim">{s.count === 1 ? "film" : "films"}</span>
-                  {s.avg != null && <span className="text-[11px] text-text-dim">· {s.avg}♡</span>}
+              >
+                <Icon name={c.icon as IconName} size={16} />
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="truncate text-sm font-semibold text-text-hi">{c.label}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-text-dim">
+                    <span className="text-sm font-bold text-text-hi">{c.count}</span>
+                    <span className="hidden sm:inline"> {c.count === 1 ? "film" : "films"}</span>
+                    {c.avg != null && ` · ${c.avg}♡`}
+                  </span>
+                </div>
+                <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-chip">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: c.color }}
+                    initial={{ width: 0 }}
+                    whileInView={{ width: `${(c.count / max) * 100}%` }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                </div>
+                <div className="mt-1 hidden text-[11px] leading-snug text-text-dim group-hover:block">
+                  {c.blurb}
                 </div>
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
-
-      {/* Emotional core — a calm dark medallion with a rose accent, not a ball */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-1/2 flex h-[6.5rem] w-[6.5rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border border-cinema-500/40 text-center"
-        style={{
-          background: "rgb(var(--surface))",
-          boxShadow: "0 0 0 6px rgb(var(--bg)), 0 0 28px -6px rgb(var(--c-500) / 0.5)",
-        }}
-      >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-cinema-500/15 text-cinema-400">
-          <Icon name="heart" size={16} />
-        </span>
-        <div className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-text-hi">Emotions</div>
-        <div className="text-[10px] text-text-dim">
-          {hs.count} {hs.count === 1 ? "film" : "films"}
-          {hs.avg != null ? ` · ${hs.avg}♡` : ""}
-        </div>
-      </div>
-    </div>
+      </ul>
+    </GlassCard>
   );
 }

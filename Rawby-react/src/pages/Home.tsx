@@ -20,7 +20,7 @@ import { useProgress } from "../hooks/useProgress";
 import { useTrips, useTripAutoActivate, daysUntil } from "../hooks/useTrips";
 import { useAuth } from "../store/auth";
 import { useSettings } from "../store/settings";
-import { WEEKLY_CYCLE } from "../lib/constants";
+import { WEEKLY_CYCLE, DAY_NAMES, cycleDayLabel, isCyclePhaseToday, daysUntilCycleEnd } from "../lib/constants";
 import type { Snapshot } from "../types";
 
 const FALLBACK: Snapshot = {
@@ -36,16 +36,6 @@ const FALLBACK: Snapshot = {
 
 const nf = new Intl.NumberFormat("en-US");
 
-// Which weekdays each cycle phase covers (0 Sun … 6 Sat).
-const DAY_SET: Record<string, number[]> = {
-  Friday: [5],
-  "Sat–Sun": [6, 0],
-  "Mon–Tue": [1, 2],
-  "Tue–Wed": [2, 3],
-  "Wed–Thu": [3, 4],
-};
-const isToday = (dayLabel: string) => (DAY_SET[dayLabel] ?? []).includes(new Date().getDay());
-
 export default function Home() {
   const { data, isLoading } = useMe();
   const user = useAuth((s) => s.user);
@@ -60,6 +50,10 @@ export default function Home() {
   const region = useSettings((s) => s.region);
   const seasonal = useSettings((s) => s.seasonalPrompts);
   const showCategories = useSettings((s) => s.showCategories);
+  const showTrips = useSettings((s) => s.showTrips);
+  const showSteps = useSettings((s) => s.showSteps);
+  const showRecent = useSettings((s) => s.showRecent);
+  const cycleDay = useSettings((s) => s.cycleDay);
   const upcomingTrips = trips.filter((t) => t.status === "planned");
   const activeTrip = trips.find((t) => t.status === "active");
 
@@ -94,7 +88,10 @@ export default function Home() {
   const holiday = !!(snap.filmingStartedAt && snap.filmingDeadline);
   const startMs = holiday ? new Date(snap.filmingStartedAt!).getTime() : 0;
   const deadlineMs = holiday ? new Date(snap.filmingDeadline!).getTime() : 0;
-  const daysLeft = holiday ? Math.max(0, Math.ceil((deadlineMs - Date.now()) / DAY)) : snap.daysLeft ?? 0;
+  // Weekly countdown runs off the user's cycle day (client-side, always fresh).
+  const daysLeft = holiday
+    ? Math.max(0, Math.ceil((deadlineMs - Date.now()) / DAY))
+    : daysUntilCycleEnd(cycleDay);
   const totalWindow = holiday ? Math.max(1, Math.round((deadlineMs - startMs) / DAY)) : 7;
   const progress = Math.min(1, Math.max(0, (totalWindow - daysLeft) / totalWindow));
   // Which phase is "today" in holiday mode — mapped by elapsed day, not weekday.
@@ -126,11 +123,7 @@ export default function Home() {
       <GlassCard spotlight className="relative overflow-hidden p-6 md:p-8">
         <div
           className="animate-aurora-drift pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl"
-          style={{ background: "radial-gradient(circle, rgb(var(--glow) / 0.22), transparent 70%)" }}
-        />
-        <div
-          className="animate-aurora-drift pointer-events-none absolute -bottom-20 -left-10 h-52 w-52 rounded-full blur-3xl"
-          style={{ background: "radial-gradient(circle, rgb(var(--c-500) / 0.14), transparent 70%)", animationDelay: "-5s" }}
+          style={{ background: "radial-gradient(circle, rgb(var(--glow) / 0.2), transparent 70%)" }}
         />
         {hasPrompt ? (
           <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -287,6 +280,7 @@ export default function Home() {
       </div>
 
       {/* Holiday mode — trips planned ahead with Aurora */}
+      {showTrips && (
       <Reveal className="mt-12">
       <GlassCard>
         <div className="mb-3 flex items-center justify-between">
@@ -304,7 +298,7 @@ export default function Home() {
         {upcomingTrips.length === 0 ? (
           <p className="py-2 text-sm text-text-dim">
             Going somewhere? Tell Aurora about a trip — she'll line up the prompt and a custom
-            filming window for the day you leave. No Friday lock-in needed.
+            filming window for the day you leave. No {DAY_NAMES[cycleDay]} lock-in needed.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -341,24 +335,31 @@ export default function Home() {
         )}
       </GlassCard>
       </Reveal>
+      )}
 
       {/* Videography box */}
       {showCategories && (
         <Reveal className="mt-14">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <div className="mb-2"><Eyebrow icon="aperture">Your map</Eyebrow></div>
+              <div className="mb-2"><Eyebrow icon="aperture">Your lanes</Eyebrow></div>
               <h3 className="h-display text-display-md font-semibold text-text-hi">Your videography</h3>
             </div>
-            <Link to="/settings" className="text-xs text-text-dim hover:text-text-hi">
-              Hide in Settings
-            </Link>
+            <div className="flex items-center gap-3 text-xs">
+              <Link to="/atlas" className="inline-flex items-center gap-1 font-semibold text-cinema-400 hover:underline">
+                <Icon name="globe" size={13} /> Atlas
+              </Link>
+              <Link to="/settings" className="text-text-dim hover:text-text-hi">
+                Hide in Settings
+              </Link>
+            </div>
           </div>
           <CategoryBox history={history} />
         </Reveal>
       )}
 
       {/* Production stepper — connected nodes, a filling line + progress bar. */}
+      {showSteps && (
       <GlassCard className="mt-8">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -385,8 +386,10 @@ export default function Home() {
             {WEEKLY_CYCLE.map((p, i) => {
               const done = prog.done.includes(p.phase);
               const prevDone = i > 0 && prog.done.includes(WEEKLY_CYCLE[i - 1].phase);
-              const today = holiday ? i === holidayPhaseIdx : isToday(p.day);
-              const dayLabel = holiday ? `Day ${Math.floor((i * totalWindow) / WEEKLY_CYCLE.length) + 1}` : p.day;
+              const today = holiday ? i === holidayPhaseIdx : isCyclePhaseToday(i, cycleDay);
+              const dayLabel = holiday
+                ? `Day ${Math.floor((i * totalWindow) / WEEKLY_CYCLE.length) + 1}`
+                : cycleDayLabel(i, cycleDay);
               const last = i === WEEKLY_CYCLE.length - 1;
               return (
                 <div key={p.phase + i} className="flex flex-1 flex-col items-center">
@@ -434,8 +437,10 @@ export default function Home() {
           </Link>
         )}
       </GlassCard>
+      )}
 
       {/* History + Aurora */}
+      {showRecent && (
       <Reveal className="mt-14 grid gap-4 lg:grid-cols-3">
         <GlassCard className="lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
@@ -485,6 +490,7 @@ export default function Home() {
           </Link>
         </GlassCard>
       </Reveal>
+      )}
 
       <PlanTripModal open={planOpen} onClose={() => setPlanOpen(false)} />
     </PageTransition>

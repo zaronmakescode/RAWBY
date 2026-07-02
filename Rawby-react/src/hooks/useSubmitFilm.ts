@@ -17,6 +17,7 @@ export interface SubmitInput {
   lateIdx: number; // index into LATE_MULTIPLIERS
   gear?: string[]; // gear item ids used
   categories?: string[]; // video taxonomy ids
+  location?: { lat: number; lng: number; label?: string }; // Atlas pin
 }
 
 export function computeScore(level: string, lateIdx: number): number {
@@ -47,6 +48,7 @@ export function useSubmitFilm() {
         lateIdx: input.lateIdx,
         gear: input.gear?.length ? input.gear : undefined,
         categories: input.categories?.length ? input.categories : undefined,
+        location: input.location,
         week: snap.weekNumber,
       };
 

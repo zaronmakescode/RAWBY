@@ -38,7 +38,9 @@ export type IconName =
   | "eyeOff"
   | "shield"
   | "tag"
-  | "heart";
+  | "heart"
+  | "globe"
+  | "mapPin";
 
 // Inner SVG geometry per icon.
 const PATHS: Record<IconName, JSX.Element> = {
@@ -76,6 +78,8 @@ const PATHS: Record<IconName, JSX.Element> = {
   shield: <><path d="M12 3l7 3v5c0 4.6-3 7.7-7 9-4-1.3-7-4.4-7-9V6l7-3Z" /><path d="m9 12 2 2 4-4" /></>,
   tag: <><path d="M3 7v5a2 2 0 0 0 .6 1.4l7 7a2 2 0 0 0 2.8 0l5-5a2 2 0 0 0 0-2.8l-7-7A2 2 0 0 0 12 5H7a4 4 0 0 0-4 4Z" /><circle cx="8" cy="8" r="1.2" /></>,
   heart: <><path d="M12 20s-7-4.3-9.2-8.5C1.3 8.2 3 5 6 5c1.8 0 3 1 3 1s.2-.2 3-1c3 0 4.7 3.2 3.2 6.5C19 15.7 12 20 12 20Z" /></>,
+  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18Z" /></>,
+  mapPin: <><path d="M12 21s7-6.3 7-12a7 7 0 0 0-14 0c0 5.7 7 12 7 12Z" /><circle cx="12" cy="9" r="2.4" /></>,
 };
 
 interface Props extends SVGProps<SVGSVGElement> {

@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { AuthLayout, Field, PasswordField } from "../components/layout/AuthLayout";
 import { GradientButton } from "../components/ui/GradientButton";
 import { ColdStartNote } from "../components/ui/Bits";
+import { usePeepers } from "../components/auth/Peepers";
 import { auth } from "../lib/endpoints";
 import { authErrorMessage } from "../lib/errors";
 import { useAuth } from "../store/auth";
@@ -20,6 +21,8 @@ export default function Register() {
   const upd = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setF((s) => ({ ...s, [k]: e.target.value }));
 
+  const react = usePeepers((s) => s.react);
+
   const m = useMutation({
     mutationFn: () =>
       auth.register({
@@ -28,7 +31,9 @@ export default function Register() {
         email: f.email.trim(),
         password: f.password,
       }),
+    onError: () => react("sad"),
     onSuccess: (data) => {
+      react("happy", 1200);
       if ("token" in data) {
         // Instant login (e.g. admin / verification disabled).
         setAuth(data.token, data.user);

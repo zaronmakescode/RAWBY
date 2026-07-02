@@ -45,12 +45,26 @@ export default function Profile() {
       <PageHeader eyebrow="You" title="Profile" />
 
       <GlassCard className="flex flex-col items-center gap-4 text-center md:flex-row md:text-left">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-green-400 to-green-600 text-3xl font-bold text-white shadow-[0_8px_30px_-8px_rgba(90,138,94,0.45)]">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cinema-500 to-cinema-700 text-3xl font-bold text-[#16161a] shadow-[0_8px_30px_-8px_rgb(var(--c-500)/0.4)]">
           {user?.displayName?.[0]?.toUpperCase() ?? "?"}
         </div>
         <div>
           <h2 className="h-display text-2xl font-bold text-text-hi">{user?.displayName}</h2>
           <p className="text-sm text-text-dim">@{user?.username}</p>
+          {(snap?.profile?.location || snap?.profile?.style) && (
+            <p className="mt-0.5 flex flex-wrap items-center justify-center gap-x-3 text-xs text-text-dim md:justify-start">
+              {snap.profile?.location && (
+                <span className="inline-flex items-center gap-1">
+                  <Icon name="mapPin" size={12} /> {snap.profile.location}
+                </span>
+              )}
+              {snap.profile?.style && (
+                <span className="inline-flex items-center gap-1">
+                  <Icon name="palette" size={12} /> {snap.profile.style}
+                </span>
+              )}
+            </p>
+          )}
           {snap?.promptLevel && (
             <div className="mt-2">
               <FilmTag level={snap.promptLevel} />
@@ -106,6 +120,11 @@ export default function Profile() {
                   <span className="inline-flex items-center gap-1"><Icon name="clock" size={12} /> {timeLabel(h)}</span>
                   <span>{h.level}</span>
                   {h.likes != null && <span className="inline-flex items-center gap-1"><Icon name="flame" size={12} /> {nf.format(h.likes)} likes</span>}
+                  {h.location && (
+                    <span className="inline-flex items-center gap-1">
+                      <Icon name="mapPin" size={12} /> {h.location.label ?? "pinned"}
+                    </span>
+                  )}
                   {h.gear?.length ? <span>· {h.gear.length} gear</span> : null}
                 </div>
               </div>

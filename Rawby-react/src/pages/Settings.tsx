@@ -7,6 +7,7 @@ import { Icon } from "../components/ui/Icon";
 import { ThemeControls } from "../components/ui/ThemeControls";
 import { useAuth } from "../store/auth";
 import { useSettings, COUNTRIES } from "../store/settings";
+import { DAY_NAMES } from "../lib/constants";
 import { BASE_URL } from "../lib/api";
 
 function Row({ label, sub, children }: { label: string; sub?: string; children: React.ReactNode }) {
@@ -21,31 +22,198 @@ function Row({ label, sub, children }: { label: string; sub?: string; children: 
   );
 }
 
+/** Standard switch row — one look for every boolean setting. */
+function Toggle({
+  label,
+  sub,
+  on,
+  onChange,
+}: {
+  label: string;
+  sub?: string;
+  on: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={() => onChange(!on)}
+      className="flex w-full items-center justify-between gap-4 rounded-xl border border-hairline bg-chip px-4 py-3 text-left transition-colors hover:border-hairline-strong"
+    >
+      <div>
+        <div className="text-sm font-medium text-text-hi">{label}</div>
+        {sub && <div className="text-xs text-text-dim">{sub}</div>}
+      </div>
+      <span
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+          on ? "bg-cinema-500" : "bg-hairline-strong"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+            on ? "translate-x-5" : "translate-x-0.5"
+          }`}
+        />
+      </span>
+    </button>
+  );
+}
+
+/** Slider row with a live value readout. */
+function SliderRow({
+  label,
+  sub,
+  value,
+  min,
+  max,
+  step,
+  format,
+  onChange,
+}: {
+  label: string;
+  sub?: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  format?: (v: number) => string;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-hairline bg-chip px-4 py-3">
+      <div className="mb-2 flex items-baseline justify-between gap-4">
+        <div>
+          <div className="text-sm font-medium text-text-hi">{label}</div>
+          {sub && <div className="text-xs text-text-dim">{sub}</div>}
+        </div>
+        <span className="shrink-0 text-xs font-semibold tabular-nums text-cinema-400">
+          {format ? format(value) : value}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        aria-label={label}
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-hairline-strong accent-[rgb(var(--c-500))]"
+      />
+    </div>
+  );
+}
+
 export default function Settings() {
   const nav = useNavigate();
   const logout = useAuth((s) => s.logout);
   const user = useAuth((s) => s.user);
-  const region = useSettings((s) => s.region);
-  const setRegion = useSettings((s) => s.setRegion);
-  const seasonal = useSettings((s) => s.seasonalPrompts);
-  const setSeasonal = useSettings((s) => s.setSeasonal);
-  const showCategories = useSettings((s) => s.showCategories);
-  const setShowCategories = useSettings((s) => s.setShowCategories);
-  const holidayMode = useSettings((s) => s.holidayMode);
-  const setHolidayMode = useSettings((s) => s.setHolidayMode);
-  const holidayDays = useSettings((s) => s.holidayDays);
-  const setHolidayDays = useSettings((s) => s.setHolidayDays);
-  const useClaude = useSettings((s) => s.useClaude);
-  const setUseClaude = useSettings((s) => s.setUseClaude);
+  const s = useSettings();
 
   return (
     <PageTransition>
       <PageHeader eyebrow="Preferences" title="Settings" />
 
+      {/* Theme */}
       <GlassCard className="mb-4">
         <ThemeControls />
       </GlassCard>
 
+      {/* Backdrop & effects */}
+      <GlassCard className="mb-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Icon name="film" size={18} className="text-cinema-400" />
+          <div>
+            <div className="text-sm font-semibold text-text-hi">Backdrop & effects</div>
+            <div className="text-xs text-text-dim">
+              The living background behind everything — tune it to taste.
+            </div>
+          </div>
+        </div>
+        <Toggle
+          label="Cinematic video background"
+          sub="Real footage instead of the animated scene. Heavier on mobile data."
+          on={s.bgVideo}
+          onChange={s.setBgVideo}
+        />
+        {!s.bgVideo && (
+          <SliderRow
+            label="Backdrop motion"
+            sub="How fast the scene drifts."
+            value={s.bgSpeed}
+            min={0.25}
+            max={2}
+            step={0.05}
+            format={(v) => `${v.toFixed(2)}×`}
+            onChange={s.setBgSpeed}
+          />
+        )}
+        <SliderRow
+          label="Backdrop dim"
+          sub="Darkens the backdrop so cards + text stay readable."
+          value={s.bgDim}
+          min={0.1}
+          max={0.85}
+          step={0.01}
+          format={(v) => `${Math.round(v * 100)}%`}
+          onChange={s.setBgDim}
+        />
+        <SliderRow
+          label="Film grain"
+          sub="The analog texture over the app. 0 turns it off."
+          value={s.grainAmount}
+          min={0}
+          max={2}
+          step={0.05}
+          format={(v) => `${Math.round(v * 100)}%`}
+          onChange={s.setGrainAmount}
+        />
+        <Toggle
+          label="Reduce animations"
+          sub="Calms transitions and freezes the backdrop."
+          on={s.reduceMotion}
+          onChange={s.setReduceMotion}
+        />
+      </GlassCard>
+
+      {/* Home layout */}
+      <GlassCard className="mb-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Icon name="home" size={18} className="text-cinema-400" />
+          <div>
+            <div className="text-sm font-semibold text-text-hi">Home layout</div>
+            <div className="text-xs text-text-dim">Choose which sections your dashboard shows.</div>
+          </div>
+        </div>
+        <Toggle
+          label="Videography breakdown"
+          sub="Category stats for your films."
+          on={s.showCategories}
+          onChange={s.setShowCategories}
+        />
+        <Toggle
+          label="Holiday mode card"
+          sub="Trips planned with Aurora."
+          on={s.showTrips}
+          onChange={s.setShowTrips}
+        />
+        <Toggle
+          label="Weekly steps"
+          sub="The production stepper."
+          on={s.showSteps}
+          onChange={s.setShowSteps}
+        />
+        <Toggle
+          label="Recent films + Aurora"
+          sub="Latest submissions and the co-pilot card."
+          on={s.showRecent}
+          onChange={s.setShowRecent}
+        />
+      </GlassCard>
+
+      {/* Prompt tuning */}
       <GlassCard className="mb-4 space-y-5">
         <div>
           <div className="text-sm font-semibold text-text-hi">Prompt tuning</div>
@@ -58,8 +226,8 @@ export default function Settings() {
           <input
             id="set-region"
             list="country-list"
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
+            value={s.region}
+            onChange={(e) => s.setRegion(e.target.value)}
             placeholder="e.g. Hungary"
             className="w-full rounded-xl border border-hairline bg-field px-4 py-3 text-sm text-text-hi outline-none focus:border-cinema-500/70"
           />
@@ -69,52 +237,39 @@ export default function Settings() {
             ))}
           </datalist>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={seasonal}
-          onClick={() => setSeasonal(!seasonal)}
-          className="flex w-full items-center justify-between gap-4 rounded-xl border border-hairline bg-chip px-4 py-3 text-left transition-colors hover:border-hairline-strong"
-        >
-          <div>
-            <div className="text-sm font-medium text-text-hi">Seasonal prompts</div>
-            <div className="text-xs text-text-dim">Tune ideas to the time of year.</div>
+        <Toggle
+          label="Seasonal prompts"
+          sub="Tune ideas to the time of year."
+          on={s.seasonalPrompts}
+          onChange={s.setSeasonal}
+        />
+        <div className="rounded-xl border border-hairline bg-chip px-4 py-3">
+          <div className="mb-2.5">
+            <div className="text-sm font-medium text-text-hi">Cycle starts on</div>
+            <div className="text-xs text-text-dim">
+              Your week runs {DAY_NAMES[s.cycleDay]} → {DAY_NAMES[s.cycleDay]}. Prompt day, filming
+              window and the countdown all follow it.
+            </div>
           </div>
-          <span
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-              seasonal ? "bg-cinema-500" : "bg-hairline-strong"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                seasonal ? "translate-x-5" : "translate-x-0.5"
-              }`}
-            />
-          </span>
-        </button>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={showCategories}
-          onClick={() => setShowCategories(!showCategories)}
-          className="flex w-full items-center justify-between gap-4 rounded-xl border border-hairline bg-chip px-4 py-3 text-left transition-colors hover:border-hairline-strong"
-        >
-          <div>
-            <div className="text-sm font-medium text-text-hi">Videography box on Home</div>
-            <div className="text-xs text-text-dim">Show the category map + per-category stats.</div>
+          <div className="grid grid-cols-7 gap-1">
+            {DAY_NAMES.map((d, i) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => s.setCycleDay(i)}
+                aria-pressed={s.cycleDay === i}
+                title={d}
+                className={`rounded-lg py-2 text-xs font-semibold transition-colors ${
+                  s.cycleDay === i
+                    ? "bg-cinema-500 text-[#16161a]"
+                    : "bg-field text-text-dim hover:text-text-hi"
+                }`}
+              >
+                {d.slice(0, 2)}
+              </button>
+            ))}
           </div>
-          <span
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-              showCategories ? "bg-cinema-500" : "bg-hairline-strong"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                showCategories ? "translate-x-5" : "translate-x-0.5"
-              }`}
-            />
-          </span>
-        </button>
+        </div>
       </GlassCard>
 
       {/* Holiday mode */}
@@ -124,35 +279,18 @@ export default function Settings() {
           <div>
             <div className="text-sm font-semibold text-text-hi">Holiday mode</div>
             <div className="text-xs text-text-dim">
-              Summer schedule's off? Skip the Friday cycle — your filming clock starts when you
-              lock in a prompt and runs a fixed window.
+              Summer schedule's off? Skip the {DAY_NAMES[s.cycleDay]} cycle — your filming clock
+              starts when you lock in a prompt and runs a fixed window.
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={holidayMode}
-          onClick={() => setHolidayMode(!holidayMode)}
-          className="flex w-full items-center justify-between gap-4 rounded-xl border border-hairline bg-chip px-4 py-3 text-left transition-colors hover:border-hairline-strong"
-        >
-          <div>
-            <div className="text-sm font-medium text-text-hi">Start the clock on lock-in</div>
-            <div className="text-xs text-text-dim">Countdown begins when you start, not on Friday.</div>
-          </div>
-          <span
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-              holidayMode ? "bg-cinema-500" : "bg-hairline-strong"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                holidayMode ? "translate-x-5" : "translate-x-0.5"
-              }`}
-            />
-          </span>
-        </button>
-        {holidayMode && (
+        <Toggle
+          label="Start the clock on lock-in"
+          sub="Countdown begins when you start, not on Friday."
+          on={s.holidayMode}
+          onChange={s.setHolidayMode}
+        />
+        {s.holidayMode && (
           <div className="flex items-center justify-between gap-4 rounded-xl border border-hairline bg-chip px-4 py-3">
             <div>
               <div className="text-sm font-medium text-text-hi">Filming window</div>
@@ -160,17 +298,17 @@ export default function Settings() {
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setHolidayDays(holidayDays - 1)}
+                onClick={() => s.setHolidayDays(s.holidayDays - 1)}
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline text-text-hi transition-colors hover:border-cinema-500/70"
                 aria-label="Fewer days"
               >
                 <Icon name="plus" size={14} className="rotate-45" />
               </button>
               <span className="h-display w-10 text-center text-lg font-bold tabular-nums text-text-hi">
-                {holidayDays}
+                {s.holidayDays}
               </span>
               <button
-                onClick={() => setHolidayDays(holidayDays + 1)}
+                onClick={() => s.setHolidayDays(s.holidayDays + 1)}
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline text-text-hi transition-colors hover:border-cinema-500/70"
                 aria-label="More days"
               >
@@ -188,34 +326,19 @@ export default function Settings() {
           <div>
             <div className="text-sm font-semibold text-text-hi">Aurora's brain</div>
             <div className="text-xs text-text-dim">
-              By default Aurora runs on Groq (free). Switch her to your own Claude subscription via
-              the bridge — see claude-bridge/README. Falls back to Groq if the bridge isn't set up.
+              By default Aurora runs on Groq (free, fast). Switch to your Claude subscription to
+              power chat, weekly prompt generation and skill feedback through your plan — Aurora
+              draws on Claude's full knowledge including current info. Falls back to Groq if the
+              bridge isn't set up. Setup: see claude-bridge/README.
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={useClaude}
-          onClick={() => setUseClaude(!useClaude)}
-          className="flex w-full items-center justify-between gap-4 rounded-xl border border-hairline bg-chip px-4 py-3 text-left transition-colors hover:border-hairline-strong"
-        >
-          <div>
-            <div className="text-sm font-medium text-text-hi">Use my Claude (Pro)</div>
-            <div className="text-xs text-text-dim">Route Aurora through your Claude plan.</div>
-          </div>
-          <span
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-              useClaude ? "bg-cinema-500" : "bg-hairline-strong"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                useClaude ? "translate-x-5" : "translate-x-0.5"
-              }`}
-            />
-          </span>
-        </button>
+        <Toggle
+          label="Use my Claude (Pro)"
+          sub="Route Aurora through your Claude plan."
+          on={s.useClaude}
+          onChange={s.setUseClaude}
+        />
       </GlassCard>
 
       <GlassCard className="divide-y divide-divide">

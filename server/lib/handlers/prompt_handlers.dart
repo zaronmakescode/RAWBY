@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:shelf/shelf.dart';
 import '../store.dart';
 import '../data/song_catalog.dart';
+import '../services/claude_bridge.dart';
 
 const _jsonHeaders = {'content-type': 'application/json'};
 
@@ -441,11 +442,29 @@ Future<Response> handleGeneratePrompts(Request request) async {
     }
     final promptText = fullPrompt.toString();
 
-    final rawText = provider == 'openai'
-        ? await _callOpenAi(model: model, userPrompt: promptText)
-        : provider == 'claude'
-            ? await _callClaudePrompts(model: model, userPrompt: promptText)
-            : await _callGroq(model: model, userPrompt: promptText);
+    // Bridge path — routes through the owner's Claude subscription.
+    // Tools are disabled so the reply stays pure JSON for _parsePrompts.
+    final bridgeUrl = Platform.environment['CLAUDE_BRIDGE_URL'];
+    String rawText;
+    if (provider == 'claude' && bridgeUrl != null && bridgeUrl.isNotEmpty) {
+      try {
+        rawText = await callClaudeBridge(
+          bridgeUrl: bridgeUrl,
+          systemPrompt: _systemPrompt,
+          prompt: promptText,
+          allowTools: false,
+        );
+      } catch (e) {
+        stderr.writeln('[generate-prompts] bridge failed, falling back to groq: $e');
+        rawText = await _callGroq(model: 'llama-3.3-70b-versatile', userPrompt: promptText);
+      }
+    } else if (provider == 'openai') {
+      rawText = await _callOpenAi(model: model, userPrompt: promptText);
+    } else if (provider == 'claude') {
+      rawText = await _callClaudePrompts(model: model, userPrompt: promptText);
+    } else {
+      rawText = await _callGroq(model: model, userPrompt: promptText);
+    }
 
     final prompts = _parsePrompts(rawText);
 

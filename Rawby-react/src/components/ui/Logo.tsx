@@ -18,10 +18,12 @@ const CARVED_TEXT: React.CSSProperties = {
 };
 
 const BLOCK: React.CSSProperties = {
+  // Weighted toward the mid/deep brand tones — the light --brand-1 only kisses
+  // the top edge, so the block reads matte metal instead of neon.
   background:
-    "linear-gradient(155deg, var(--brand-1) 0%, var(--brand-2) 45%, var(--brand-3) 100%)",
+    "linear-gradient(155deg, var(--brand-1) 0%, var(--brand-2) 26%, var(--brand-3) 100%)",
   boxShadow:
-    "inset 0 2px 5px rgba(0,0,0,0.45), inset 0 -2px 4px rgba(255,255,255,0.3), 0 6px 18px rgba(0,0,0,0.45)",
+    "inset 0 2px 5px rgba(0,0,0,0.45), inset 0 -2px 4px rgba(255,255,255,0.14), 0 6px 18px rgba(0,0,0,0.45)",
   border: "1px solid rgba(0,0,0,0.28)",
 };
 

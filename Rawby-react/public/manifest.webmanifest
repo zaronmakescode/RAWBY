@@ -1,0 +1,17 @@
+{
+  "name": "RAWBY — Weekly Film Challenge",
+  "short_name": "RAWBY",
+  "description": "The weekly filmmaking challenge for solo videographers. A prompt, a song, a deadline — every week.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#110f0d",
+  "theme_color": "#15110E",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

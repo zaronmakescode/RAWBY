@@ -75,8 +75,11 @@ export function PageHeader({
 export function Spinner({ label }: { label?: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-20 text-text-dim">
-      <span
-        className="h-8 w-8 animate-spin rounded-full border-2 border-hairline-strong border-t-cinema-500"
+      {/* aperture blades spin like a lens ring while we wait */}
+      <Icon
+        name="aperture"
+        size={34}
+        className="animate-[spin_2.6s_linear_infinite] text-cinema-500"
         aria-hidden="true"
       />
       {label && <span className="text-sm">{label}</span>}

@@ -52,13 +52,13 @@ export default function Leaderboard() {
                   <div
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold tabular-nums"
                     style={{
-                      background: i < 3 ? `${medal[i]}22` : "rgba(255,255,255,0.04)",
-                      color: i < 3 ? medal[i] : "#9CA3AF",
+                      background: i < 3 ? `${medal[i]}22` : "rgb(var(--chip))",
+                      color: i < 3 ? medal[i] : "rgb(var(--text-dim))",
                     }}
                   >
                     {r.rank}
                   </div>
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-green-600 text-sm font-bold text-white">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cinema-500 to-cinema-700 text-sm font-bold text-[#16161a]">
                     {r.displayName?.[0]?.toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">

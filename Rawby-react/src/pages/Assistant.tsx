@@ -15,7 +15,6 @@ import { useTrips } from "../hooks/useTrips";
 import { gearLabels, filmSummaries, tripSummaries } from "../lib/personalize";
 import { useAuth } from "../store/auth";
 import { useSettings } from "../store/settings";
-import { toast } from "../store/toast";
 import type { ChatMessage, ChatContext } from "../types";
 
 const GREETING: ChatMessage = {
@@ -98,29 +97,6 @@ export default function Assistant() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, m.isPending]);
 
-  // Bridge to the user's own Claude Pro: copy the question + context and open
-  // claude.ai so they paste it into their plan (no API/automation possible).
-  function askMyClaude() {
-    const q = input.trim() || [...messages].reverse().find((m) => m.role === "user")?.content || "";
-    if (!q) {
-      toast.error("Type a question first.");
-      return;
-    }
-    const ctxLines = [
-      user?.displayName && `Filmmaker: ${user.displayName}`,
-      context.location && `Shoots around: ${context.location}`,
-      context.gear?.length ? `Gear: ${context.gear.join(", ")}` : "",
-      context.promptText && `This week's prompt: ${context.promptText}`,
-    ].filter(Boolean).join("\n");
-    const text =
-      `You are my expert filmmaking co-pilot for solo video — be concrete and technical.\n\n${ctxLines}\n\nQuestion: ${q}`;
-    navigator.clipboard?.writeText(text).then(
-      () => toast.success("Copied — paste it into Claude"),
-      () => toast.error("Couldn't copy — open Claude and type it.")
-    );
-    window.open("https://claude.ai/new", "_blank", "noopener,noreferrer");
-  }
-
   function send(textArg?: string) {
     const text = (textArg ?? input).trim();
     if (!text || m.isPending) return;
@@ -144,9 +120,6 @@ export default function Assistant() {
         </GradientButton>
         <GradientButton variant="ghost" onClick={() => setCheckOpen(true)}>
           <Icon name="film" size={15} /> Check my video
-        </GradientButton>
-        <GradientButton variant="ghost" onClick={askMyClaude}>
-          <Icon name="sparkles" size={15} /> Ask my Claude
         </GradientButton>
         {messages.length > 1 && (
           <GradientButton

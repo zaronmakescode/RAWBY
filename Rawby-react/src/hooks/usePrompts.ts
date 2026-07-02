@@ -15,6 +15,7 @@ import type { GeneratedPrompt, MeResponse, Snapshot } from "../types";
 export function useGeneratePrompts() {
   const region = useSettings((s) => s.region);
   const seasonalPrompts = useSettings((s) => s.seasonalPrompts);
+  const useClaude = useSettings((s) => s.useClaude);
   const { data } = useMe();
   const personalization = personalizationText(
     data?.snapshot?.profile,
@@ -24,8 +25,9 @@ export function useGeneratePrompts() {
   );
   return useMutation({
     // Pass an optional idea/description for a trip → personalised prompt.
+    // Respects the "Use my Claude (Pro)" toggle — same bridge as chat.
     mutationFn: (idea?: string) =>
-      ai.generatePrompts("groq", { region, seasonalPrompts, personalization, idea }),
+      ai.generatePrompts(useClaude ? "claude" : "groq", { region, seasonalPrompts, personalization, idea }),
     onError: () => toast.error("Couldn't generate prompts — the server may be waking."),
   });
 }

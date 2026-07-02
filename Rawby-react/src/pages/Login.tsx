@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { AuthLayout, Field, PasswordField } from "../components/layout/AuthLayout";
 import { GradientButton } from "../components/ui/GradientButton";
 import { ColdStartNote } from "../components/ui/Bits";
+import { usePeepers } from "../components/auth/Peepers";
 import { auth } from "../lib/endpoints";
 import { authErrorMessage } from "../lib/errors";
 import { useAuth } from "../store/auth";
@@ -15,12 +16,16 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  const react = usePeepers((s) => s.react);
+
   const m = useMutation({
     mutationFn: () => auth.login(username.trim(), password),
     onSuccess: (data) => {
+      react("happy", 1200);
       setAuth(data.token, data.user);
       nav(loc.state?.from ?? "/home", { replace: true });
     },
+    onError: () => react("sad"),
   });
 
   return (

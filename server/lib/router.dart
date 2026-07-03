@@ -12,6 +12,7 @@ import 'handlers/instagram_handlers.dart';
 import 'handlers/ai_handlers.dart';
 import 'handlers/admin_prompt_handlers.dart';
 import 'handlers/suggestion_handlers.dart';
+import 'handlers/spot_handlers.dart';
 
 Handler buildRouter() {
   final router = Router();
@@ -126,6 +127,11 @@ Handler buildRouter() {
     });
     return Response.ok(jsonEncode({'ok': true}), headers: {'content-type': 'application/json'});
   }));
+
+  // Shooting spots (community pins on the Atlas)
+  router.get('/api/spots', protect(handleGetSpots));
+  router.post('/api/spots', protect(handleAddSpot));
+  router.delete('/api/spots/<id>', protectWithParam(handleDeleteSpot));
 
   // Suggestions
   router.post('/api/suggestions', protect(handleSubmitSuggestion));

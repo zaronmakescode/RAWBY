@@ -12,6 +12,7 @@ import type {
   AIProvider,
   Suggestion,
   GeneratedPrompt,
+  Spot,
 } from "../types";
 
 export const auth = {
@@ -103,6 +104,14 @@ export const admin = {
     api.post("/api/admin/set-admin", { username }).then((r) => r.data),
   deleteUser: (username: string) =>
     api.delete(`/api/admin/users/${encodeURIComponent(username)}`).then((r) => r.data),
+};
+
+export const spots = {
+  list: () => api.get<{ spots: Spot[] }>("/api/spots").then((r) => r.data.spots ?? []),
+  add: (body: { name: string; lat: number; lng: number; note?: string }) =>
+    api.post<{ id: string }>("/api/spots", body).then((r) => r.data),
+  remove: (id: string) =>
+    api.delete(`/api/spots/${encodeURIComponent(id)}`).then((r) => r.data),
 };
 
 export const community = {

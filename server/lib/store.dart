@@ -19,6 +19,7 @@ class Store {
   late DbCollection _suggestions;
   late DbCollection _communityPrompts;
   late DbCollection _generatedPrompts;
+  late DbCollection _spots;
 
   Future<void> initialize() async {
     final mongoUri = Platform.environment['MONGO_URI'] ??
@@ -46,6 +47,7 @@ class Store {
     _suggestions = _db.collection('suggestions');
     _communityPrompts = _db.collection('community_prompts');
     _generatedPrompts = _db.collection('generated_prompts');
+    _spots = _db.collection('spots');
   }
 
   /// Atlas free-tier closes idle sockets and Render's keep-alive only pinged
@@ -249,6 +251,34 @@ class Store {
   Future<Map<String, String>> getAllFcmTokens() async {
     final docs = await _fcmTokens.find().toList();
     return {for (final d in docs) d['userId'] as String: d['token'] as String};
+  }
+
+  // ── Shooting spots (community pins on the Atlas) ───────────────
+
+  Future<String> addSpot(Map<String, dynamic> data) async {
+    final id = _uuid.v4();
+    data['id'] = id;
+    data['createdAt'] = DateTime.now().toIso8601String();
+    await _spots.insertOne(data);
+    return id;
+  }
+
+  Future<List<Map<String, dynamic>>> getSpots({int limit = 500}) async {
+    final docs = await _spots
+        .find(where.sortBy('createdAt', descending: true).limit(limit))
+        .toList();
+    return docs.map((d) { d.remove('_id'); return Map<String, dynamic>.from(d); }).toList();
+  }
+
+  Future<Map<String, dynamic>?> getSpotById(String id) async {
+    final doc = await _spots.findOne(where.eq('id', id));
+    if (doc == null) return null;
+    doc.remove('_id');
+    return Map<String, dynamic>.from(doc);
+  }
+
+  Future<void> deleteSpot(String id) async {
+    await _spots.deleteOne(where.eq('id', id));
   }
 
   // ── Suggestions ────────────────────────────────────────────────

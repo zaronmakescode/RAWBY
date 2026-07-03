@@ -150,6 +150,19 @@ export interface ProjectHistoryItem {
   location?: { lat: number; lng: number; label?: string }; // where it was filmed (Atlas pin)
 }
 
+/** A shared shooting spot pinned on the Atlas (community or curated). */
+export interface Spot {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  note?: string | null;
+  by?: string; // username of who pinned it
+  userId?: string;
+  createdAt?: string;
+  curated?: boolean; // true for the built-in famous locations
+}
+
 export type GearStatus = "active" | "rested" | "retired";
 
 export interface GearItem {

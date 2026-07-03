@@ -13,7 +13,11 @@ export interface MapPin {
   /** Film title, shown as the tooltip headline. */
   title?: string;
   id?: string;
+  /** "film" (default) = accent dot. "spot" = teal diamond (shared shooting spot). */
+  kind?: "film" | "spot";
 }
+
+const SPOT_COLOR = "#4fc3a1"; // shared shooting spots — distinct from any accent
 
 interface Props {
   pins?: MapPin[];
@@ -94,9 +98,27 @@ export function WorldMap({ pins = [], interactive = false, onPick, onPinClick, c
             }}
           >
             {tip && <title>{tip}</title>}
-            <circle cx={x} cy={y} r="9" fill="rgb(var(--c-500) / 0.16)" />
-            <circle cx={x} cy={y} r="4.5" fill="rgb(var(--c-500) / 0.45)" />
-            <circle cx={x} cy={y} r="2.4" fill="rgb(var(--c-500))" stroke="rgb(var(--bg))" strokeWidth="0.8" />
+            {p.kind === "spot" ? (
+              <>
+                <circle cx={x} cy={y} r="8" fill={SPOT_COLOR} opacity="0.14" />
+                <rect
+                  x={x - 3}
+                  y={y - 3}
+                  width="6"
+                  height="6"
+                  transform={`rotate(45 ${x} ${y})`}
+                  fill={SPOT_COLOR}
+                  stroke="rgb(var(--bg))"
+                  strokeWidth="0.8"
+                />
+              </>
+            ) : (
+              <>
+                <circle cx={x} cy={y} r="9" fill="rgb(var(--c-500) / 0.16)" />
+                <circle cx={x} cy={y} r="4.5" fill="rgb(var(--c-500) / 0.45)" />
+                <circle cx={x} cy={y} r="2.4" fill="rgb(var(--c-500))" stroke="rgb(var(--bg))" strokeWidth="0.8" />
+              </>
+            )}
           </motion.g>
         );
       })}

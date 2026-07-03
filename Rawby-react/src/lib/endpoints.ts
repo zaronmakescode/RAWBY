@@ -48,9 +48,9 @@ export const board = {
 };
 
 export const ai = {
-  chat: (messages: ChatMessage[], context: ChatContext, provider: AIProvider) =>
+  chat: (messages: ChatMessage[], context: ChatContext, provider: AIProvider, apiKey?: string) =>
     api
-      .post<{ reply: string }>("/api/chat", { messages, context, provider })
+      .post<{ reply: string }>("/api/chat", { messages, context, provider, apiKey })
       .then((r) => r.data.reply),
 
   /** Pre-post video review — send sampled frames (data URLs) to a vision model. */
@@ -66,15 +66,18 @@ export const ai = {
     notes?: string;
     history?: unknown[];
     stats?: unknown;
+    apiKey?: string;
   }) => api.post<{ feedback: string }>("/api/skill-feedback", body).then((r) => r.data.feedback),
 
   generatePrompts: (
     provider: AIProvider,
-    opts?: { region?: string; seasonalPrompts?: boolean; personalization?: string; idea?: string }
+    opts?: { region?: string; seasonalPrompts?: boolean; personalization?: string; idea?: string },
+    apiKey?: string
   ) =>
     api
       .post<{ prompts: GeneratedPrompt[] }>("/api/generate-prompts", {
         provider,
+        apiKey,
         region: opts?.region && opts.region !== "Global" ? opts.region : "",
         seasonalPrompts: opts?.seasonalPrompts ?? false,
         personalization: opts?.personalization ?? "",

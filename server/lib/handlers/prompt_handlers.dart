@@ -445,8 +445,18 @@ Future<Response> handleGeneratePrompts(Request request) async {
     // Bridge path — routes through the owner's Claude subscription.
     // Tools are disabled so the reply stays pure JSON for _parsePrompts.
     final bridgeUrl = Platform.environment['CLAUDE_BRIDGE_URL'];
+    final userKey = (data['apiKey'] as String?)?.trim();
     String rawText;
-    if (provider == 'claude' && bridgeUrl != null && bridgeUrl.isNotEmpty) {
+    if (provider == 'claude' && userKey != null && userKey.isNotEmpty) {
+      // User's own Anthropic key — request-scoped, never stored.
+      try {
+        rawText = await _callClaudePrompts(
+            model: 'claude-sonnet-5', userPrompt: promptText, apiKey: userKey);
+      } catch (e) {
+        stderr.writeln('[generate-prompts] user key failed, falling back to groq: $e');
+        rawText = await _callGroq(model: 'llama-3.3-70b-versatile', userPrompt: promptText);
+      }
+    } else if (provider == 'claude' && bridgeUrl != null && bridgeUrl.isNotEmpty) {
       try {
         rawText = await callClaudeBridge(
           bridgeUrl: bridgeUrl,
@@ -549,8 +559,9 @@ Future<String> _callOpenAi({required String model, required String userPrompt}) 
   return _extractContent(res.body, 'OpenAI');
 }
 
-Future<String> _callClaudePrompts({required String model, required String userPrompt}) async {
-  final key = Platform.environment['ANTHROPIC_API_KEY'];
+Future<String> _callClaudePrompts(
+    {required String model, required String userPrompt, String? apiKey}) async {
+  final key = apiKey ?? Platform.environment['ANTHROPIC_API_KEY'];
   if (key == null || key.isEmpty) throw StateError('ANTHROPIC_API_KEY not set');
 
   final res = await http.post(

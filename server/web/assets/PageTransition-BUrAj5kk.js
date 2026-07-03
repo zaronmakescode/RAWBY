@@ -1,0 +1,1 @@
+import{j as t,m as i}from"./vendor-DTFTLdcN.js";import{a4 as m}from"./index-B-DLBVb4.js";function o({children:a}){return t.jsx(i.main,{variants:m,initial:"hidden",animate:"show",exit:"exit",className:"mx-auto w-full max-w-6xl px-4 pb-32 pt-6 md:px-8 md:pb-32 md:pt-8",children:a})}export{o as P};

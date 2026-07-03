@@ -132,13 +132,38 @@ export default function Settings() {
             </div>
           </div>
         </div>
-        <Toggle
-          label="Cinematic video background"
-          sub="Real footage instead of the animated scene. Heavier on mobile data."
-          on={s.bgVideo}
-          onChange={s.setBgVideo}
-        />
-        {!s.bgVideo && (
+        <div className="rounded-xl border border-hairline bg-chip px-4 py-3">
+          <div className="mb-2.5">
+            <div className="text-sm font-medium text-text-hi">Backdrop</div>
+            <div className="text-xs text-text-dim">
+              Animated scene, real footage, or one flat colour.
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            {(
+              [
+                { id: "shader", label: "Animated" },
+                { id: "video", label: "Footage" },
+                { id: "solid", label: "Minimal" },
+              ] as const
+            ).map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => s.setBgMode(m.id)}
+                aria-pressed={s.bgMode === m.id}
+                className={`rounded-lg py-2 text-xs font-semibold transition-colors ${
+                  s.bgMode === m.id
+                    ? "bg-cinema-500 text-[#16161a]"
+                    : "bg-field text-text-dim hover:text-text-hi"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {s.bgMode === "shader" && (
           <SliderRow
             label="Backdrop motion"
             sub="How fast the scene drifts."
@@ -150,16 +175,18 @@ export default function Settings() {
             onChange={s.setBgSpeed}
           />
         )}
-        <SliderRow
-          label="Backdrop dim"
-          sub="Darkens the backdrop so cards + text stay readable."
-          value={s.bgDim}
-          min={0.1}
-          max={0.85}
-          step={0.01}
-          format={(v) => `${Math.round(v * 100)}%`}
-          onChange={s.setBgDim}
-        />
+        {s.bgMode !== "solid" && (
+          <SliderRow
+            label="Backdrop dim"
+            sub="Darkens the backdrop so cards + text stay readable."
+            value={s.bgDim}
+            min={0.1}
+            max={0.85}
+            step={0.01}
+            format={(v) => `${Math.round(v * 100)}%`}
+            onChange={s.setBgDim}
+          />
+        )}
         <SliderRow
           label="Film grain"
           sub="The analog texture over the app. 0 turns it off."
@@ -326,19 +353,74 @@ export default function Settings() {
           <div>
             <div className="text-sm font-semibold text-text-hi">Aurora's brain</div>
             <div className="text-xs text-text-dim">
-              By default Aurora runs on Groq (free, fast). Switch to your Claude subscription to
-              power chat, weekly prompt generation and skill feedback through your plan — Aurora
-              draws on Claude's full knowledge including current info. Falls back to Groq if the
-              bridge isn't set up. Setup: see claude-bridge/README.
+              Powers chat, weekly prompts and skill feedback. Anything Claude falls back to Groq
+              if it can't be reached.
             </div>
           </div>
         </div>
-        <Toggle
-          label="Use my Claude (Pro)"
-          sub="Route Aurora through your Claude plan."
-          on={s.useClaude}
-          onChange={s.setUseClaude}
-        />
+        <div className="space-y-2">
+          {(
+            [
+              {
+                id: "groq",
+                label: "Groq",
+                sub: "Free and fast. Decent, not brilliant.",
+              },
+              {
+                id: "bridge",
+                label: "Claude bridge",
+                sub: "The owner's Claude subscription via the bridge service — see claude-bridge/README.",
+              },
+              {
+                id: "apikey",
+                label: "My Anthropic API key",
+                sub: "Best answers, your usage. Key stays on this device and is only sent with your requests.",
+              },
+            ] as const
+          ).map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => s.setAiProvider(p.id)}
+              aria-pressed={s.aiProvider === p.id}
+              className={`flex w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left transition-colors ${
+                s.aiProvider === p.id
+                  ? "border-cinema-500/60 bg-cinema-500/[0.08]"
+                  : "border-hairline bg-chip hover:border-hairline-strong"
+              }`}
+            >
+              <div>
+                <div className="text-sm font-medium text-text-hi">{p.label}</div>
+                <div className="text-xs text-text-dim">{p.sub}</div>
+              </div>
+              <span
+                className={`h-4 w-4 shrink-0 rounded-full border-2 transition-colors ${
+                  s.aiProvider === p.id ? "border-cinema-500 bg-cinema-500" : "border-hairline-strong"
+                }`}
+              />
+            </button>
+          ))}
+        </div>
+        {s.aiProvider === "apikey" && (
+          <div>
+            <label htmlFor="anthropic-key" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-text-dim">
+              Anthropic API key
+            </label>
+            <input
+              id="anthropic-key"
+              type="password"
+              value={s.anthropicKey}
+              onChange={(e) => s.setAnthropicKey(e.target.value)}
+              placeholder="sk-ant-…"
+              autoComplete="off"
+              className="w-full rounded-xl border border-hairline bg-field px-4 py-3 text-sm text-text-hi outline-none focus:border-cinema-500/70"
+            />
+            <p className="mt-1.5 text-[11px] text-text-dim">
+              Create one at console.anthropic.com. Stored only in this browser; sent over HTTPS
+              with each request and never saved on the server.
+            </p>
+          </div>
+        )}
       </GlassCard>
 
       <GlassCard className="divide-y divide-divide">

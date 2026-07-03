@@ -6,7 +6,7 @@
 // ============================================================
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ai, session } from "../lib/endpoints";
-import { useSettings } from "../store/settings";
+import { useSettings, aiRequestFields } from "../store/settings";
 import { toast } from "../store/toast";
 import { useMe } from "./queries";
 import { personalizationText } from "../lib/personalize";
@@ -15,7 +15,8 @@ import type { GeneratedPrompt, MeResponse, Snapshot } from "../types";
 export function useGeneratePrompts() {
   const region = useSettings((s) => s.region);
   const seasonalPrompts = useSettings((s) => s.seasonalPrompts);
-  const useClaude = useSettings((s) => s.useClaude);
+  const aiProvider = useSettings((s) => s.aiProvider);
+  const anthropicKey = useSettings((s) => s.anthropicKey);
   const { data } = useMe();
   const personalization = personalizationText(
     data?.snapshot?.profile,
@@ -25,9 +26,11 @@ export function useGeneratePrompts() {
   );
   return useMutation({
     // Pass an optional idea/description for a trip → personalised prompt.
-    // Respects the "Use my Claude (Pro)" toggle — same bridge as chat.
-    mutationFn: (idea?: string) =>
-      ai.generatePrompts(useClaude ? "claude" : "groq", { region, seasonalPrompts, personalization, idea }),
+    // Follows the Aurora's-brain setting (Groq / bridge / own key).
+    mutationFn: (idea?: string) => {
+      const { provider, apiKey } = aiRequestFields(aiProvider, anthropicKey);
+      return ai.generatePrompts(provider, { region, seasonalPrompts, personalization, idea }, apiKey);
+    },
     onError: () => toast.error("Couldn't generate prompts — the server may be waking."),
   });
 }

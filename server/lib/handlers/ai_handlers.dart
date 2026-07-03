@@ -172,8 +172,9 @@ Future<String> _callClaude({
   required String systemPrompt,
   required List<Map<String, dynamic>> messages,
   int maxTokens = 400,
+  String? apiKey, // per-user key sent with the request; falls back to server env
 }) async {
-  final key = Platform.environment['ANTHROPIC_API_KEY'];
+  final key = apiKey ?? Platform.environment['ANTHROPIC_API_KEY'];
   if (key == null || key.isEmpty) throw StateError('ANTHROPIC_API_KEY not set');
 
   final res = await http.post(
@@ -184,7 +185,7 @@ Future<String> _callClaude({
       'Content-Type': 'application/json',
     },
     body: jsonEncode({
-      'model': 'claude-sonnet-4-6',
+      'model': 'claude-sonnet-5',
       'max_tokens': maxTokens,
       'system': systemPrompt,
       'messages': messages,
@@ -232,8 +233,22 @@ Future<Response> handleAiChat(Request request) async {
     }
 
     final bridgeUrl = Platform.environment['CLAUDE_BRIDGE_URL'];
+    final userKey = (body['apiKey'] as String?)?.trim();
     String reply;
-    if (provider == 'claude' && bridgeUrl != null && bridgeUrl.isNotEmpty) {
+    if (provider == 'claude' && userKey != null && userKey.isNotEmpty) {
+      // The user's own Anthropic key — used for this request only, never stored.
+      try {
+        reply = await _callClaude(
+          systemPrompt: _chatSystemPrompt,
+          messages: messages,
+          maxTokens: 900,
+          apiKey: userKey,
+        );
+      } catch (e) {
+        stderr.writeln('[ai-chat] user key failed, falling back to groq: $e');
+        reply = await _callGroq(systemPrompt: _chatSystemPrompt, messages: messages, maxTokens: 900);
+      }
+    } else if (provider == 'claude' && bridgeUrl != null && bridgeUrl.isNotEmpty) {
       // Route through the owner's Claude subscription (Agent SDK bridge).
       // Flatten the conversation into a transcript so the bridge gets one prompt.
       // allowTools: true → bridge may use WebSearch if the owner has an MCP
@@ -313,8 +328,25 @@ Future<Response> handleSkillFeedback(Request request) async {
     ].join('\n');
 
     final bridgeUrl2 = Platform.environment['CLAUDE_BRIDGE_URL'];
+    final userKey2 = (body['apiKey'] as String?)?.trim();
     String reply;
-    if (provider == 'claude' && bridgeUrl2 != null && bridgeUrl2.isNotEmpty) {
+    if (provider == 'claude' && userKey2 != null && userKey2.isNotEmpty) {
+      try {
+        reply = await _callClaude(
+          systemPrompt: _skillSystemPrompt,
+          messages: [{'role': 'user', 'content': userMessage}],
+          maxTokens: 500,
+          apiKey: userKey2,
+        );
+      } catch (e) {
+        stderr.writeln('[skill-feedback] user key failed, falling back to groq: $e');
+        reply = await _callGroq(
+          systemPrompt: _skillSystemPrompt,
+          messages: [{'role': 'user', 'content': userMessage}],
+          maxTokens: 500,
+        );
+      }
+    } else if (provider == 'claude' && bridgeUrl2 != null && bridgeUrl2.isNotEmpty) {
       try {
         reply = await callClaudeBridge(
           bridgeUrl: bridgeUrl2,

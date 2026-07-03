@@ -307,15 +307,26 @@ export function ThemeBackground() {
   const [videoFailed, setVideoFailed] = useState(false);
   const accent = useTheme((s) => s.accent);
   const customColor = useTheme((s) => s.customColor);
-  const bgVideo = useSettings((s) => s.bgVideo);
+  const bgMode = useSettings((s) => s.bgMode);
   const bgDim = useSettings((s) => s.bgDim);
 
-  // Re-try the video when the toggle flips back on (file may have been added).
+  // Re-try the video when the mode flips back (file may have been added).
   useEffect(() => {
-    if (bgVideo) setVideoFailed(false);
-  }, [bgVideo]);
+    if (bgMode === "video") setVideoFailed(false);
+  }, [bgMode]);
 
-  const useVideo = bgVideo && !videoFailed;
+  // Minimal mode — one flat colour, nothing moving.
+  if (bgMode === "solid") {
+    return (
+      <div
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{ background: "rgb(var(--bg))" }}
+        aria-hidden="true"
+      />
+    );
+  }
+
+  const useVideo = bgMode === "video" && !videoFailed;
   const videoSrc = `/bg/${videoAccent(accent, customColor)}.mp4`;
 
   return (

@@ -9,7 +9,7 @@ import { useSettings } from "../../store/settings";
 import { useMe } from "../../hooks/queries";
 import { daysUntilCycleEnd } from "../../lib/constants";
 
-const MAX_SHIFT = 4.5; // px a pupil may travel from centre
+const MAX_SHIFT = 7; // px a pupil may travel from centre — big enough to SEE
 
 export function AuroraBuddy({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const { pathname } = useLocation();
@@ -20,7 +20,6 @@ export function AuroraBuddy({ open, onToggle }: { open: boolean; onToggle: () =>
   const leftPupil = useRef<HTMLSpanElement>(null);
   const rightPupil = useRef<HTMLSpanElement>(null);
   const [blink, setBlink] = useState(false);
-  const [hover, setHover] = useState(false);
 
   // Deadline breathing down your neck? Worried brows + amber pulse.
   const snap = data?.snapshot;
@@ -50,9 +49,9 @@ export function AuroraBuddy({ open, onToggle }: { open: boolean; onToggle: () =>
       const dx = target.x - cx;
       const dy = target.y - cy;
       const d = Math.hypot(dx, dy) || 1;
-      const k = Math.min(1, d / 110); // nearby cursor → subtler shift
-      const x = (dx / d) * MAX_SHIFT * k;
-      const y = (dy / d) * MAX_SHIFT * k;
+      // Full deflection toward the cursor — the follow should be unmistakable.
+      const x = (dx / d) * MAX_SHIFT;
+      const y = (dy / d) * MAX_SHIFT;
       for (const p of [leftPupil.current, rightPupil.current]) {
         if (p) p.style.transform = `translate(${x}px, ${y}px)`;
       }
@@ -96,7 +95,9 @@ export function AuroraBuddy({ open, onToggle }: { open: boolean; onToggle: () =>
   }, []);
 
   const hidden = pathname === "/assistant";
-  const happy = hover || open; // arcs while hovered or chatting
+  // Arcs only while the panel is open — on hover the eyes keep tracking
+  // (turning them into arcs exactly when you look at them read as "broken").
+  const happy = open;
 
   return (
     <AnimatePresence>
@@ -110,8 +111,6 @@ export function AuroraBuddy({ open, onToggle }: { open: boolean; onToggle: () =>
           transition={{ type: "spring", stiffness: 260, damping: 20 }}
           whileHover={{ scale: 1.07 }}
           whileTap={{ scale: 0.9 }}
-          onHoverStart={() => setHover(true)}
-          onHoverEnd={() => setHover(false)}
           onClick={onToggle}
           aria-label={open ? "Close Aurora chat" : "Chat with Aurora"}
           aria-expanded={open}
@@ -145,16 +144,16 @@ export function AuroraBuddy({ open, onToggle }: { open: boolean; onToggle: () =>
               ) : (
                 <span
                   key={i}
-                  className="relative flex h-[26px] w-[18px] items-center justify-center overflow-hidden rounded-full bg-text-hi transition-transform duration-100"
+                  className="relative flex h-[28px] w-[20px] items-center justify-center overflow-hidden rounded-full bg-white transition-transform duration-100"
                   style={{ transform: blink ? "scaleY(0.1)" : "scaleY(1)" }}
                 >
                   <span
                     ref={ref}
-                    className="h-[9px] w-[9px] rounded-full"
-                    style={{ background: "rgb(var(--c-600))", transition: "transform 80ms linear" }}
+                    className="h-[11px] w-[11px] rounded-full bg-[#1c1a17]"
+                    style={{ transition: "transform 70ms linear" }}
                   />
                   {/* eye shine */}
-                  <span className="pointer-events-none absolute left-[3px] top-[5px] h-[3px] w-[3px] rounded-full bg-white/70" />
+                  <span className="pointer-events-none absolute left-[4px] top-[6px] h-[3px] w-[3px] rounded-full bg-white/80" />
                 </span>
               )
             )}

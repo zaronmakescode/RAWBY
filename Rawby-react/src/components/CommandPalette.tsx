@@ -28,8 +28,8 @@ export function CommandPalette() {
   const mode = useTheme((s) => s.mode);
   const toggleMode = useTheme((s) => s.toggleMode);
   const setAccent = useTheme((s) => s.setAccent);
-  const bgVideo = useSettings((s) => s.bgVideo);
-  const setBgVideo = useSettings((s) => s.setBgVideo);
+  const bgMode = useSettings((s) => s.bgMode);
+  const setBgMode = useSettings((s) => s.setBgMode);
   const logout = useAuth((s) => s.logout);
   const isAdmin = useAuth((s) => s.user?.isAdmin);
 
@@ -64,13 +64,20 @@ export function CommandPalette() {
         keywords: `colour color theme ${a.id}`,
         run: () => setAccent(a.id),
       })),
-      {
-        id: "bgvideo",
-        label: bgVideo ? "Backdrop: switch to animated scene" : "Backdrop: switch to real footage",
-        icon: "film",
-        keywords: "background video shader cinematic",
-        run: () => setBgVideo(!bgVideo),
-      },
+      ...(["shader", "video", "solid"] as const)
+        .filter((m) => m !== bgMode)
+        .map((m) => ({
+          id: `bg-${m}`,
+          label:
+            m === "shader"
+              ? "Backdrop: animated scene"
+              : m === "video"
+                ? "Backdrop: real footage"
+                : "Backdrop: single colour (minimal)",
+          icon: "film" as IconName,
+          keywords: "background video shader solid flat minimal cinematic",
+          run: () => setBgMode(m),
+        })),
       {
         id: "logout",
         label: "Sign out",
@@ -83,7 +90,7 @@ export function CommandPalette() {
       },
     ];
     return [...pages, ...actions];
-  }, [nav, mode, toggleMode, setAccent, bgVideo, setBgVideo, logout, isAdmin]);
+  }, [nav, mode, toggleMode, setAccent, bgMode, setBgMode, logout, isAdmin]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

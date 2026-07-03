@@ -11,7 +11,7 @@ import { useNote, useAurora } from "../../hooks/usePersonal";
 import { useTrips } from "../../hooks/useTrips";
 import { gearLabels, filmSummaries, tripSummaries } from "../../lib/personalize";
 import { useAuth } from "../../store/auth";
-import { useSettings } from "../../store/settings";
+import { useSettings, aiRequestFields } from "../../store/settings";
 import type { ChatMessage, ChatContext } from "../../types";
 
 const GREETING: ChatMessage = {
@@ -34,7 +34,8 @@ export function AuroraChat({ compact = false }: { compact?: boolean }) {
   const { note } = useNote();
   const { thread, saveThread } = useAurora();
   const { trips } = useTrips();
-  const useClaude = useSettings((s) => s.useClaude);
+  const aiProvider = useSettings((s) => s.aiProvider);
+  const anthropicKey = useSettings((s) => s.anthropicKey);
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
   const hydrated = useRef(false);
@@ -68,7 +69,10 @@ export function AuroraChat({ compact = false }: { compact?: boolean }) {
   };
 
   const m = useMutation({
-    mutationFn: (history: ChatMessage[]) => ai.chat(history, context, useClaude ? "claude" : "groq"),
+    mutationFn: (history: ChatMessage[]) => {
+      const { provider, apiKey } = aiRequestFields(aiProvider, anthropicKey);
+      return ai.chat(history, context, provider, apiKey);
+    },
     onSuccess: (reply) =>
       setMessages((prev) => {
         const next = [...prev, { role: "assistant" as const, content: reply }];

@@ -21,30 +21,37 @@ export const COUNTRIES = [
   "United Arab Emirates", "United Kingdom", "United States", "Vietnam",
 ] as const;
 
+/** Aurora's brain: free Groq, the owner's Claude bridge, or your own key. */
+export type AiProvider = "groq" | "bridge" | "apikey";
+/** Backdrop: animated shader scene, real footage, or a flat single colour. */
+export type BgMode = "shader" | "video" | "solid";
+
 interface SettingsState {
   region: string;
   seasonalPrompts: boolean;
-  showCategories: boolean; // the videography box on Home
-  holidayMode: boolean; // break the weekly Friday cycle — the clock starts when you start a project
+  showCategories: boolean; // the videography web on Home
+  holidayMode: boolean; // break the weekly cycle — the clock starts when you start a project
   holidayDays: number; // length of the filming window in holiday mode
-  useClaude: boolean; // route Aurora through the owner's Claude subscription (bridge)
+  aiProvider: AiProvider;
+  anthropicKey: string; // user's own Anthropic API key (stored locally, sent per request)
   cycleDay: number; // weekday the weekly cycle starts (0 Sun … 6 Sat; default 5 Friday)
-  bgVideo: boolean; // real cinematic video background instead of the shader
+  bgMode: BgMode;
   bgSpeed: number; // shader motion speed multiplier (0.25–2)
   bgDim: number; // backdrop veil opacity (0.1–0.85) — higher = darker/calmer
   grainAmount: number; // film grain multiplier (0–2); 0 hides it
   reduceMotion: boolean; // damp app animations regardless of OS setting
   showTrips: boolean; // Holiday mode card on Home
   showSteps: boolean; // weekly production stepper on Home
-  showRecent: boolean; // recent films + Aurora cards on Home
+  showRecent: boolean; // recent films card on Home
   setRegion: (r: string) => void;
   setSeasonal: (s: boolean) => void;
   setShowCategories: (s: boolean) => void;
   setHolidayMode: (s: boolean) => void;
   setHolidayDays: (n: number) => void;
-  setUseClaude: (s: boolean) => void;
+  setAiProvider: (p: AiProvider) => void;
+  setAnthropicKey: (k: string) => void;
   setCycleDay: (n: number) => void;
-  setBgVideo: (s: boolean) => void;
+  setBgMode: (m: BgMode) => void;
   setBgSpeed: (n: number) => void;
   setBgDim: (n: number) => void;
   setGrainAmount: (n: number) => void;
@@ -52,6 +59,18 @@ interface SettingsState {
   setShowTrips: (s: boolean) => void;
   setShowSteps: (s: boolean) => void;
   setShowRecent: (s: boolean) => void;
+}
+
+/** What a chat/prompt request should send for the current provider choice. */
+export function aiRequestFields(aiProvider: AiProvider, anthropicKey: string): {
+  provider: "groq" | "claude";
+  apiKey?: string;
+} {
+  if (aiProvider === "apikey" && anthropicKey.trim()) {
+    return { provider: "claude", apiKey: anthropicKey.trim() };
+  }
+  if (aiProvider === "bridge") return { provider: "claude" };
+  return { provider: "groq" };
 }
 
 export const useSettings = create<SettingsState>()(
@@ -62,9 +81,10 @@ export const useSettings = create<SettingsState>()(
       showCategories: true,
       holidayMode: false,
       holidayDays: 7,
-      useClaude: false,
+      aiProvider: "groq",
+      anthropicKey: "",
       cycleDay: 5,
-      bgVideo: false,
+      bgMode: "shader",
       bgSpeed: 1,
       bgDim: 0.44,
       grainAmount: 1,
@@ -77,9 +97,10 @@ export const useSettings = create<SettingsState>()(
       setShowCategories: (showCategories) => set({ showCategories }),
       setHolidayMode: (holidayMode) => set({ holidayMode }),
       setHolidayDays: (holidayDays) => set({ holidayDays: Math.max(1, Math.min(60, holidayDays)) }),
-      setUseClaude: (useClaude) => set({ useClaude }),
+      setAiProvider: (aiProvider) => set({ aiProvider }),
+      setAnthropicKey: (anthropicKey) => set({ anthropicKey }),
       setCycleDay: (cycleDay) => set({ cycleDay: Math.max(0, Math.min(6, Math.round(cycleDay))) }),
-      setBgVideo: (bgVideo) => set({ bgVideo }),
+      setBgMode: (bgMode) => set({ bgMode }),
       setBgSpeed: (bgSpeed) => set({ bgSpeed: Math.max(0.25, Math.min(2, bgSpeed)) }),
       setBgDim: (bgDim) => set({ bgDim: Math.max(0.1, Math.min(0.85, bgDim)) }),
       setGrainAmount: (grainAmount) => set({ grainAmount: Math.max(0, Math.min(2, grainAmount)) }),
@@ -88,6 +109,17 @@ export const useSettings = create<SettingsState>()(
       setShowSteps: (showSteps) => set({ showSteps }),
       setShowRecent: (showRecent) => set({ showRecent }),
     }),
-    { name: "rawby-settings" }
+    {
+      name: "rawby-settings",
+      // Old persisted shapes carry over: bgVideo:true → video mode,
+      // useClaude:true → bridge provider.
+      migrate: (persisted: unknown) => {
+        const p = (persisted ?? {}) as Record<string, unknown>;
+        if (p.bgMode == null && p.bgVideo === true) p.bgMode = "video";
+        if (p.aiProvider == null && p.useClaude === true) p.aiProvider = "bridge";
+        return p as never;
+      },
+      version: 1,
+    }
   )
 );

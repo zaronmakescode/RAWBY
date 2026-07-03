@@ -152,11 +152,6 @@ export default function Home() {
                     <Icon name="arrowRight" size={16} />
                   </GradientButton>
                 </Link>
-                <Link to="/assistant">
-                  <GradientButton variant="ghost">
-                    <Icon name="sparkles" size={16} /> Ask Aurora
-                  </GradientButton>
-                </Link>
               </div>
             </div>
 
@@ -268,14 +263,8 @@ export default function Home() {
           to="/settings"
           className="inline-flex items-center gap-1.5 rounded-full bg-chip px-3 py-1.5 text-text-dim transition-colors hover:text-text-hi"
         >
-          <Icon name="aperture" size={13} /> {region}
+          <Icon name="settings" size={13} /> {region}
           {seasonal ? " · seasonal" : ""}
-        </Link>
-        <Link
-          to="/prompts"
-          className="inline-flex items-center gap-1.5 rounded-full bg-cinema-500/15 px-3 py-1.5 font-semibold text-cinema-300 transition-colors hover:bg-cinema-500/25"
-        >
-          <Icon name="sparkles" size={13} /> Generate prompts
         </Link>
       </div>
 
@@ -439,10 +428,10 @@ export default function Home() {
       </GlassCard>
       )}
 
-      {/* History + Aurora */}
+      {/* Recent films — Aurora's card is gone; her chat head floats nearby */}
       {showRecent && (
-      <Reveal className="mt-14 grid gap-4 lg:grid-cols-3">
-        <GlassCard className="lg:col-span-2">
+      <Reveal className="mt-14">
+        <GlassCard>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="h-display text-display-sm font-semibold text-text-hi">Recent films</h3>
             <Link to="/profile" className="text-xs font-semibold text-cinema-400 hover:underline">
@@ -462,6 +451,7 @@ export default function Home() {
                     <div className="text-sm font-semibold text-text-hi">{h.title}</div>
                     <div className="text-xs text-text-dim">
                       {h.level} · {h.date ?? `Week ${h.week ?? "—"}`}
+                      {h.location?.label ? ` · ${h.location.label}` : ""}
                     </div>
                   </div>
                   <span className="h-display text-lg font-bold text-cinema-400 tabular-nums">
@@ -471,23 +461,6 @@ export default function Home() {
               ))}
             </ul>
           )}
-        </GlassCard>
-
-        <GlassCard interactive className="flex flex-col justify-between">
-          <div>
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#E85D75]/15 text-[#E85D75]">
-              <Icon name="sparkles" size={22} />
-            </div>
-            <h3 className="h-display text-lg font-bold text-text-hi">Aurora</h3>
-            <p className="mt-1 text-sm text-text-dim">
-              Your cinematic co-pilot. Stuck on a shot, a cut, or a grade? Ask.
-            </p>
-          </div>
-          <Link to="/assistant" className="mt-4">
-            <GradientButton variant="story" className="w-full">
-              Chat with Aurora
-            </GradientButton>
-          </Link>
         </GlassCard>
       </Reveal>
       )}

@@ -82,6 +82,7 @@
   --grain-opacity: 0.045;
   --scene-veil: 17 15 13 / 0.55;
   --dock: 22 22 25 / 0.42; /* neutral glass — no brown on the docks */
+  --logo-ink: var(--c-400); /* flat wordmark colour — brighter accent on dark */
 }
 [data-theme="light"] {
   color-scheme: light;
@@ -102,6 +103,7 @@
   --grain-opacity: 0.02;
   --scene-veil: 238 233 226 / 0.5;
   --dock: 250 250 251 / 0.62; /* neutral glass */
+  --logo-ink: var(--c-700); /* deeper accent for contrast on cream */
 }
 
 * {

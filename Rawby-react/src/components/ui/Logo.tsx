@@ -1,58 +1,45 @@
 // ============================================================
-// RAWBY logo — a solid block with the wordmark carved (engraved)
-// into it, bold. Colour is driven by the --brand-* CSS variables
-// (default cinema amber / gold) so a theme change repaints it.
+// RAWBY logo — a flat editorial wordmark in the display serif,
+// tinted by the accent (--brand-* / cinema tokens). No block,
+// no bevel: the type IS the brand.
 // ============================================================
 type Size = "sm" | "md" | "lg";
 
-const SIZES: Record<Size, { pad: string; text: string; radius: string }> = {
-  sm: { pad: "px-2.5 py-1", text: "text-base", radius: "rounded-lg" },
-  md: { pad: "px-3.5 py-1.5", text: "text-2xl", radius: "rounded-xl" },
-  lg: { pad: "px-5 py-2.5", text: "text-4xl", radius: "rounded-2xl" },
+const SIZES: Record<Size, string> = {
+  sm: "text-lg",
+  md: "text-2xl",
+  lg: "text-4xl",
 };
 
-// Engraved text: dark fill + lower-edge highlight = pressed inward.
-const CARVED_TEXT: React.CSSProperties = {
-  color: "var(--brand-ink)",
-  textShadow: "0 1px 0 rgba(255,255,255,0.35), 0 -1px 1px rgba(0,0,0,0.45)",
-};
-
-const BLOCK: React.CSSProperties = {
-  // Weighted toward the mid/deep brand tones — the light --brand-1 only kisses
-  // the top edge, so the block reads matte metal instead of neon.
-  background:
-    "linear-gradient(155deg, var(--brand-1) 0%, var(--brand-2) 26%, var(--brand-3) 100%)",
-  boxShadow:
-    "inset 0 2px 5px rgba(0,0,0,0.45), inset 0 -2px 4px rgba(255,255,255,0.14), 0 6px 18px rgba(0,0,0,0.45)",
-  border: "1px solid rgba(0,0,0,0.28)",
+const WORDMARK: React.CSSProperties = {
+  // Deep→mid accent sweep keeps it rich without reading neon.
+  background: "linear-gradient(115deg, var(--brand-2) 0%, var(--brand-3) 90%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
 };
 
 export function Logo({ size = "md", className = "" }: { size?: Size; className?: string }) {
-  const s = SIZES[size];
   return (
-    <div
-      className={`inline-flex select-none items-center ${s.pad} ${s.radius} ${className}`}
-      style={BLOCK}
+    <span
+      className={`h-display inline-flex select-none items-baseline font-black tracking-[0.08em] ${SIZES[size]} ${className}`}
       aria-label="RAWBY"
+      style={WORDMARK}
     >
-      <span className={`h-display font-extrabold tracking-[0.12em] ${s.text}`} style={CARVED_TEXT}>
-        RAWBY
-      </span>
-    </div>
+      RAWBY
+    </span>
   );
 }
 
-/** Compact square block with just an engraved “R”. */
+/** Compact square mark — flat accent chip with the R, for tight spots. */
 export function LogoMark({ className = "" }: { className?: string }) {
   return (
-    <div
-      className={`flex h-9 w-9 select-none items-center justify-center rounded-lg ${className}`}
-      style={BLOCK}
+    <span
+      className={`h-display flex h-9 w-9 select-none items-center justify-center rounded-lg text-xl font-black ${className}`}
+      style={{ background: "rgb(var(--c-500) / 0.14)", color: "rgb(var(--c-500))" }}
       aria-label="RAWBY"
     >
-      <span className="h-display text-xl font-extrabold" style={CARVED_TEXT}>
-        R
-      </span>
-    </div>
+      R
+    </span>
   );
 }

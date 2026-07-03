@@ -1,30 +1,31 @@
-// Aurora's floating chat head — a little glass bubble with a pair of eyes
-// that follow your cursor around the app. Click it to open the assistant.
-// On touch devices (no cursor) the eyes wander on their own. Blinks too.
+// Aurora's chat head — a glass bubble with big expressive eyes that follow
+// your cursor. Click to open her chat panel. Moods: idle (wander + blink),
+// hover (happy arcs), urgent (worried brows + amber pulse when the deadline
+// is inside 24h), open (soft content arcs while the panel is up).
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSettings } from "../../store/settings";
 import { useMe } from "../../hooks/queries";
 import { daysUntilCycleEnd } from "../../lib/constants";
 
-const MAX_SHIFT = 3.2; // px a pupil may travel from centre
+const MAX_SHIFT = 4.5; // px a pupil may travel from centre
 
-export function AuroraBuddy() {
-  const nav = useNavigate();
+export function AuroraBuddy({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const { pathname } = useLocation();
   const reduceMotion = useSettings((s) => s.reduceMotion);
   const cycleDay = useSettings((s) => s.cycleDay);
   const { data } = useMe();
-
-  // Deadline breathing down your neck? The bubble pulses amber.
-  const snap = data?.snapshot;
-  const holiday = !!(snap?.filmingStartedAt && snap?.filmingDeadline);
-  const urgent = !!snap?.promptText && !holiday && daysUntilCycleEnd(cycleDay) <= 1;
   const wrapRef = useRef<HTMLButtonElement>(null);
   const leftPupil = useRef<HTMLSpanElement>(null);
   const rightPupil = useRef<HTMLSpanElement>(null);
   const [blink, setBlink] = useState(false);
+  const [hover, setHover] = useState(false);
+
+  // Deadline breathing down your neck? Worried brows + amber pulse.
+  const snap = data?.snapshot;
+  const holiday = !!(snap?.filmingStartedAt && snap?.filmingDeadline);
+  const urgent = !!snap?.promptText && !holiday && daysUntilCycleEnd(cycleDay) <= 1;
 
   // Pupils chase the cursor (rAF-throttled, no React re-renders).
   useEffect(() => {
@@ -49,7 +50,7 @@ export function AuroraBuddy() {
       const dx = target.x - cx;
       const dy = target.y - cy;
       const d = Math.hypot(dx, dy) || 1;
-      const k = Math.min(1, d / 90); // nearby cursor → subtler shift
+      const k = Math.min(1, d / 110); // nearby cursor → subtler shift
       const x = (dx / d) * MAX_SHIFT * k;
       const y = (dy / d) * MAX_SHIFT * k;
       for (const p of [leftPupil.current, rightPupil.current]) {
@@ -95,6 +96,7 @@ export function AuroraBuddy() {
   }, []);
 
   const hidden = pathname === "/assistant";
+  const happy = hover || open; // arcs while hovered or chatting
 
   return (
     <AnimatePresence>
@@ -106,41 +108,61 @@ export function AuroraBuddy() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0, y: 16 }}
           transition={{ type: "spring", stiffness: 260, damping: 20 }}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.92 }}
-          onClick={() => nav("/assistant")}
-          aria-label="Chat with Aurora"
-          title={urgent ? "Deadline's close — ask Aurora" : "Aurora"}
-          className="group fixed bottom-24 right-4 z-nav flex h-14 w-14 items-center justify-center rounded-full border border-white/[0.08] bg-[rgb(var(--dock))] shadow-[0_8px_24px_-8px_rgb(var(--c-500)/0.45)] backdrop-blur-md md:bottom-8 md:right-6"
+          whileHover={{ scale: 1.07 }}
+          whileTap={{ scale: 0.9 }}
+          onHoverStart={() => setHover(true)}
+          onHoverEnd={() => setHover(false)}
+          onClick={onToggle}
+          aria-label={open ? "Close Aurora chat" : "Chat with Aurora"}
+          aria-expanded={open}
+          className="group fixed bottom-24 right-3 z-modal flex h-[72px] w-[72px] items-center justify-center rounded-full border border-white/[0.08] bg-[rgb(var(--dock))] shadow-[0_10px_30px_-10px_rgb(var(--c-500)/0.5)] backdrop-blur-md md:bottom-8 md:right-6"
         >
           {/* soft accent halo */}
           <span
             className="pointer-events-none absolute inset-0 rounded-full opacity-60 transition-opacity duration-300 group-hover:opacity-100"
-            style={{ boxShadow: "inset 0 0 14px rgb(var(--c-500) / 0.22)" }}
+            style={{ boxShadow: "inset 0 0 18px rgb(var(--c-500) / 0.24)" }}
           />
           {/* deadline pulse — under 24h on an active prompt */}
-          {urgent && !reduceMotion && (
+          {urgent && !reduceMotion && !open && (
             <span className="pointer-events-none absolute inset-0 animate-ping rounded-full border-2 border-cinema-500/50" />
           )}
-          {/* eyes */}
-          <span className="flex items-center gap-1.5">
-            {[leftPupil, rightPupil].map((ref, i) => (
-              <span
-                key={i}
-                className="relative flex h-[18px] w-[13px] items-center justify-center overflow-hidden rounded-full bg-text-hi transition-transform duration-100"
-                style={{ transform: blink ? "scaleY(0.12)" : "scaleY(1)" }}
-              >
+
+          {/* face */}
+          <span className="relative flex items-center gap-2">
+            {/* worried brows when the clock is tight */}
+            {urgent && !happy && (
+              <>
+                <span className="absolute -top-2.5 left-[1px] h-[2.5px] w-[13px] -rotate-[14deg] rounded-full bg-text-hi/80" />
+                <span className="absolute -top-2.5 right-[1px] h-[2.5px] w-[13px] rotate-[14deg] rounded-full bg-text-hi/80" />
+              </>
+            )}
+            {[leftPupil, rightPupil].map((ref, i) =>
+              happy ? (
+                // closed happy arcs (∩)
+                <span key={i} className="flex h-[26px] w-[18px] items-end justify-center pb-[6px]">
+                  <span className="h-[9px] w-[15px] rounded-t-full border-[3px] border-b-0 border-text-hi" />
+                </span>
+              ) : (
                 <span
-                  ref={ref}
-                  className="h-[7px] w-[7px] rounded-full"
-                  style={{ background: "rgb(var(--c-600))", transition: "transform 80ms linear" }}
-                />
-              </span>
-            ))}
+                  key={i}
+                  className="relative flex h-[26px] w-[18px] items-center justify-center overflow-hidden rounded-full bg-text-hi transition-transform duration-100"
+                  style={{ transform: blink ? "scaleY(0.1)" : "scaleY(1)" }}
+                >
+                  <span
+                    ref={ref}
+                    className="h-[9px] w-[9px] rounded-full"
+                    style={{ background: "rgb(var(--c-600))", transition: "transform 80ms linear" }}
+                  />
+                  {/* eye shine */}
+                  <span className="pointer-events-none absolute left-[3px] top-[5px] h-[3px] w-[3px] rounded-full bg-white/70" />
+                </span>
+              )
+            )}
           </span>
-          {/* tiny sparkle on hover */}
-          <span className="pointer-events-none absolute -right-0.5 -top-0.5 text-[10px] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            ✦
+
+          {/* name tag on hover */}
+          <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-hairline bg-[rgb(var(--surface))] px-2.5 py-1 text-[11px] font-semibold text-text-hi opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+            {urgent ? "Deadline's close — talk to me" : "Aurora"}
           </span>
         </motion.button>
       )}

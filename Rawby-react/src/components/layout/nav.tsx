@@ -7,6 +7,7 @@ export interface NavItem {
   icon: IconName;
 }
 
+// Aurora is intentionally NOT here — her floating chat head is the entry.
 export const NAV_ITEMS: NavItem[] = [
   { to: "/home", label: "Home", icon: "home" },
   { to: "/prompts", label: "Prompts", icon: "clapper" },
@@ -14,7 +15,6 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/atlas", label: "Atlas", icon: "globe" },
   { to: "/gear", label: "Gear", icon: "aperture" },
   { to: "/idea-bank", label: "Ideas", icon: "bulb" },
-  { to: "/assistant", label: "Aurora", icon: "sparkles" },
 ];
 
 export const SECONDARY_ITEMS: NavItem[] = [
@@ -36,7 +36,6 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Create",
     items: [
       { to: "/prompts", label: "Prompts", icon: "clapper" },
-      { to: "/assistant", label: "Aurora", icon: "sparkles" },
       { to: "/idea-bank", label: "Ideas", icon: "bulb" },
     ],
   },

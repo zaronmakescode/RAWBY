@@ -238,6 +238,69 @@ function videoAccent(accent: Accent, customColor: string): string {
   return accent === "custom" ? nearestPresetAccent(customColor) : accent;
 }
 
+// Seamless looping video — two stacked players crossfading at the loop
+// point so the restart is invisible.
+const FADE_S = 1.4;
+function CrossfadeVideo({ src, onFail }: { src: string; onFail: () => void }) {
+  const refs = [useRef<HTMLVideoElement>(null), useRef<HTMLVideoElement>(null)] as const;
+  const [front, setFront] = useState<0 | 1>(0);
+
+  useEffect(() => {
+    // New source → reset to player 0.
+    setFront(0);
+    const v0 = refs[0].current;
+    const v1 = refs[1].current;
+    if (v1) {
+      v1.pause();
+      v1.currentTime = 0;
+    }
+    v0?.play().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src]);
+
+  function handleTime(idx: 0 | 1) {
+    const cur = refs[idx].current;
+    const other = refs[idx === 0 ? 1 : 0].current;
+    if (!cur || !other || idx !== front) return;
+    if (!cur.duration || Number.isNaN(cur.duration)) return;
+    const remaining = cur.duration - cur.currentTime;
+    if (remaining <= FADE_S && other.paused) {
+      other.currentTime = 0;
+      other.play().catch(() => {});
+      setFront(idx === 0 ? 1 : 0); // opacity swap does the blend
+    }
+  }
+
+  function handleEnded(idx: 0 | 1) {
+    const v = refs[idx].current;
+    if (v) {
+      v.pause();
+      v.currentTime = 0;
+    }
+  }
+
+  return (
+    <>
+      {([0, 1] as const).map((i) => (
+        <video
+          key={i}
+          ref={refs[i]}
+          src={src}
+          muted
+          playsInline
+          autoPlay={i === 0}
+          preload="auto"
+          onTimeUpdate={() => handleTime(i)}
+          onEnded={() => handleEnded(i)}
+          onError={() => i === 0 && onFail()}
+          className="absolute inset-0 h-full w-full object-cover transition-opacity ease-linear"
+          style={{ opacity: front === i ? 1 : 0, transitionDuration: `${FADE_S}s` }}
+        />
+      ))}
+    </>
+  );
+}
+
 // ─── Public component — fixed full-screen backdrop ────────────────────────────
 export function ThemeBackground() {
   const [glError, setGlError] = useState(false);
@@ -265,16 +328,7 @@ export function ThemeBackground() {
       <div className="aurora-layer" />
 
       {useVideo ? (
-        <video
-          key={videoSrc}
-          src={videoSrc}
-          autoPlay
-          muted
-          loop
-          playsInline
-          onError={() => setVideoFailed(true)}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <CrossfadeVideo key={videoSrc} src={videoSrc} onFail={() => setVideoFailed(true)} />
       ) : (
         !glError && (
           <GlBoundary onError={() => setGlError(true)}>

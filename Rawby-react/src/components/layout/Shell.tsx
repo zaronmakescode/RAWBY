@@ -3,12 +3,13 @@
 // and a floating liquid-glass dock at the bottom for the 6 core
 // destinations. Hosts the aurora background, grain, animated routes.
 // ============================================================
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Spinner } from "../ui/Bits";
 import { FilmGrain } from "../ui/FilmGrain";
 import { AuroraBuddy } from "../ui/AuroraBuddy";
+import { AuroraPanel } from "../aurora/AuroraPanel";
 import { CommandPalette } from "../CommandPalette";
 import { ThemeBackground } from "../ui/ThemeBackground";
 import { Icon, type IconName } from "../ui/Icon";
@@ -18,6 +19,11 @@ import { Onboarding } from "../Onboarding";
 import { Dock } from "./Dock";
 import { NAV_ITEMS } from "./nav";
 import { useAuth } from "../../store/auth";
+
+// ⌘ on Apple hardware, Ctrl everywhere else.
+const IS_MAC =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? "");
+export const PALETTE_KEY_LABEL = IS_MAC ? "⌘K" : "Ctrl K";
 
 function TopIcon({ to, icon, label }: { to: string; icon: IconName; label: string }) {
   return (
@@ -40,6 +46,12 @@ export function Shell() {
   const location = useLocation();
   const user = useAuth((s) => s.user);
   const initial = user?.displayName?.[0]?.toUpperCase() ?? "?";
+  const [auroraOpen, setAuroraOpen] = useState(false);
+
+  // The full studio page supersedes the mini panel.
+  useEffect(() => {
+    if (location.pathname === "/assistant") setAuroraOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="relative min-h-screen">
@@ -54,12 +66,11 @@ export function Shell() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}
-              title="Command palette (Ctrl+K)"
+              title={`Command palette (${PALETTE_KEY_LABEL})`}
               aria-label="Open command palette"
               className="hidden h-9 items-center gap-1.5 rounded-lg border border-hairline bg-chip px-2.5 text-[11px] font-semibold text-text-dim transition-colors hover:text-text-hi md:flex"
             >
-              <Icon name="sparkles" size={13} />
-              <kbd className="tracking-wide">⌘K</kbd>
+              <kbd className="tracking-wide">{PALETTE_KEY_LABEL}</kbd>
             </button>
             <ModeToggle />
             <TopIcon to="/settings" icon="settings" label="Settings" />
@@ -93,8 +104,9 @@ export function Shell() {
       {/* Floating liquid-glass dock — core destinations */}
       <Dock items={NAV_ITEMS} />
 
-      {/* Aurora's chat head — eyes on you, one tap away */}
-      <AuroraBuddy />
+      {/* Aurora — chat head + pinned panel (her only entry; not in the dock) */}
+      <AuroraBuddy open={auroraOpen} onToggle={() => setAuroraOpen((o) => !o)} />
+      <AuroraPanel open={auroraOpen} onClose={() => setAuroraOpen(false)} />
 
       {/* ⌘K — jump anywhere */}
       <CommandPalette />

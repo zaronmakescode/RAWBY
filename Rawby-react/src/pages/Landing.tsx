@@ -49,7 +49,7 @@ const STEPS: { n: string; icon: IconName; title: string; body: string }[] = [
     n: "01",
     icon: "sparkles",
     title: "Get your prompt",
-    body: "Every Friday RAWBY hands you a fresh story prompt and a song — tuned to where you live and the season.",
+    body: "Every week RAWBY hands you a fresh story prompt and a song — tuned to where you live and the season. You pick the day.",
   },
   {
     n: "02",
@@ -118,7 +118,7 @@ export default function Landing() {
 
               <p className="measure mt-7 text-lg leading-relaxed text-text-dim">
                 RAWBY is a weekly ritual for videographers who shoot alone. A fresh prompt, a song,
-                a deadline — every Friday. You bring the camera and the nerve.
+                a deadline — every single week. You bring the camera and the nerve.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">

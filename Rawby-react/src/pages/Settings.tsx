@@ -238,6 +238,36 @@ export default function Settings() {
           on={s.showRecent}
           onChange={s.setShowRecent}
         />
+        <div className="rounded-xl border border-hairline bg-chip px-4 py-3">
+          <div className="mb-2.5">
+            <div className="text-sm font-medium text-text-hi">Navigation</div>
+            <div className="text-xs text-text-dim">
+              Bottom dock, or a left sidebar that types out the page names on hover (desktop).
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-1">
+            {(
+              [
+                { id: "bottom", label: "Bottom dock" },
+                { id: "left", label: "Left sidebar" },
+              ] as const
+            ).map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => s.setNavSide(n.id)}
+                aria-pressed={s.navSide === n.id}
+                className={`rounded-lg py-2 text-xs font-semibold transition-colors ${
+                  s.navSide === n.id
+                    ? "bg-cinema-500 text-[#16161a]"
+                    : "bg-field text-text-dim hover:text-text-hi"
+                }`}
+              >
+                {n.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </GlassCard>
 
       {/* Prompt tuning */}

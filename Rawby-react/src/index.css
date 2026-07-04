@@ -153,6 +153,33 @@ body {
   }
 }
 
+/* MapLibre — blend the controls + attribution into the theme */
+.maplibregl-ctrl-group {
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--hairline)) !important;
+  box-shadow: 0 4px 16px -6px rgb(0 0 0 / 0.5) !important;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid rgb(var(--hairline)) !important;
+}
+.maplibregl-ctrl-group button {
+  background: transparent !important;
+}
+.maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: var(--map-ctrl-filter, none);
+}
+[data-theme="dark"] {
+  --map-ctrl-filter: invert(1) hue-rotate(180deg) brightness(0.9);
+}
+.maplibregl-ctrl-attrib {
+  background: rgb(var(--surface) / 0.8) !important;
+  color: rgb(var(--text-dim)) !important;
+  border-radius: 8px !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: rgb(var(--text-dim)) !important;
+}
+
 /* Thin cinematic scrollbar */
 ::-webkit-scrollbar {
   width: 10px;

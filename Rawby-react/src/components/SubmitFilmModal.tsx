@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Modal } from "./ui/Modal";
 import { GradientButton } from "./ui/GradientButton";
 import { Icon } from "./ui/Icon";
-import { WorldMap } from "./WorldMap";
+import { MapView } from "./MapView";
 import { LEVELS, LATE_MULTIPLIERS, VIDEO_CATEGORIES } from "../lib/constants";
 import { fireConfetti } from "../lib/confetti";
 import { useSubmitFilm, computeScore } from "../hooks/useSubmitFilm";
@@ -243,7 +243,8 @@ export function SubmitFilmModal({ open, onClose, defaultLevel = "Short Story", d
               )}
             </div>
             <div className="overflow-hidden rounded-xl border border-hairline bg-field">
-              <WorldMap
+              <MapView
+                className="h-[260px] w-full"
                 interactive
                 pins={pin ? [{ ...pin, label: place || undefined }] : []}
                 onPick={(lat, lng) => setPin({ lat, lng })}

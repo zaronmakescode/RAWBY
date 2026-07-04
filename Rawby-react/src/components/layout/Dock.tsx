@@ -5,9 +5,9 @@ import { NavLink } from "react-router-dom";
 import { Icon } from "../ui/Icon";
 import type { NavItem } from "./nav";
 
-export function Dock({ items }: { items: NavItem[] }) {
+export function Dock({ items, className = "" }: { items: NavItem[]; className?: string }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-nav flex justify-center px-3 pb-3 md:pb-5">
+    <div className={`pointer-events-none fixed inset-x-0 bottom-0 z-nav flex justify-center px-3 pb-3 md:pb-5 ${className}`}>
       <nav
         aria-label="Primary"
         className="dock no-scrollbar pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-hairline bg-[rgb(var(--dock))] px-2 py-1.5"

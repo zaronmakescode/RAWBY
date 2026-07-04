@@ -12,7 +12,7 @@ import { GradientButton } from "../components/ui/GradientButton";
 import { PageHeader, Reveal } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
 import { Modal } from "../components/ui/Modal";
-import { WorldMap, type MapPin } from "../components/WorldMap";
+import { MapView, type MapPin } from "../components/MapView";
 import { useMe } from "../hooks/queries";
 import { useAuth } from "../store/auth";
 import { toast } from "../store/toast";
@@ -200,8 +200,9 @@ export default function Atlas() {
         </LayerChip>
       </div>
 
-      <GlassCard spotlight={false} className="overflow-hidden p-2 md:p-2.5">
-        <WorldMap
+      <GlassCard spotlight={false} className="overflow-hidden p-1.5">
+        <MapView
+          className="h-[64vh] min-h-[400px] w-full overflow-hidden rounded-xl"
           pins={mapPins}
           onPinClick={(p) => {
             if (p.kind === "spot") {
@@ -323,7 +324,8 @@ export default function Atlas() {
         <div className="space-y-4">
           <p className="text-sm text-text-dim">Tap the map where you filmed it.</p>
           <div className="overflow-hidden rounded-xl border border-hairline bg-field">
-            <WorldMap
+            <MapView
+              className="h-[300px] w-full"
               interactive
               pins={pick ? [{ ...pick, label: place || undefined }] : []}
               onPick={(lat, lng) => setPick({ lat, lng })}
@@ -356,7 +358,8 @@ export default function Atlas() {
             Tap where it is — every RAWBY filmmaker will see it on their Atlas.
           </p>
           <div className="overflow-hidden rounded-xl border border-hairline bg-field">
-            <WorldMap
+            <MapView
+              className="h-[300px] w-full"
               interactive
               pins={spotPick ? [{ ...spotPick, kind: "spot", title: spotName || "New spot" }] : []}
               onPick={(lat, lng) => setSpotPick({ lat, lng })}

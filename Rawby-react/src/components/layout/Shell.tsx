@@ -17,8 +17,10 @@ import { Logo } from "../ui/Logo";
 import { ModeToggle } from "../ui/ThemeControls";
 import { Onboarding } from "../Onboarding";
 import { Dock } from "./Dock";
+import { SideNav } from "./SideNav";
 import { NAV_ITEMS } from "./nav";
 import { useAuth } from "../../store/auth";
+import { useSettings } from "../../store/settings";
 
 // ⌘ on Apple hardware, Ctrl everywhere else.
 const IS_MAC =
@@ -47,6 +49,8 @@ export function Shell() {
   const user = useAuth((s) => s.user);
   const initial = user?.displayName?.[0]?.toUpperCase() ?? "?";
   const [auroraOpen, setAuroraOpen] = useState(false);
+  const leftNav = useSettings((s) => s.navSide) === "left";
+  const shift = leftNav ? "md:pl-[64px]" : "";
 
   // The full studio page supersedes the mini panel.
   useEffect(() => {
@@ -59,8 +63,11 @@ export function Shell() {
       <FilmGrain />
       <Onboarding />
 
+      {/* Left rail (opt-in, desktop) — collapsed icons, hover types the names */}
+      {leftNav && <SideNav items={NAV_ITEMS} />}
+
       {/* Wide top dock — glass bar matching the bottom dock */}
-      <header className="sticky top-0 z-nav px-3 pt-3 md:px-5 md:pt-4">
+      <header className={`sticky top-0 z-nav px-3 pt-3 md:px-5 md:pt-4 ${shift}`}>
         <div className="dock mx-auto flex w-full max-w-6xl items-center justify-between rounded-[22px] border border-white/[0.07] bg-[rgb(var(--dock))] px-3 py-2 md:px-4">
           <Logo size="md" />
           <div className="flex items-center gap-1.5">
@@ -88,7 +95,7 @@ export function Shell() {
 
       {/* Routed content — page chunks load inside the shell (dock stays put) */}
       <AnimatePresence mode="wait">
-        <div key={location.pathname} className="relative z-base">
+        <div key={location.pathname} className={`relative z-base ${shift}`}>
           <Suspense
             fallback={
               <div className="flex min-h-[50vh] items-center justify-center">
@@ -101,8 +108,8 @@ export function Shell() {
         </div>
       </AnimatePresence>
 
-      {/* Floating liquid-glass dock — core destinations */}
-      <Dock items={NAV_ITEMS} />
+      {/* Bottom dock — always on phones; on desktop only when the rail is off */}
+      <Dock items={NAV_ITEMS} className={leftNav ? "md:hidden" : ""} />
 
       {/* Aurora — chat head + pinned panel (her only entry; not in the dock) */}
       <AuroraBuddy open={auroraOpen} onToggle={() => setAuroraOpen((o) => !o)} />

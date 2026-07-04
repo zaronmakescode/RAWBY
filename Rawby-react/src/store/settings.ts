@@ -25,6 +25,8 @@ export const COUNTRIES = [
 export type AiProvider = "groq" | "bridge" | "apikey";
 /** Backdrop: animated shader scene, real footage, or a flat single colour. */
 export type BgMode = "shader" | "video" | "solid";
+/** Navigation placement: floating bottom dock, or a left sidebar (desktop). */
+export type NavSide = "bottom" | "left";
 
 interface SettingsState {
   region: string;
@@ -35,6 +37,7 @@ interface SettingsState {
   aiProvider: AiProvider;
   anthropicKey: string; // user's own Anthropic API key (stored locally, sent per request)
   cycleDay: number; // weekday the weekly cycle starts (0 Sun … 6 Sat; default 5 Friday)
+  navSide: NavSide;
   bgMode: BgMode;
   bgSpeed: number; // shader motion speed multiplier (0.25–2)
   bgDim: number; // backdrop veil opacity (0.1–0.85) — higher = darker/calmer
@@ -51,6 +54,7 @@ interface SettingsState {
   setAiProvider: (p: AiProvider) => void;
   setAnthropicKey: (k: string) => void;
   setCycleDay: (n: number) => void;
+  setNavSide: (s: NavSide) => void;
   setBgMode: (m: BgMode) => void;
   setBgSpeed: (n: number) => void;
   setBgDim: (n: number) => void;
@@ -84,6 +88,7 @@ export const useSettings = create<SettingsState>()(
       aiProvider: "groq",
       anthropicKey: "",
       cycleDay: 5,
+      navSide: "bottom",
       bgMode: "shader",
       bgSpeed: 1,
       bgDim: 0.44,
@@ -100,6 +105,7 @@ export const useSettings = create<SettingsState>()(
       setAiProvider: (aiProvider) => set({ aiProvider }),
       setAnthropicKey: (anthropicKey) => set({ anthropicKey }),
       setCycleDay: (cycleDay) => set({ cycleDay: Math.max(0, Math.min(6, Math.round(cycleDay))) }),
+      setNavSide: (navSide) => set({ navSide }),
       setBgMode: (bgMode) => set({ bgMode }),
       setBgSpeed: (bgSpeed) => set({ bgSpeed: Math.max(0.25, Math.min(2, bgSpeed)) }),
       setBgDim: (bgDim) => set({ bgDim: Math.max(0.1, Math.min(0.85, bgDim)) }),

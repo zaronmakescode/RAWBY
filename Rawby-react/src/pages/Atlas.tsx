@@ -8,7 +8,6 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageTransition } from "../components/layout/PageTransition";
 import { GlassCard } from "../components/ui/GlassCard";
-import { TiltCard } from "../components/ui/TiltCard";
 import { GradientButton } from "../components/ui/GradientButton";
 import { PageHeader, Reveal } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
@@ -201,23 +200,21 @@ export default function Atlas() {
         </LayerChip>
       </div>
 
-      <TiltCard max={4} className="[perspective:1400px]">
-        <GlassCard className="overflow-hidden p-2 md:p-3">
-          <WorldMap
-            pins={mapPins}
-            onPinClick={(p) => {
-              if (p.kind === "spot") {
-                const s = allSpots.find((x) => x.id === p.id);
-                if (s) toast.info(`${s.name}${s.note ? ` — ${s.note}` : ""}${s.by ? ` (by @${s.by})` : ""}`);
-                return;
-              }
-              const film = pinned.find((h) => (p.id ? h.id === p.id : h.title === p.title));
-              if (film?.link) window.open(film.link, "_blank", "noopener,noreferrer");
-              else if (film) toast.info(`${film.title}${film.location?.label ? ` — ${film.location.label}` : ""}`);
-            }}
-          />
-        </GlassCard>
-      </TiltCard>
+      <GlassCard spotlight={false} className="overflow-hidden p-2 md:p-2.5">
+        <WorldMap
+          pins={mapPins}
+          onPinClick={(p) => {
+            if (p.kind === "spot") {
+              const s = allSpots.find((x) => x.id === p.id);
+              if (s) toast.info(`${s.name}${s.note ? ` — ${s.note}` : ""}${s.by ? ` (by @${s.by})` : ""}`);
+              return;
+            }
+            const film = pinned.find((h) => (p.id ? h.id === p.id : h.title === p.title));
+            if (film?.link) window.open(film.link, "_blank", "noopener,noreferrer");
+            else if (film) toast.info(`${film.title}${film.location?.label ? ` — ${film.location.label}` : ""}`);
+          }}
+        />
+      </GlassCard>
 
       {history.length === 0 && (
         <p className="mt-4 text-center text-sm text-text-dim">

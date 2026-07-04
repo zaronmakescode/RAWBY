@@ -75,9 +75,9 @@ export default function Profile() {
 
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile icon="medal" value={`#${snap?.rank ?? "—"}`} label="Rank" />
-        <StatTile icon="star" value={nf.format(snap?.totalScore ?? 0)} label="Total score" accent="#6FA373" />
-        <StatTile icon="flame" value={snap?.streak ?? 0} label="Streak" accent="#E85D75" />
-        <StatTile icon="film" value={history.length} label="Films" accent="#3B82F6" />
+        <StatTile icon="star" value={nf.format(snap?.totalScore ?? 0)} label="Total score" />
+        <StatTile icon="flame" value={snap?.streak ?? 0} label="Streak" />
+        <StatTile icon="film" value={history.length} label="Films" />
       </div>
 
       {/* Privacy — what others see */}

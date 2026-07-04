@@ -239,16 +239,14 @@ export default function Home() {
           icon="medal"
           value={snap.rank ? <CountUp value={snap.rank} prefix="#" /> : "—"}
           label="Rank"
-          accent="#E8B647"
         />
         <StatTile
           icon="star"
           value={<CountUp value={snap.totalScore ?? 0} format={(n) => nf.format(n)} />}
           label="Total score"
-          accent="#6FA373"
         />
-        <StatTile icon="flame" value={<CountUp value={snap.streak ?? 0} />} label="Streak" accent="#E85D75" />
-        <StatTile icon="refresh" value={<CountUp value={snap.regensLeft ?? 0} />} label="Regens left" accent="#3B82F6" />
+        <StatTile icon="flame" value={<CountUp value={snap.streak ?? 0} />} label="Streak" />
+        <StatTile icon="refresh" value={<CountUp value={snap.regensLeft ?? 0} />} label="Regens left" />
       </div>
 
       {/* Kit & tuning */}
@@ -270,7 +268,7 @@ export default function Home() {
 
       {/* Holiday mode — trips planned ahead with Aurora */}
       {showTrips && (
-      <Reveal className="mt-12">
+      <Reveal className="mt-10">
       <GlassCard>
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -328,7 +326,7 @@ export default function Home() {
 
       {/* Videography box */}
       {showCategories && (
-        <Reveal className="mt-14">
+        <Reveal className="mt-10">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <div className="mb-2"><Eyebrow icon="aperture">Your lanes</Eyebrow></div>
@@ -430,7 +428,7 @@ export default function Home() {
 
       {/* Recent films — Aurora's card is gone; her chat head floats nearby */}
       {showRecent && (
-      <Reveal className="mt-14">
+      <Reveal className="mt-10">
         <GlassCard>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="h-display text-display-sm font-semibold text-text-hi">Recent films</h3>

@@ -33,8 +33,12 @@ interface Props {
 // Crop the empty poles: show lat 85°N … 60°S of the 720x360 projection.
 const VIEW_Y = 10;
 const VIEW_H = 290;
-const MIN_W = MAP_W / 8; // 8× max zoom
+const MIN_W = MAP_W / 40; // 40× max zoom — enough to navigate one country's spots
 const DRAG_EPS = 5; // px of screen movement that turns a click into a drag
+// With a big curated pack, spot pins only render once you're zoomed in —
+// otherwise a whole country collapses into one blob of diamonds.
+const SPOT_GATE_COUNT = 30;
+const SPOT_GATE_W = MAP_W / 4;
 
 interface VB { x: number; y: number; w: number; h: number }
 const HOME: VB = { x: 0, y: VIEW_Y, w: MAP_W, h: VIEW_H };
@@ -151,7 +155,12 @@ export function WorldMap({ pins = [], interactive = false, onPick, onPinClick, c
   }
 
   // Pins keep a sane on-screen size at any zoom.
-  const pinScale = Math.max(0.32, Math.sqrt(vb.w / MAP_W));
+  const pinScale = Math.max(0.12, Math.sqrt(vb.w / MAP_W));
+
+  // Big spot packs hide until you zoom in; films always show.
+  const spotCount = pins.reduce((n, p) => n + (p.kind === "spot" ? 1 : 0), 0);
+  const spotsGated = spotCount > SPOT_GATE_COUNT && vb.w > SPOT_GATE_W;
+  const visiblePins = spotsGated ? pins.filter((p) => p.kind !== "spot") : pins;
 
   return (
     <div className={`relative ${className}`}>
@@ -191,7 +200,7 @@ export function WorldMap({ pins = [], interactive = false, onPick, onPinClick, c
         />
 
         {/* pins */}
-        {pins.map((p, i) => {
+        {visiblePins.map((p, i) => {
           const [x, y] = project(p.lat, p.lng);
           const tip = [p.title, p.label].filter(Boolean).join(" — ");
           const s = pinScale;
@@ -234,6 +243,13 @@ export function WorldMap({ pins = [], interactive = false, onPick, onPinClick, c
           );
         })}
       </svg>
+
+      {/* gated-spots hint */}
+      {spotsGated && (
+        <div className="pointer-events-none absolute bottom-2 left-2 rounded-full border border-hairline bg-[rgb(var(--surface))] px-2.5 py-1 text-[10px] font-semibold text-text-dim">
+          {spotCount} spots — zoom in to see them
+        </div>
+      )}
 
       {/* zoom controls */}
       <div className="absolute bottom-2 right-2 flex flex-col gap-1">

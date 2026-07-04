@@ -10,7 +10,6 @@ interface Props {
   prefix?: string;
   format?: (n: number) => string;
   label: string;
-  accent?: string;
 }
 
 /**

@@ -180,6 +180,41 @@ body {
   color: rgb(var(--text-dim)) !important;
 }
 
+/* Hover popups on map pins — themed glass card */
+.rawby-popup .maplibregl-popup-content {
+  background: rgb(var(--surface));
+  border: 1px solid rgb(var(--hairline));
+  border-radius: 10px;
+  box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.6);
+  padding: 8px 11px;
+  max-width: 240px;
+  pointer-events: none;
+}
+.rawby-popup .maplibregl-popup-tip {
+  border-top-color: rgb(var(--surface)) !important;
+  border-bottom-color: rgb(var(--surface)) !important;
+}
+.rawby-popup .rp-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgb(var(--text-hi));
+}
+.rawby-popup .rp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+.rawby-popup .rp-sub {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgb(var(--text-dim));
+}
+
 /* Thin cinematic scrollbar */
 ::-webkit-scrollbar {
   width: 10px;

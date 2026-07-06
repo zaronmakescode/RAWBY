@@ -47,24 +47,35 @@ function rasterStyle(dark: boolean): maplibregl.StyleSpecification {
 }
 
 function makeMarkerEl(pin: MapPin, clickable: boolean): HTMLDivElement {
+  // MapLibre positions the marker element with its own inline transform, so
+  // any rotation must live on an INNER element or it gets overwritten.
   const el = document.createElement("div");
-  const spot = pin.kind === "spot";
-  el.style.width = "14px";
-  el.style.height = "14px";
+  el.style.width = "12px";
+  el.style.height = "12px";
   el.style.cursor = clickable ? "pointer" : "default";
-  el.title = [pin.title, pin.label].filter(Boolean).join(" — ");
-  if (spot) {
-    el.style.background = SPOT_COLOR;
-    el.style.transform = "rotate(45deg)";
-    el.style.borderRadius = "3px";
-    el.style.border = "1.5px solid rgb(var(--bg))";
-    el.style.boxShadow = "0 1px 4px rgb(0 0 0 / 0.4)";
+  const inner = document.createElement("div");
+  inner.style.width = "100%";
+  inner.style.height = "100%";
+  inner.style.transition = "transform 120ms ease";
+  if (pin.kind === "spot") {
+    inner.style.background = SPOT_COLOR;
+    inner.style.transform = "rotate(45deg) scale(0.86)";
+    inner.style.borderRadius = "2.5px";
+    inner.style.border = "1.5px solid rgb(var(--bg))";
+    inner.style.boxShadow = "0 1px 4px rgb(0 0 0 / 0.45)";
   } else {
-    el.style.background = "rgb(var(--c-500))";
-    el.style.borderRadius = "50%";
-    el.style.border = "2px solid rgb(var(--bg))";
-    el.style.boxShadow = "0 0 0 4px rgb(var(--c-500) / 0.2), 0 1px 4px rgb(0 0 0 / 0.4)";
+    inner.style.background = "rgb(var(--c-500))";
+    inner.style.borderRadius = "50%";
+    inner.style.border = "2px solid rgb(var(--bg))";
+    inner.style.boxShadow = "0 0 0 4px rgb(var(--c-500) / 0.2), 0 1px 4px rgb(0 0 0 / 0.45)";
   }
+  el.appendChild(inner);
+  el.addEventListener("mouseenter", () => {
+    inner.style.transform = pin.kind === "spot" ? "rotate(45deg) scale(1.25)" : "scale(1.3)";
+  });
+  el.addEventListener("mouseleave", () => {
+    inner.style.transform = pin.kind === "spot" ? "rotate(45deg) scale(0.86)" : "scale(1)";
+  });
   return el;
 }
 
@@ -90,7 +101,7 @@ export function MapView({ pins = [], interactive = false, onPick, onPinClick, cl
       dragRotate: false,
       pitchWithRotate: false,
     });
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "bottom-right");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "top-right");
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
     map.on("load", () => {
       readyRef.current = true;
@@ -123,6 +134,22 @@ export function MapView({ pins = [], interactive = false, onPick, onPinClick, cl
     for (const p of pins) {
       const el = makeMarkerEl(p, !!onPinClick);
       if (onPinClick) el.addEventListener("click", (ev) => { ev.stopPropagation(); onPinClick(p); });
+      // Instant styled hover popup (the native title tooltip is too slow).
+      const tipTitle = p.title ?? (p.kind === "spot" ? "Shooting spot" : "Film");
+      const popup = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 12,
+        className: "rawby-popup",
+      }).setHTML(
+        `<div class="rp-title"><span class="rp-dot" style="background:${
+          p.kind === "spot" ? SPOT_COLOR : "rgb(var(--c-500))"
+        }"></span>${tipTitle.replace(/</g, "&lt;")}</div>${
+          p.label ? `<div class="rp-sub">${p.label.replace(/</g, "&lt;")}</div>` : ""
+        }`
+      );
+      el.addEventListener("mouseenter", () => popup.setLngLat([p.lng, p.lat]).addTo(map));
+      el.addEventListener("mouseleave", () => popup.remove());
       const marker = new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).addTo(map);
       markersRef.current.push(marker);
       bounds.extend([p.lng, p.lat]);

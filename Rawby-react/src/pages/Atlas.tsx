@@ -85,6 +85,19 @@ export default function Atlas() {
   const [spotName, setSpotName] = useState("");
   const [spotNote, setSpotNote] = useState("");
 
+  // Selected pin → a proper detail card under the map (not a toast dump)
+  interface Selected {
+    kind: "spot" | "film";
+    title: string;
+    note?: string;
+    place?: string;
+    link?: string;
+    by?: string;
+    lat: number;
+    lng: number;
+  }
+  const [selected, setSelected] = useState<Selected | null>(null);
+
   const saveFilmPin = useMutation({
     mutationFn: async () => {
       if (!target || !pick) return;
@@ -207,17 +220,86 @@ export default function Atlas() {
           onPinClick={(p) => {
             if (p.kind === "spot") {
               const s = allSpots.find((x) => x.id === p.id);
-              if (s) toast.info(`${s.name}${s.note ? ` — ${s.note}` : ""}${s.by ? ` (by @${s.by})` : ""}`);
+              if (s) setSelected({ kind: "spot", title: s.name, note: s.note ?? undefined, by: s.by, lat: s.lat, lng: s.lng });
               return;
             }
             const film = pinned.find((h) => (p.id ? h.id === p.id : h.title === p.title));
-            if (film?.link) window.open(film.link, "_blank", "noopener,noreferrer");
-            else if (film) toast.info(`${film.title}${film.location?.label ? ` — ${film.location.label}` : ""}`);
+            if (film)
+              setSelected({
+                kind: "film",
+                title: film.title,
+                place: film.location?.label,
+                link: film.link,
+                lat: film.location!.lat,
+                lng: film.location!.lng,
+              });
           }}
         />
       </GlassCard>
 
-      {history.length === 0 && (
+      {/* Selected pin — a designed detail card, not a toast */}
+      {selected && (
+        <Reveal className="mt-3">
+          <GlassCard className="relative flex items-start gap-3.5 p-4">
+            <span
+              className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+              style={{
+                color: selected.kind === "spot" ? "#4fc3a1" : "rgb(var(--c-500))",
+                background: selected.kind === "spot" ? "#4fc3a11a" : "rgb(var(--c-500) / 0.12)",
+              }}
+            >
+              <Icon name={selected.kind === "spot" ? "mapPin" : "film"} size={18} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-dim">
+                  {selected.kind === "spot" ? "Shooting spot" : "Your film"}
+                </span>
+                {selected.by && (
+                  <span className="rounded-full bg-chip px-2 py-0.5 text-[10px] font-medium text-text-dim">
+                    @{selected.by}
+                  </span>
+                )}
+              </div>
+              <h4 className="h-display mt-0.5 truncate text-lg font-bold text-text-hi">{selected.title}</h4>
+              {(selected.note || selected.place) && (
+                <p className="measure mt-1 text-sm leading-relaxed text-text-dim">
+                  {selected.note ?? selected.place}
+                </p>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {selected.kind === "film" && selected.link && (
+                  <a href={selected.link} target="_blank" rel="noreferrer">
+                    <GradientButton className="!py-2 text-xs">
+                      <Icon name="film" size={14} /> Open reel
+                    </GradientButton>
+                  </a>
+                )}
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${selected.lat},${selected.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-chip px-3 py-1.5 text-xs font-medium text-text-dim transition-colors hover:text-text-hi"
+                >
+                  <Icon name="arrowRight" size={13} className="-rotate-45" /> Open in Maps
+                </a>
+                <span className="text-[11px] tabular-nums text-text-dim/70">
+                  {selected.lat.toFixed(3)}°, {selected.lng.toFixed(3)}°
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelected(null)}
+              aria-label="Close details"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-dim transition-colors hover:bg-glass hover:text-text-hi"
+            >
+              <Icon name="plus" size={16} className="rotate-45" />
+            </button>
+          </GlassCard>
+        </Reveal>
+      )}
+
+      {history.length === 0 && !selected && (
         <p className="mt-4 text-center text-sm text-text-dim">
           The diamonds are yours to chase — submit films and your own pins join them.
         </p>

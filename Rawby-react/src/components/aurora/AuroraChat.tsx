@@ -5,6 +5,7 @@ import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { Icon } from "../ui/Icon";
+import { AuroraOrb } from "./AuroraOrb";
 import { ai } from "../../lib/endpoints";
 import { useMe } from "../../hooks/queries";
 import { useNote, useAurora } from "../../hooks/usePersonal";
@@ -135,18 +136,16 @@ export function AuroraChat({ compact = false }: { compact?: boolean }) {
         </AnimatePresence>
 
         {m.isPending && (
-          <div className="flex justify-start">
-            <div className="flex gap-1.5 rounded-2xl border border-hairline bg-chip px-4 py-3">
-              {[0, 1, 2].map((d) => (
-                <motion.span
-                  key={d}
-                  className="h-2 w-2 rounded-full bg-cinema-400"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ repeat: Infinity, duration: 1, delay: d * 0.2 }}
-                />
-              ))}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-start"
+          >
+            <div className="flex items-center gap-2 rounded-2xl border border-hairline bg-chip py-1.5 pl-1.5 pr-4">
+              <AuroraOrb thinking compact className="h-9 w-9 shrink-0" />
+              <span className="text-xs text-text-dim">thinking…</span>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {messages.length === 1 && !m.isPending && (

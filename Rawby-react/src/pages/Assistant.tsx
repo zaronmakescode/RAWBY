@@ -5,11 +5,12 @@ import { useState } from "react";
 import { PageTransition } from "../components/layout/PageTransition";
 import { GlassCard } from "../components/ui/GlassCard";
 import { GradientButton } from "../components/ui/GradientButton";
-import { PageHeader } from "../components/ui/Bits";
+import { Eyebrow } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
 import { PlanTripModal } from "../components/PlanTripModal";
 import { PrePostCheckModal } from "../components/PrePostCheckModal";
 import { AuroraChat } from "../components/aurora/AuroraChat";
+import { AuroraOrb } from "../components/aurora/AuroraOrb";
 import { useNote } from "../hooks/usePersonal";
 
 export default function Assistant() {
@@ -20,11 +21,25 @@ export default function Assistant() {
 
   return (
     <PageTransition>
-      <PageHeader
-        eyebrow="AI Co-pilot"
-        title="Aurora"
-        sub="Cinematic guidance for this week's film. Plain talk, no fluff."
-      />
+      {/* Hero — her living form, always awake, faster/warmer while she thinks */}
+      <div className="relative mb-6 h-48 overflow-hidden rounded-glass border border-hairline md:h-56">
+        <AuroraOrb className="absolute inset-0" />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(60% 70% at 50% 40%, transparent 40%, rgb(var(--bg) / 0.9) 100%), " +
+              "linear-gradient(to top, rgb(var(--bg)) 0%, transparent 55%)",
+          }}
+        />
+        <div className="absolute inset-x-0 bottom-0 p-5">
+          <Eyebrow icon="sparkles">AI Co-pilot</Eyebrow>
+          <h1 className="h-display mt-2 text-2xl font-semibold text-text-hi md:text-3xl">Aurora</h1>
+          <p className="mt-0.5 text-sm text-text-dim">
+            Cinematic guidance for this week's film. Plain talk, no fluff.
+          </p>
+        </div>
+      </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <GradientButton variant="ghost" onClick={() => setPlanOpen(true)}>

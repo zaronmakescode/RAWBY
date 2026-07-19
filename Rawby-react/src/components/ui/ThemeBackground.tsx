@@ -11,6 +11,8 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useTheme, nearestPresetAccent, type Accent } from "../../store/theme";
 import { useSettings } from "../../store/settings";
+import { useUiMode } from "../../store/uiMode";
+import { RawBackground } from "./RawBackground";
 
 // ─── Accent → shader mode ────────────────────────────────────────────────────
 const ACCENT_MODE: Record<string, number> = {
@@ -309,11 +311,15 @@ export function ThemeBackground() {
   const customColor = useTheme((s) => s.customColor);
   const bgMode = useSettings((s) => s.bgMode);
   const bgDim = useSettings((s) => s.bgDim);
+  const isRaw = useUiMode((s) => s.mode) === "raw";
 
   // Re-try the video when the mode flips back (file may have been added).
   useEffect(() => {
     if (bgMode === "video") setVideoFailed(false);
   }, [bgMode]);
+
+  // RAW mode — monochrome wave field, regardless of the user's Studio backdrop.
+  if (isRaw) return <RawBackground />;
 
   // Minimal mode — one flat colour, nothing moving.
   if (bgMode === "solid") {

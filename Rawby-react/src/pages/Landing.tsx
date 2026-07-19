@@ -8,6 +8,8 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { GlassCard } from "../components/ui/GlassCard";
 import { GradientButton } from "../components/ui/GradientButton";
+import { CountUp } from "../components/ui/CountUp";
+import { Magnetic } from "../components/ui/Magnetic";
 import { Eyebrow, Reveal } from "../components/ui/Bits";
 import { FilmStrip } from "../components/ui/FilmStrip";
 import { Scribble } from "../components/ui/Scribble";
@@ -15,7 +17,11 @@ import { ThemeBackground } from "../components/ui/ThemeBackground";
 import { Icon, type IconName } from "../components/ui/Icon";
 import { Logo } from "../components/ui/Logo";
 import { FilmGrain } from "../components/ui/FilmGrain";
-import { CategoryBox } from "../components/CategoryBox";
+import { TiltCard } from "../components/ui/TiltCard";
+import { BorderBeam } from "../components/ui/BorderBeam";
+import { SmoothScroll } from "../components/ui/SmoothScroll";
+import { BlendCursor } from "../components/ui/BlendCursor";
+import { CategoryRadar } from "../components/CategoryRadar";
 import { WorldMap } from "../components/WorldMap";
 import { LEVELS, WEEKLY_CYCLE } from "../lib/constants";
 import type { ProjectHistoryItem } from "../types";
@@ -91,6 +97,8 @@ export default function Landing() {
     <div className="relative min-h-screen overflow-x-hidden">
       <ThemeBackground />
       <FilmGrain opacity={0.06} />
+      <SmoothScroll />
+      <BlendCursor />
 
       <div className="relative z-base">
         <TopBar />
@@ -136,15 +144,15 @@ export default function Landing() {
 
               <div className="mt-7 flex items-center gap-6 text-sm text-text-dim">
                 <span className="flex items-center gap-2">
-                  <span className="h-display text-2xl font-bold text-text-hi">4</span> levels
+                  <span className="h-display text-2xl font-bold tabular-nums text-text-hi"><CountUp value={4} /></span> levels
                 </span>
                 <span className="h-4 w-px bg-hairline-strong" />
                 <span className="flex items-center gap-2">
-                  <span className="h-display text-2xl font-bold text-text-hi">7</span> day cycle
+                  <span className="h-display text-2xl font-bold tabular-nums text-text-hi"><CountUp value={7} /></span> day cycle
                 </span>
                 <span className="h-4 w-px bg-hairline-strong" />
                 <span className="flex items-center gap-2">
-                  <span className="h-display text-2xl font-bold text-text-hi">1</span> filmmaker — you
+                  <span className="h-display text-2xl font-bold tabular-nums text-text-hi"><CountUp value={1} /></span> filmmaker — you
                 </span>
               </div>
             </motion.div>
@@ -179,17 +187,19 @@ export default function Landing() {
           </Reveal>
           <div className="grid gap-4 md:grid-cols-3">
             {STEPS.map((s, i) => (
-              <Reveal key={s.n} delay={i * 0.08}>
-                <GlassCard className="h-full p-6">
-                  <div className="mb-5 flex items-center justify-between">
-                    <span className="h-display text-display-md font-semibold text-cinema-500/40">{s.n}</span>
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-cinema-500/12 text-cinema-300">
-                      <Icon name={s.icon} size={20} />
-                    </span>
-                  </div>
-                  <h3 className="h-display text-display-sm font-semibold text-text-hi">{s.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-text-dim">{s.body}</p>
-                </GlassCard>
+              <Reveal key={s.n} delay={i * 0.08} className="h-full">
+                <TiltCard max={6} className="h-full [perspective:1000px]">
+                  <GlassCard interactive className="h-full p-6">
+                    <div className="mb-5 flex items-center justify-between">
+                      <span className="h-display text-display-md font-semibold text-cinema-500/40">{s.n}</span>
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-cinema-500/12 text-cinema-300">
+                        <Icon name={s.icon} size={20} />
+                      </span>
+                    </div>
+                    <h3 className="h-display text-display-sm font-semibold text-text-hi">{s.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-text-dim">{s.body}</p>
+                  </GlassCard>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
@@ -209,15 +219,17 @@ export default function Landing() {
           </Reveal>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {LEVELS.map((l, i) => (
-              <Reveal key={l.name} delay={i * 0.06}>
-                <GlassCard interactive className="h-full p-5">
-                  <div className="mb-4 h-1.5 w-12 rounded-full" style={{ background: l.glow }} />
-                  <div className="text-sm font-semibold text-text-hi">{l.name}</div>
-                  <div className="h-display mt-1 text-display-md font-bold" style={{ color: l.glow }}>
-                    {l.points}
-                  </div>
-                  <div className="text-xs uppercase tracking-wider text-text-dim">points</div>
-                </GlassCard>
+              <Reveal key={l.name} delay={i * 0.06} className="h-full">
+                <TiltCard max={8} className="h-full [perspective:900px]">
+                  <GlassCard interactive className="h-full p-5">
+                    <div className="mb-4 h-1.5 w-12 rounded-full" style={{ background: l.glow }} />
+                    <div className="text-sm font-semibold text-text-hi">{l.name}</div>
+                    <div className="h-display mt-1 text-display-md font-bold" style={{ color: l.glow }}>
+                      {l.points}
+                    </div>
+                    <div className="text-xs uppercase tracking-wider text-text-dim">points</div>
+                  </GlassCard>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
@@ -278,7 +290,7 @@ export default function Landing() {
             </h2>
           </Reveal>
           <Reveal>
-            <CategoryBox history={DEMO_HISTORY} />
+            <CategoryRadar history={DEMO_HISTORY} />
           </Reveal>
         </section>
 
@@ -286,6 +298,7 @@ export default function Landing() {
         <section className="mx-auto max-w-5xl px-4 pb-24 md:px-8">
           <Reveal>
             <GlassCard spotlight className="relative overflow-hidden p-10 text-center md:p-16">
+              <BorderBeam duration={12} lightWidth={300} />
               <div
                 className="animate-aurora-drift pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full blur-3xl"
                 style={{ background: "radial-gradient(circle, rgb(var(--glow) / 0.22), transparent 70%)" }}
@@ -299,11 +312,13 @@ export default function Landing() {
                   Join the solo filmmakers turning a blank weekend into a finished film — every week.
                 </p>
                 <div className="mt-8 flex flex-wrap justify-center gap-3">
-                  <Link to="/register">
-                    <GradientButton className="!px-8 !py-4 text-base">
-                      Create your free account <Icon name="arrowRight" size={18} />
-                    </GradientButton>
-                  </Link>
+                  <Magnetic>
+                    <Link to="/register">
+                      <GradientButton className="!px-8 !py-4 text-base">
+                        Create your free account <Icon name="arrowRight" size={18} />
+                      </GradientButton>
+                    </Link>
+                  </Magnetic>
                 </div>
               </div>
             </GlassCard>

@@ -12,10 +12,12 @@ export function TiltCard({
   children,
   className = "",
   max = 7,
+  disabled = false,
 }: {
   children: ReactNode;
   className?: string;
   max?: number; // max tilt in degrees
+  disabled?: boolean; // opt out of the 3D effect (e.g. RAW mode)
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const px = useMotionValue(0.5);
@@ -39,7 +41,7 @@ export function TiltCard({
     py.set(0.5);
   }
 
-  if (prefersReduced) return <div className={className}>{children}</div>;
+  if (prefersReduced || disabled) return <div className={className}>{children}</div>;
 
   return (
     <motion.div

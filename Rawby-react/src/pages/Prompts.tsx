@@ -13,6 +13,7 @@ import { useGeneratePrompts, useSetActivePrompt } from "../hooks/usePrompts";
 import { useBigProject } from "../hooks/useBigProject";
 import { useDraft } from "../hooks/usePersonal";
 import { useSettings } from "../store/settings";
+import { useUiMode } from "../store/uiMode";
 import { LEVELS, LATE_MULTIPLIERS, levelStyle } from "../lib/constants";
 import type { GeneratedPrompt } from "../types";
 
@@ -113,6 +114,9 @@ export default function Prompts() {
   const snap = data?.snapshot;
   const region = useSettings((s) => s.region);
   const seasonalPrompts = useSettings((s) => s.seasonalPrompts);
+  const isRaw = useUiMode((s) => s.mode) === "raw";
+  // RAW mode neutralises the tier / penalty colours to stay monochrome.
+  const tierColor = (glow: string) => (isRaw ? "rgb(var(--c-500))" : glow);
   const gen = useGeneratePrompts();
   const prompts = gen.data ?? [];
   const big = useBigProject();
@@ -286,11 +290,11 @@ export default function Prompts() {
           <GlassCard key={l.name} interactive className="group relative h-full overflow-hidden">
             <span
               className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-30 blur-2xl transition-opacity duration-300 group-hover:opacity-70"
-              style={{ background: `radial-gradient(circle, ${l.glow}, transparent 70%)` }}
+              style={{ background: `radial-gradient(circle, ${tierColor(l.glow)}, transparent 70%)` }}
             />
-            <div className="mb-3 h-1.5 w-12 rounded-full" style={{ background: l.glow }} />
+            <div className="mb-3 h-1.5 w-12 rounded-full" style={{ background: tierColor(l.glow) }} />
             <div className="text-sm font-semibold text-text-hi">{l.name}</div>
-            <div className="h-display mt-1 text-display-sm font-bold tabular-nums" style={{ color: l.glow }}>
+            <div className="h-display mt-1 text-display-sm font-bold tabular-nums" style={{ color: tierColor(l.glow) }}>
               {l.points}
             </div>
             <div className="text-[11px] font-medium uppercase tracking-wider text-text-dim">points</div>
@@ -307,7 +311,7 @@ export default function Prompts() {
               <div className="text-xs uppercase tracking-wider text-text-dim">{p.day}</div>
               <div
                 className="h-display mt-1 text-2xl font-bold"
-                style={{ color: p.mult === 1 ? "#22C55E" : p.mult >= 0.75 ? "#FBBF24" : "#EF4444" }}
+                style={{ color: isRaw ? "rgb(var(--text-hi))" : p.mult === 1 ? "#22C55E" : p.mult >= 0.75 ? "#FBBF24" : "#EF4444" }}
               >
                 ×{p.mult}
               </div>

@@ -8,6 +8,7 @@ import { Icon, type IconName } from "./ui/Icon";
 import { useTheme, ACCENTS } from "../store/theme";
 import { useSettings } from "../store/settings";
 import { useAuth } from "../store/auth";
+import { useUiMode } from "../store/uiMode";
 
 interface Command {
   id: string;
@@ -32,10 +33,11 @@ export function CommandPalette() {
   const setBgMode = useSettings((s) => s.setBgMode);
   const logout = useAuth((s) => s.logout);
   const isAdmin = useAuth((s) => s.user?.isAdmin);
+  const isRaw = useUiMode((s) => s.mode) === "raw";
 
   const commands = useMemo<Command[]>(() => {
     const go = (to: string) => () => nav(to);
-    const pages: Command[] = [
+    const allPages: Command[] = [
       { id: "home", label: "Go to Home", icon: "home", keywords: "dashboard start", run: go("/home") },
       { id: "prompts", label: "Go to Prompts", icon: "clapper", keywords: "weekly generate", run: go("/prompts") },
       { id: "ranks", label: "Go to Leaderboard", icon: "trophy", keywords: "ranks scores", run: go("/leaderboard") },
@@ -49,6 +51,9 @@ export function CommandPalette() {
         ? [{ id: "admin", label: "Go to Admin", icon: "shield" as IconName, keywords: "manage", run: go("/admin") }]
         : []),
     ];
+    // RAW mode: same tool restriction as the dock — no map, gear, or leaderboard.
+    const rawHidden = new Set(["ranks", "atlas", "gear"]);
+    const pages = isRaw ? allPages.filter((p) => !rawHidden.has(p.id)) : allPages;
     const actions: Command[] = [
       {
         id: "mode",
@@ -90,7 +95,7 @@ export function CommandPalette() {
       },
     ];
     return [...pages, ...actions];
-  }, [nav, mode, toggleMode, setAccent, bgMode, setBgMode, logout, isAdmin]);
+  }, [nav, mode, toggleMode, setAccent, bgMode, setBgMode, logout, isAdmin, isRaw]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

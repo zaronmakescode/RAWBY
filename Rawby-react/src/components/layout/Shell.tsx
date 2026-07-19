@@ -18,9 +18,11 @@ import { ModeToggle } from "../ui/ThemeControls";
 import { Onboarding } from "../Onboarding";
 import { Dock } from "./Dock";
 import { SideNav } from "./SideNav";
-import { NAV_ITEMS } from "./nav";
+import { NAV_ITEMS, RAW_NAV_ITEMS } from "./nav";
 import { useAuth } from "../../store/auth";
 import { useSettings } from "../../store/settings";
+import { useUiMode } from "../../store/uiMode";
+import { toast } from "../../store/toast";
 
 // ⌘ on Apple hardware, Ctrl everywhere else.
 const IS_MAC =
@@ -51,6 +53,19 @@ export function Shell() {
   const [auroraOpen, setAuroraOpen] = useState(false);
   const leftNav = useSettings((s) => s.navSide) === "left";
   const shift = leftNav ? "md:pl-[64px]" : "";
+  const uiMode = useUiMode((s) => s.mode);
+  const toggleUiMode = useUiMode((s) => s.toggleMode);
+  const hasSeenRawHint = useUiMode((s) => s.hasSeenRawHint);
+  const markRawHintSeen = useUiMode((s) => s.markRawHintSeen);
+  const navItems = uiMode === "raw" ? RAW_NAV_ITEMS : NAV_ITEMS;
+
+  const handleModeToggle = () => {
+    const next = toggleUiMode();
+    if (next === "raw" && !hasSeenRawHint) {
+      toast.info("RAW mode. Click the logo anytime to go back.");
+      markRawHintSeen();
+    }
+  };
 
   // The full studio page supersedes the mini panel.
   useEffect(() => {
@@ -60,16 +75,24 @@ export function Shell() {
   return (
     <div className="relative min-h-screen">
       <ThemeBackground />
-      <FilmGrain />
+      {uiMode !== "raw" && <FilmGrain />}
       <Onboarding />
 
       {/* Left rail (opt-in, desktop) — collapsed icons, hover types the names */}
-      {leftNav && <SideNav items={NAV_ITEMS} />}
+      {leftNav && <SideNav items={navItems} />}
 
       {/* Wide top dock — glass bar matching the bottom dock */}
       <header className={`sticky top-0 z-nav px-3 pt-3 md:px-5 md:pt-4 ${shift}`}>
         <div className="dock mx-auto flex w-full max-w-6xl items-center justify-between rounded-[22px] border border-white/[0.07] bg-[rgb(var(--dock))] px-3 py-2 md:px-4">
-          <Logo size="md" />
+          <button
+            type="button"
+            onClick={handleModeToggle}
+            aria-pressed={uiMode === "raw"}
+            title={uiMode === "raw" ? "Switch to Studio mode" : "Switch to RAW mode"}
+            className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cinema-500"
+          >
+            <Logo size="md" />
+          </button>
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}
@@ -109,7 +132,7 @@ export function Shell() {
       </AnimatePresence>
 
       {/* Bottom dock — always on phones; on desktop only when the rail is off */}
-      <Dock items={NAV_ITEMS} className={leftNav ? "md:hidden" : ""} />
+      <Dock items={navItems} className={leftNav ? "md:hidden" : ""} />
 
       {/* Aurora — chat head + pinned panel (her only entry; not in the dock) */}
       <AuroraBuddy open={auroraOpen} onToggle={() => setAuroraOpen((o) => !o)} />

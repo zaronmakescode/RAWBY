@@ -7,6 +7,7 @@ import { Icon } from "../components/ui/Icon";
 import { ThemeControls } from "../components/ui/ThemeControls";
 import { useAuth } from "../store/auth";
 import { useSettings, COUNTRIES } from "../store/settings";
+import { useUiMode } from "../store/uiMode";
 import { DAY_NAMES } from "../lib/constants";
 import { BASE_URL } from "../lib/api";
 
@@ -112,9 +113,31 @@ export default function Settings() {
   const user = useAuth((s) => s.user);
   const s = useSettings();
 
+  const uiMode = useUiMode((s) => s.mode);
+
   return (
     <PageTransition>
       <PageHeader eyebrow="Preferences" title="Settings" />
+
+      {/* Interface mode */}
+      <GlassCard className="mb-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <Icon name="sparkles" size={18} className="text-cinema-400" />
+          <div>
+            <div className="text-sm font-semibold text-text-hi">Interface</div>
+            <div className="text-xs text-text-dim">
+              Click the RAWBY logo (top left) anytime to switch — it's remembered next time you visit.
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-hairline bg-chip px-4 py-2.5 text-xs text-text-dim">
+          Currently in{" "}
+          <span className="font-semibold text-text-hi">
+            {uiMode === "raw" ? "RAW mode — prompts, ideas & assistant only" : "Studio mode — full toolset"}
+          </span>
+          .
+        </div>
+      </GlassCard>
 
       {/* Theme */}
       <GlassCard className="mb-4">

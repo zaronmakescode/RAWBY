@@ -11,7 +11,7 @@ import { TiltCard } from "../components/ui/TiltCard";
 import { Eyebrow, Reveal } from "../components/ui/Bits";
 import { Icon } from "../components/ui/Icon";
 import { SkeletonCard } from "../components/ui/Skeleton";
-import { CategoryBox } from "../components/CategoryBox";
+import { CategoryRadar } from "../components/CategoryRadar";
 import { BorderBeam } from "../components/ui/BorderBeam";
 import { FilmDoodle } from "../components/ui/FilmDoodle";
 import { PlanTripModal } from "../components/PlanTripModal";
@@ -20,6 +20,7 @@ import { useProgress } from "../hooks/useProgress";
 import { useTrips, useTripAutoActivate, daysUntil } from "../hooks/useTrips";
 import { useAuth } from "../store/auth";
 import { useSettings } from "../store/settings";
+import { useUiMode } from "../store/uiMode";
 import { WEEKLY_CYCLE, DAY_NAMES, cycleDayLabel, isCyclePhaseToday, daysUntilCycleEnd } from "../lib/constants";
 import type { Snapshot } from "../types";
 
@@ -54,6 +55,7 @@ export default function Home() {
   const showSteps = useSettings((s) => s.showSteps);
   const showRecent = useSettings((s) => s.showRecent);
   const cycleDay = useSettings((s) => s.cycleDay);
+  const isRaw = useUiMode((s) => s.mode) === "raw";
   const upcomingTrips = trips.filter((t) => t.status === "planned");
   const activeTrip = trips.find((t) => t.status === "active");
 
@@ -119,12 +121,14 @@ export default function Home() {
       </motion.div>
 
       {/* Next-step hero */}
-      <TiltCard className="[perspective:1200px]">
+      <TiltCard className="[perspective:1200px]" disabled={isRaw}>
       <GlassCard spotlight className="relative overflow-hidden p-6 md:p-8">
-        <div
-          className="animate-aurora-drift pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl"
-          style={{ background: "radial-gradient(circle, rgb(var(--glow) / 0.2), transparent 70%)" }}
-        />
+        {!isRaw && (
+          <div
+            className="animate-aurora-drift pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl"
+            style={{ background: "radial-gradient(circle, rgb(var(--glow) / 0.2), transparent 70%)" }}
+          />
+        )}
         {hasPrompt ? (
           <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="max-w-xl">
@@ -179,7 +183,7 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <BorderBeam duration={11} lightWidth={260} />
+            {!isRaw && <BorderBeam duration={11} lightWidth={260} />}
             <div className="relative grid items-center gap-6 md:grid-cols-[1.12fr_0.88fr]">
               <div>
                 <div className="mb-3">
@@ -266,8 +270,9 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* Holiday mode — trips planned ahead with Aurora */}
-      {showTrips && (
+      {/* Holiday mode — trips planned ahead with Aurora. A planning tool, so
+          RAW mode (prompts + ideas + assistant only) leaves it out. */}
+      {showTrips && !isRaw && (
       <Reveal className="mt-10">
       <GlassCard>
         <div className="mb-3 flex items-center justify-between">
@@ -333,20 +338,24 @@ export default function Home() {
               <h3 className="h-display text-display-md font-semibold text-text-hi">Your videography</h3>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <Link to="/atlas" className="inline-flex items-center gap-1 font-semibold text-cinema-400 hover:underline">
-                <Icon name="globe" size={13} /> Atlas
-              </Link>
+              {/* Atlas is a RAW-hidden tool — don't offer a dead link there. */}
+              {!isRaw && (
+                <Link to="/atlas" className="inline-flex items-center gap-1 font-semibold text-cinema-400 hover:underline">
+                  <Icon name="globe" size={13} /> Atlas
+                </Link>
+              )}
               <Link to="/settings" className="text-text-dim hover:text-text-hi">
                 Hide in Settings
               </Link>
             </div>
           </div>
-          <CategoryBox history={history} />
+          <CategoryRadar history={history} />
         </Reveal>
       )}
 
-      {/* Production stepper — connected nodes, a filling line + progress bar. */}
-      {showSteps && (
+      {/* Production stepper — connected nodes, a filling line + progress bar.
+          A workflow tool, so RAW mode leaves it out. */}
+      {showSteps && !isRaw && (
       <GlassCard className="mt-8">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>

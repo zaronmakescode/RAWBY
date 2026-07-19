@@ -8,6 +8,7 @@ import { Shell } from "./components/layout/Shell";
 import { RequireAuth } from "./components/layout/RequireAuth";
 import { useAuth } from "./store/auth";
 import { useSettings } from "./store/settings";
+import { useUiMode } from "./store/uiMode";
 
 // Route-level code splitting — each page ships as its own chunk so the first
 // paint only loads what it needs (three.js is already split separately).
@@ -38,6 +39,19 @@ function ScrollToTop() {
     window.scrollTo(0, 0);
   }, [pathname]);
   return null;
+}
+
+// RAW mode drops the map/gear/leaderboard tools — if a stale link or the
+// back button lands here anyway, bounce to Home rather than 404 or render.
+const RAW_HIDDEN_PATHS = ["/atlas", "/gear", "/leaderboard"];
+
+function RawGuard({ children }: { children: JSX.Element }) {
+  const isRaw = useUiMode((s) => s.mode) === "raw";
+  const { pathname } = useLocation();
+  if (isRaw && RAW_HIDDEN_PATHS.includes(pathname)) {
+    return <Navigate to="/home" replace />;
+  }
+  return children;
 }
 
 function PageFallback() {
@@ -72,9 +86,9 @@ export default function App() {
         >
           <Route path="/home" element={<Home />} />
           <Route path="/prompts" element={<Prompts />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/atlas" element={<Atlas />} />
-          <Route path="/gear" element={<Gear />} />
+          <Route path="/leaderboard" element={<RawGuard><Leaderboard /></RawGuard>} />
+          <Route path="/atlas" element={<RawGuard><Atlas /></RawGuard>} />
+          <Route path="/gear" element={<RawGuard><Gear /></RawGuard>} />
           <Route path="/idea-bank" element={<IdeaBank />} />
           <Route path="/assistant" element={<Assistant />} />
           <Route path="/profile" element={<Profile />} />

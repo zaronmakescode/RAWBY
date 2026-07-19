@@ -17,6 +17,15 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/idea-bank", label: "Ideas", icon: "bulb" },
 ];
 
+// RAW mode: only the tools that matter — no map, no gear, no leaderboard.
+// Assistant joins the dock here since it's RAW's second core tool.
+export const RAW_NAV_ITEMS: NavItem[] = [
+  { to: "/home", label: "Home", icon: "home" },
+  { to: "/prompts", label: "Prompts", icon: "clapper" },
+  { to: "/idea-bank", label: "Ideas", icon: "bulb" },
+  { to: "/assistant", label: "Assistant", icon: "sparkles" },
+];
+
 export const SECONDARY_ITEMS: NavItem[] = [
   { to: "/profile", label: "Profile", icon: "user" },
   { to: "/settings", label: "Settings", icon: "settings" },
